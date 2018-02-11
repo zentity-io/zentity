@@ -21,8 +21,6 @@ public class ResolutionAction extends BaseRestHandler {
         super(settings);
         controller.registerHandler(POST, "_zentity/resolution", this);
         controller.registerHandler(POST, "_zentity/resolution/{entity_type}", this);
-        controller.registerHandler(POST, "_zentity/resolution/{entity_type}/{indices}", this);
-        controller.registerHandler(POST, "_zentity/resolution/{entity_type}/{indices}/{resolvers}", this);
     }
 
     /**
@@ -205,9 +203,9 @@ public class ResolutionAction extends BaseRestHandler {
 
                 // Parse and validate the "resolvers" field of the entity model.
                 HashMap<String, ArrayList<String>> resolversObj = ModelsAction.parseResolvers(entityModel);
-                // Parse and validate the "resolvers" field of the request body or URL.
+                // Parse and validate the "filter_resolvers" field of the request body or URL.
                 HashSet<String> resolversFilter = ModelsAction.parseResolversFilter(resolversFilterFromUrl, requestBody);
-                // Intersect the "resolvers" field of the entity model with the "resolvers" filter.
+                // Intersect the "resolvers" field of the entity model with the "filter_resolvers" field.
                 resolversObj = ModelsAction.filterResolvers(resolversObj, resolversFilter);
                 if (resolversObj.isEmpty())
                     throw new BadRequestException("No resolvers have been provided for the entity resolution job.");
@@ -215,9 +213,9 @@ public class ResolutionAction extends BaseRestHandler {
 
                 // Parse and validate the "indices" field of the entity model.
                 HashMap<String, HashMap<String, String>> indicesObj = ModelsAction.parseIndices(entityModel);
-                // Parse and validate the "indices" field of the request body or URL.
+                // Parse and validate the "filter_indices" field of the request body or URL.
                 HashSet<String> indicesFilter = ModelsAction.parseIndicesFilter(indicesFilterFromUrl, requestBody);
-                // Intersect the "indices" field of the entity model with the "indices" filter.
+                // Intersect the "indices" field of the entity model with the "filter_indices" field.
                 indicesObj = ModelsAction.filterIndices(indicesObj, indicesFilter);
                 if (indicesObj.isEmpty())
                     throw new BadRequestException("No indices have been provided for the entity resolution job.");
