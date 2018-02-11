@@ -54,7 +54,7 @@ Download: [https://www.elastic.co/downloads/elasticsearch](https://www.elastic.c
 ```javascript
 {
   "name": "zentity",
-  "description": "Fast and flexible entity resolution for Elasticsearch.",
+  "description": "Real-time entity resolution for Elasticsearch.",
   "version": "0.1",
   "author": "Dave Moore",
   "website": "http://zentity.io"
