@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <name>zentity</name>
-    <description>Fast and flexible entity resolution for Elasticsearch.</description>
+    <description>Real-time entity resolution for Elasticsearch.</description>
     <groupId>io.zentity</groupId>
     <artifactId>zentity</artifactId>
     <version>0.1</version>
