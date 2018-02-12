@@ -220,7 +220,7 @@ You must provide an entity model when making a resolution request. You can provi
 - Option 2. You can index the entity model using the [Models API](#models-api) and reference it by its `entity_type`.
 
 Option (2) gives you the ability to share, reuse, and build upon existing entity models. You can manage entity models
-using the [Models API](#models-api). zentity stores entity models in an Elasticsearch index called `.entity-models`.
+using the [Models API](#models-api). zentity stores entity models in an Elasticsearch index called `.zentity-models`.
 Each document in this index represents the entity model for a distinct entity type. The entity type is listed in the
 [`_id`](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-id-field.html) field of the document.
 There can be only one entity model for a given entity type. Once you have indexed an entity model, you can use it by
@@ -593,7 +593,7 @@ span many hops if they have highly varied attribute values.
 
 **Notes:**
 
-- If you define an `entity_type`, zentity will use its model from the `.entity-models` index.
+- If you define an `entity_type`, zentity will use its model from the `.zentity-models` index.
 - If you don't define an `entity_type`, then you must include a `model` object in the request body.
 - You can define an `entity_type` in the request body or the URL, but not both.
 
@@ -613,7 +613,7 @@ searching each index in the entity model at each hop.
 GET _zentity/models
 ```
 
-Returns all entity models from the `.entity-models` index.
+Returns all entity models from the `.zentity-models` index.
 
 
 #### Get an entity model
@@ -622,7 +622,7 @@ Returns all entity models from the `.entity-models` index.
 GET _zentity/models/{entity_type}
 ```
 
-Returns the entity model for a given `entity_type` from the `.entity-models` index.
+Returns the entity model for a given `entity_type` from the `.zentity-models` index.
 
 **URL Params:**
 
@@ -633,7 +633,7 @@ Returns the entity model for a given `entity_type` from the `.entity-models` ind
 
 #### Create an entity model
 
-Creates an entity model for a given `entity_type` and puts it in the `.entity-models` index.
+Creates an entity model for a given `entity_type` and puts it in the `.zentity-models` index.
 Returns an error if an entity model already exists for that `entity_type`.
 
 ```javascript
@@ -711,7 +711,7 @@ PUT _zentity/models/{entity_type}
 
 #### Delete an entity model
 
-Deletes the entity model for a given `entity_type` from the `.entity-models` index.
+Deletes the entity model for a given `entity_type` from the `.zentity-models` index.
 
 ```javascript
 DELETE _zentity/models/{entity_type}

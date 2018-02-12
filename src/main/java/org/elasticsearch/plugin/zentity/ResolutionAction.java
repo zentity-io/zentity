@@ -67,7 +67,7 @@ public class ResolutionAction extends BaseRestHandler {
      * @param entityType  The entity type.
      * @param requestBody The request body.
      * @param client      The client that will communicate with Elasticsearch.
-     * @return The parsed "model" field from the request body, or an object from ".entity-models" index.
+     * @return The parsed "model" field from the request body, or an object from ".zentity-models" index.
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws IOException

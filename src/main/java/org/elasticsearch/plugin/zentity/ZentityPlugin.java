@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 public class ZentityPlugin extends Plugin implements ActionPlugin {
 
-    public static final String INDEX = ".entity-models";
+    public static final String INDEX = ".zentity-models";
     private static final Properties properties = new Properties();
 
     public ZentityPlugin() throws IOException {
