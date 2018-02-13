@@ -70,7 +70,7 @@ Download: [https://www.elastic.co/downloads/elasticsearch](https://www.elastic.c
 
 ### Step 1. Index some data.
 
-zentity operates on data that is indexed in ***[Elasticsearch](https://www.elastic.co/products/elasticsearch)***,
+zentity operates on data that is indexed in **[Elasticsearch](https://www.elastic.co/products/elasticsearch)**,
 an open source search engine for real-time search and analytics at scale. The most common tools for indexing
 documents in Elasticsearch are [Logstash](https://www.elastic.co/guide/en/logstash/6.1/introduction.html) and
 [Beats](https://www.elastic.co/guide/en/beats/libbeat/current/beats-reference.html). You can also index single
