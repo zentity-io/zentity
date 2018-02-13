@@ -3,13 +3,14 @@
 zentity is an [Elasticsearch](https://www.elastic.co/products/elasticsearch) plugin for real-time entity
 resolution. It aims to be:
 
-- **Simple** - Entity resolution is hard. zentity offers a framework to make it easy.
-- **Fast** - Get results at real-time interactive speeds.
-- **Logical** - Logic is easier to read, troubleshoot, and optimize than black box statistical algorithms.
-- **Transitive** - Resolve entities that span multiple hops of connections.
-- **Multi-source** - Resolve entities that span multiple indices with disparate mappings.
-- **Accommodating** - Operate on data as it exists. Avoid reindexing or ETL.
-- **100% Elasticsearch** - Elasticsearch has a great foundation for real-time entity resolution.
+- **Simple** - Entity resolution is hard. zentity makes it easy.
+- **Fast** - Get results at interactive speeds. From milliseconds to low seconds.
+- **Generic** - Resolve anything. People, companies, locations, sessions, and more.
+- **Transitive** - Resolve over multiple hops. Recursion finds dynamic identities.
+- **Multi-source** - Resolve over multiple indices with disparate mappings.
+- **Accommodating** - Operate on data as it exists. No changing or reindexing data.
+- **Logical** - Logic is easier to read, troubleshoot, and optimize than statistics.
+- **100% Elasticsearch** - Elasticsearch is a great foundation for entity resolution.
 
 
 ---
@@ -55,9 +56,11 @@ Download: [https://www.elastic.co/downloads/elasticsearch](https://www.elastic.c
 {
   "name": "zentity",
   "description": "Real-time entity resolution for Elasticsearch.",
-  "version": "0.1",
-  "author": "Dave Moore",
-  "website": "http://zentity.io"
+  "website": "http://zentity.io",
+  "version": {
+    "zentity": "0.1.1",
+    "elasticsearch": "6.2.1"
+  }
 }
 ```
 
@@ -67,7 +70,7 @@ Download: [https://www.elastic.co/downloads/elasticsearch](https://www.elastic.c
 
 ### Step 1. Index some data.
 
-zentity operates on data that is indexed in ***[Elasticsearch](#https://www.elastic.co/products/elasticsearch)***,
+zentity operates on data that is indexed in ***[Elasticsearch](https://www.elastic.co/products/elasticsearch)***,
 an open source search engine for real-time search and analytics at scale. The most common tools for indexing
 documents in Elasticsearch are [Logstash](https://www.elastic.co/guide/en/logstash/6.1/introduction.html) and
 [Beats](https://www.elastic.co/guide/en/beats/libbeat/current/beats-reference.html). You can also index single
@@ -577,7 +580,7 @@ span many hops if they have highly varied attribute values.
 |`hits`|Boolean|`true`|No|Return the `hits` field in the response.|
 |`max_docs_per_query`|Integer|`1000`|No|Maximum number of docs per query result.|
 |`max_hops`|Integer|`100`|No|Maximum level of recursion.|
-|`pretty`|Boolean|`true`|No|Indents the JSON response data.|
+|`pretty`|Boolean|`false`|No|Indents the JSON response data.|
 |`profile`|Boolean|`false`|No|[Profile](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-profile.html) each query. Used for debugging.|
 |`queries`|Boolean|`false`|No|Return the `queries` field in the response. Used for debugging.|
 

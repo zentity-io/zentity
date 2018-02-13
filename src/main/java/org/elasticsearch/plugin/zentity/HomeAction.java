@@ -49,9 +49,11 @@ public class HomeAction extends BaseRestHandler {
             String response = "{\n" +
                     "  \"name\": \"" + props.getProperty("name") + "\",\n" +
                     "  \"description\": \"" + props.getProperty("description") + "\",\n" +
-                    "  \"version\": \"" + props.getProperty("version") + "\",\n" +
-                    "  \"author\": \"" + props.getProperty("author") + "\",\n" +
-                    "  \"website\": \"" + props.getProperty("website") + "\"\n" +
+                    "  \"website\": \"" + props.getProperty("zentity.website") + "\",\n" +
+                    "  \"version\": {\n" +
+                    "    \"zentity\": \"" + props.getProperty("zentity.version") + "\",\n" +
+                    "    \"elasticsearch\": \"" + props.getProperty("elasticsearch.version") + "\"\n" +
+                    "  }\n" +
                     "}";
             channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
         };

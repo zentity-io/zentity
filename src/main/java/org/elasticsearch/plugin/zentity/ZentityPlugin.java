@@ -26,8 +26,14 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
     private static final Properties properties = new Properties();
 
     public ZentityPlugin() throws IOException {
-        InputStream resourceStream = this.getClass().getResourceAsStream("/plugin-descriptor.properties");
-        properties.load(resourceStream);
+        Properties zentityProperties = new Properties();
+        Properties pluginDescriptorProperties = new Properties();
+        InputStream zentityStream = this.getClass().getResourceAsStream("/zentity.properties");
+        InputStream pluginDescriptorStream = this.getClass().getResourceAsStream("/plugin-descriptor.properties");
+        zentityProperties.load(zentityStream);
+        pluginDescriptorProperties.load(pluginDescriptorStream);
+        properties.putAll(zentityProperties);
+        properties.putAll(pluginDescriptorProperties);
     }
 
     public static void createIndex(NodeClient client) {

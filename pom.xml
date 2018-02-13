@@ -8,13 +8,16 @@
     <description>Real-time entity resolution for Elasticsearch.</description>
     <groupId>io.zentity</groupId>
     <artifactId>zentity</artifactId>
-    <version>0.1</version>
+    <version>${zentity.version}-elasticsearch-${elasticsearch.version}</version>
 
     <properties>
-        <author>Dave Moore</author>
-        <website>http://zentity.io</website>
-        <elasticsearch.version>6.1.1</elasticsearch.version>
+        <zentity.author>Dave Moore</zentity.author>
+        <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
+        <zentity.website>http://zentity.io</zentity.website>
+        <zentity.version>0.1.1</zentity.version>
+        <elasticsearch.version>6.2.1</elasticsearch.version>
         <jackson.version>2.9.4</jackson.version>
+        <jdk.version>1.8</jdk.version>
     </properties>
 
     <dependencies>
@@ -74,6 +77,7 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
+                    <include>zentity.properties</include>
                     <include>plugin-descriptor.properties</include>
                 </includes>
             </resource>
