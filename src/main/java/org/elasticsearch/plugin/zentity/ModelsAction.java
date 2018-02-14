@@ -18,6 +18,9 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.*;
@@ -395,6 +398,7 @@ public class ModelsAction extends BaseRestHandler {
 
         // Parse request
         String entityType = restRequest.param("entity_type");
+        Boolean pretty = restRequest.paramAsBoolean("pretty", false);
         Method method = restRequest.method();
         String requestBody = restRequest.content().utf8ToString();
 
@@ -404,31 +408,51 @@ public class ModelsAction extends BaseRestHandler {
                 if (method == GET && (entityType == null || entityType.equals(""))) {
                     // GET _zentity/models
                     SearchResponse response = getEntityModels(client);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response.toString()));
+                    XContentBuilder content = XContentFactory.jsonBuilder();
+                    if (pretty)
+                        content.prettyPrint();
+                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else if (method == GET && !entityType.equals("")) {
                     // GET _zentity/models/{entity_type}
                     GetResponse response = getEntityModel(entityType, client);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response.toString()));
+                    XContentBuilder content = XContentFactory.jsonBuilder();
+                    if (pretty)
+                        content.prettyPrint();
+                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else if (method == POST && !entityType.equals("")) {
                     // POST _zentity/models/{entity_type}
                     if (requestBody == null || requestBody.equals(""))
                         throw new BadRequestException("Request body cannot be empty when indexing an entity model.");
                     IndexResponse response = indexEntityModel(entityType, requestBody, client);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response.toString()));
+                    XContentBuilder content = XContentFactory.jsonBuilder();
+                    if (pretty)
+                        content.prettyPrint();
+                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else if (method == PUT && !entityType.equals("")) {
                     // PUT _zentity/models/{entity_type}
                     if (requestBody == null || requestBody.equals(""))
                         throw new BadRequestException("Request body cannot be empty when updating an entity model.");
                     UpdateResponse response = updateEntityModel(entityType, requestBody, client);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response.toString()));
+                    XContentBuilder content = XContentFactory.jsonBuilder();
+                    if (pretty)
+                        content.prettyPrint();
+                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else if (method == DELETE && !entityType.equals("")) {
                     // DELETE _zentity/models/{entity_type}
                     DeleteResponse response = deleteEntityModel(entityType, client);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response.toString()));
+                    XContentBuilder content = XContentFactory.jsonBuilder();
+                    if (pretty)
+                        content.prettyPrint();
+                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else {
                     throw new NotImplementedException("Method and endpoint not implemented.");

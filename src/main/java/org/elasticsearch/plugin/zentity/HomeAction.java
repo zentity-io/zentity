@@ -3,6 +3,8 @@ package org.elasticsearch.plugin.zentity;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.rest.*;
 
 import java.util.Properties;
@@ -26,18 +28,22 @@ public class HomeAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
 
         Properties props = ZentityPlugin.properties();
+        Boolean pretty = restRequest.paramAsBoolean("pretty", false);
 
         return channel -> {
-            String response = "{\n" +
-                    "  \"name\": \"" + props.getProperty("name") + "\",\n" +
-                    "  \"description\": \"" + props.getProperty("description") + "\",\n" +
-                    "  \"website\": \"" + props.getProperty("zentity.website") + "\",\n" +
-                    "  \"version\": {\n" +
-                    "    \"zentity\": \"" + props.getProperty("zentity.version") + "\",\n" +
-                    "    \"elasticsearch\": \"" + props.getProperty("elasticsearch.version") + "\"\n" +
-                    "  }\n" +
-                    "}";
-            channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
+            XContentBuilder content = XContentFactory.jsonBuilder();
+            if (pretty)
+                content.prettyPrint();
+            content.startObject();
+            content.field("name", props.getProperty("name"));
+            content.field("description", props.getProperty("description"));
+            content.field("website", props.getProperty("zentity.website"));
+            content.startObject("version");
+            content.field("zentity", props.getProperty("zentity.version"));
+            content.field("elasticsearch", props.getProperty("elasticsearch.version"));
+            content.endObject();
+            content.endObject();
+            channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
         };
     }
 }
