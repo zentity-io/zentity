@@ -3,6 +3,8 @@ package org.elasticsearch.plugin.zentity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequestBuilder;
@@ -42,6 +44,18 @@ public class ModelsAction extends BaseRestHandler {
     }
 
     /**
+     * Check if the .zentity-models index exists, and if it doesn't, then create it.
+     *
+     * @param client The client that will communicate with Elasticsearch.
+     */
+    public static void ensureIndex(NodeClient client) {
+        IndicesExistsRequestBuilder request = client.admin().indices().prepareExists(ZentityPlugin.INDEX);
+        IndicesExistsResponse response = request.get();
+        if (!response.isExists())
+            ZentityPlugin.createIndex(client);
+    }
+
+    /**
      * Retrieve all entity models.
      *
      * @param client The client that will communicate with Elasticsearch.
@@ -78,33 +92,31 @@ public class ModelsAction extends BaseRestHandler {
     /**
      * Index one entity model by its type.
      *
-     * @param request The request.
-     * @param client  The client that will communicate with Elasticsearch.
+     * @param entityType  The entity type.
+     * @param requestBody The request body.
+     * @param client      The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
      */
-    public static IndexResponse indexEntityModel(IndexRequestBuilder request, NodeClient client) {
-        try {
-            return request.get();
-        } catch (IndexNotFoundException e) {
-            ZentityPlugin.createIndex(client);
-            return request.get();
-        }
+    public static IndexResponse indexEntityModel(String entityType, String requestBody, NodeClient client) {
+        ensureIndex(client);
+        IndexRequestBuilder request = client.prepareIndex(ZentityPlugin.INDEX, "doc", entityType);
+        request.setSource(requestBody, XContentType.JSON).setRefreshPolicy("wait_for");
+        return request.get();
     }
 
     /**
      * Update one entity model by its type. Supports partial updates.
      *
-     * @param request The request.
-     * @param client  The client that will communicate with Elasticsearch.
+     * @param entityType  The entity type.
+     * @param requestBody The request body.
+     * @param client      The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
      */
-    public static UpdateResponse updateEntityModel(UpdateRequestBuilder request, NodeClient client) {
-        try {
-            return request.get();
-        } catch (IndexNotFoundException e) {
-            ZentityPlugin.createIndex(client);
-            return request.get();
-        }
+    public static UpdateResponse updateEntityModel(String entityType, String requestBody, NodeClient client) {
+        ensureIndex(client);
+        UpdateRequestBuilder request = client.prepareUpdate(ZentityPlugin.INDEX, "doc", entityType);
+        request.setDoc(requestBody, XContentType.JSON).setDocAsUpsert(true).setRefreshPolicy("wait_for");
+        return request.get();
     }
 
     /**
@@ -372,18 +384,14 @@ public class ModelsAction extends BaseRestHandler {
                     // POST _zentity/models/{entity_type}
                     if (requestBody == null || requestBody.equals(""))
                         throw new BadRequestException("Request body cannot be empty when indexing an entity model.");
-                    IndexRequestBuilder request = client.prepareIndex(ZentityPlugin.INDEX, "doc", entityType);
-                    request.setSource(requestBody, XContentType.JSON).setRefreshPolicy("wait_for");
-                    IndexResponse response = indexEntityModel(request, client);
+                    IndexResponse response = indexEntityModel(entityType, requestBody, client);
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response.toString()));
 
                 } else if (method == PUT && !entityType.equals("")) {
                     // PUT _zentity/models/{entity_type}
                     if (requestBody == null || requestBody.equals(""))
                         throw new BadRequestException("Request body cannot be empty when updating an entity model.");
-                    UpdateRequestBuilder request = client.prepareUpdate(ZentityPlugin.INDEX, "doc", entityType);
-                    request.setDoc(requestBody, XContentType.JSON).setDocAsUpsert(true).setRefreshPolicy("wait_for");
-                    UpdateResponse response = updateEntityModel(request, client);
+                    UpdateResponse response = updateEntityModel(entityType, requestBody, client);
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response.toString()));
 
                 } else if (method == DELETE && !entityType.equals("")) {

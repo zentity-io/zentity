@@ -7,7 +7,6 @@ import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.*;
-import org.omg.DynamicAny.NameDynAnyPair;
 
 import java.io.IOException;
 import java.util.*;

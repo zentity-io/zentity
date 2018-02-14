@@ -49,15 +49,15 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
                                 "    \"properties\": {\n" +
                                 "      \"attributes\": {\n" +
                                 "        \"type\": \"object\",\n" +
-                                "        \"dynamic\": true\n" +
+                                "        \"enabled\": false\n" +
                                 "      },\n" +
                                 "      \"indices\": {\n" +
                                 "        \"type\": \"object\",\n" +
-                                "        \"dynamic\": true\n" +
+                                "        \"enabled\": false\n" +
                                 "      },\n" +
                                 "      \"resolvers\": {\n" +
                                 "        \"type\": \"object\",\n" +
-                                "        \"dynamic\": true\n" +
+                                "        \"enabled\": false\n" +
                                 "      }\n" +
                                 "    }\n" +
                                 "  }\n" +
