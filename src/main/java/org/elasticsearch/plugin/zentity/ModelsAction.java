@@ -124,7 +124,7 @@ public class ModelsAction extends BaseRestHandler {
     }
 
     /**
-     * Index one entity model by its type.
+     * Index one entity model by its type. Return error if an entity model already exists for that entity type.
      *
      * @param entityType  The entity type.
      * @param requestBody The request body.
@@ -134,22 +134,22 @@ public class ModelsAction extends BaseRestHandler {
     public static IndexResponse indexEntityModel(String entityType, String requestBody, NodeClient client) {
         ensureIndex(client);
         IndexRequestBuilder request = client.prepareIndex(INDEX, "doc", entityType);
-        request.setSource(requestBody, XContentType.JSON).setRefreshPolicy("wait_for");
+        request.setSource(requestBody, XContentType.JSON).setCreate(true).setRefreshPolicy("wait_for");
         return request.get();
     }
 
     /**
-     * Update one entity model by its type. Supports partial updates.
+     * Update one entity model by its type. Does not support partial updates.
      *
      * @param entityType  The entity type.
      * @param requestBody The request body.
      * @param client      The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
      */
-    public static UpdateResponse updateEntityModel(String entityType, String requestBody, NodeClient client) {
+    public static IndexResponse updateEntityModel(String entityType, String requestBody, NodeClient client) {
         ensureIndex(client);
-        UpdateRequestBuilder request = client.prepareUpdate(INDEX, "doc", entityType);
-        request.setDoc(requestBody, XContentType.JSON).setDocAsUpsert(true).setRefreshPolicy("wait_for");
+        IndexRequestBuilder request = client.prepareIndex(INDEX, "doc", entityType);
+        request.setSource(requestBody, XContentType.JSON).setCreate(false).setRefreshPolicy("wait_for");
         return request.get();
     }
 
@@ -438,7 +438,7 @@ public class ModelsAction extends BaseRestHandler {
                     // PUT _zentity/models/{entity_type}
                     if (requestBody == null || requestBody.equals(""))
                         throw new BadRequestException("Request body cannot be empty when updating an entity model.");
-                    UpdateResponse response = updateEntityModel(entityType, requestBody, client);
+                    IndexResponse response = updateEntityModel(entityType, requestBody, client);
                     XContentBuilder content = XContentFactory.jsonBuilder();
                     if (pretty)
                         content.prettyPrint();
