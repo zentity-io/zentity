@@ -618,6 +618,12 @@ GET _zentity/models
 
 Returns all entity models from the `.zentity-models` index.
 
+**URL Params:**
+
+|Param|Type|Default|Required|Description|
+|-----|----|-------|--------|-----------|
+|`pretty`|Boolean|`false`|No|Indents the JSON response data.|
+
 
 #### Get an entity model
 
@@ -632,6 +638,7 @@ Returns the entity model for a given `entity_type` from the `.zentity-models` in
 |Param|Type|Default|Required|Description|
 |-----|----|-------|--------|-----------|
 |`entity_type`|String| |Yes|Entity type.|
+|`pretty`|Boolean|`false`|No|Indents the JSON response data.|
 
 
 #### Create an entity model
@@ -671,6 +678,7 @@ POST _zentity/models/{entity_type}
 |Param|Type|Default|Required|Description|
 |-----|----|-------|--------|-----------|
 |`entity_type`|String| |Yes|Entity type.|
+|`pretty`|Boolean|`false`|No|Indents the JSON response data.|
 
 
 #### Update an entity model
@@ -710,6 +718,7 @@ PUT _zentity/models/{entity_type}
 |Param|Type|Default|Required|Description|
 |-----|----|-------|--------|-----------|
 |`entity_type`|String| |Yes|Entity type.|
+|`pretty`|Boolean|`false`|No|Indents the JSON response data.|
 
 
 #### Delete an entity model
@@ -727,6 +736,7 @@ DELETE _zentity/models/{entity_type}
 |Param|Type|Default|Required|Description|
 |-----|----|-------|--------|-----------|
 |`entity_type`|String| |Yes|Entity type.|
+|`pretty`|Boolean|`false`|No|Indents the JSON response data.|
 
 
 ## <a name="license">License</a>
