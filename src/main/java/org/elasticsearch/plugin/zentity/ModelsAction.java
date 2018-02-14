@@ -30,7 +30,7 @@ import static org.elasticsearch.rest.RestRequest.Method.*;
 
 public class ModelsAction extends BaseRestHandler {
 
-
+    public static final String INDEX = ".zentity-models";
     private static final Pattern INVALID_CHARS = Pattern.compile("\\.");
 
     @Inject
@@ -43,16 +43,47 @@ public class ModelsAction extends BaseRestHandler {
         controller.registerHandler(DELETE, "_zentity/models/{entity_type}", this);
     }
 
+    public static void createIndex(NodeClient client) {
+        client.admin().indices().prepareCreate(INDEX)
+                .setSettings(Settings.builder()
+                        .put("index.number_of_shards", 1)
+                        .put("index.number_of_replicas", 1)
+                )
+                .addMapping("doc",
+                        "{\n" +
+                                "  \"doc\": {\n" +
+                                "    \"dynamic\": \"strict\",\n" +
+                                "    \"properties\": {\n" +
+                                "      \"attributes\": {\n" +
+                                "        \"type\": \"object\",\n" +
+                                "        \"enabled\": false\n" +
+                                "      },\n" +
+                                "      \"indices\": {\n" +
+                                "        \"type\": \"object\",\n" +
+                                "        \"enabled\": false\n" +
+                                "      },\n" +
+                                "      \"resolvers\": {\n" +
+                                "        \"type\": \"object\",\n" +
+                                "        \"enabled\": false\n" +
+                                "      }\n" +
+                                "    }\n" +
+                                "  }\n" +
+                                "}",
+                        XContentType.JSON
+                )
+                .get();
+    }
+
     /**
      * Check if the .zentity-models index exists, and if it doesn't, then create it.
      *
      * @param client The client that will communicate with Elasticsearch.
      */
     public static void ensureIndex(NodeClient client) {
-        IndicesExistsRequestBuilder request = client.admin().indices().prepareExists(ZentityPlugin.INDEX);
+        IndicesExistsRequestBuilder request = client.admin().indices().prepareExists(INDEX);
         IndicesExistsResponse response = request.get();
         if (!response.isExists())
-            ZentityPlugin.createIndex(client);
+            createIndex(client);
     }
 
     /**
@@ -62,12 +93,12 @@ public class ModelsAction extends BaseRestHandler {
      * @return The response from Elasticsearch.
      */
     public static SearchResponse getEntityModels(NodeClient client) {
-        SearchRequestBuilder request = client.prepareSearch(ZentityPlugin.INDEX);
+        SearchRequestBuilder request = client.prepareSearch(INDEX);
         request.setSize(10000);
         try {
             return request.get();
         } catch (IndexNotFoundException e) {
-            ZentityPlugin.createIndex(client);
+            createIndex(client);
             return request.get();
         }
     }
@@ -80,11 +111,11 @@ public class ModelsAction extends BaseRestHandler {
      * @return The response from Elasticsearch.
      */
     public static GetResponse getEntityModel(String entityType, NodeClient client) {
-        GetRequestBuilder request = client.prepareGet(ZentityPlugin.INDEX, "doc", entityType);
+        GetRequestBuilder request = client.prepareGet(INDEX, "doc", entityType);
         try {
             return request.get();
         } catch (IndexNotFoundException e) {
-            ZentityPlugin.createIndex(client);
+            createIndex(client);
             return request.get();
         }
     }
@@ -99,7 +130,7 @@ public class ModelsAction extends BaseRestHandler {
      */
     public static IndexResponse indexEntityModel(String entityType, String requestBody, NodeClient client) {
         ensureIndex(client);
-        IndexRequestBuilder request = client.prepareIndex(ZentityPlugin.INDEX, "doc", entityType);
+        IndexRequestBuilder request = client.prepareIndex(INDEX, "doc", entityType);
         request.setSource(requestBody, XContentType.JSON).setRefreshPolicy("wait_for");
         return request.get();
     }
@@ -114,7 +145,7 @@ public class ModelsAction extends BaseRestHandler {
      */
     public static UpdateResponse updateEntityModel(String entityType, String requestBody, NodeClient client) {
         ensureIndex(client);
-        UpdateRequestBuilder request = client.prepareUpdate(ZentityPlugin.INDEX, "doc", entityType);
+        UpdateRequestBuilder request = client.prepareUpdate(INDEX, "doc", entityType);
         request.setDoc(requestBody, XContentType.JSON).setDocAsUpsert(true).setRefreshPolicy("wait_for");
         return request.get();
     }
@@ -127,12 +158,12 @@ public class ModelsAction extends BaseRestHandler {
      * @return The response from Elasticsearch.
      */
     private static DeleteResponse deleteEntityModel(String entityType, NodeClient client) {
-        DeleteRequestBuilder request = client.prepareDelete(ZentityPlugin.INDEX, "doc", entityType);
+        DeleteRequestBuilder request = client.prepareDelete(INDEX, "doc", entityType);
         request.setRefreshPolicy("wait_for");
         try {
             return request.get();
         } catch (IndexNotFoundException e) {
-            ZentityPlugin.createIndex(client);
+            createIndex(client);
             return request.get();
         }
     }

@@ -9,24 +9,6 @@ import java.util.Properties;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
-class BadRequestException extends Exception {
-    BadRequestException(String message) {
-        super(message);
-    }
-}
-
-class NotFoundException extends Exception {
-    NotFoundException(String message) {
-        super(message);
-    }
-}
-
-class NotImplementedException extends Exception {
-    NotImplementedException(String message) {
-        super(message);
-    }
-}
-
 public class HomeAction extends BaseRestHandler {
 
     @Inject

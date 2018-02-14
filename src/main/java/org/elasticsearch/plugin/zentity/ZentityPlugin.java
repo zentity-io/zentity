@@ -1,13 +1,11 @@
 package org.elasticsearch.plugin.zentity;
 
-import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestController;
@@ -20,9 +18,26 @@ import java.util.List;
 import java.util.Properties;
 import java.util.function.Supplier;
 
+class BadRequestException extends Exception {
+    BadRequestException(String message) {
+        super(message);
+    }
+}
+
+class NotFoundException extends Exception {
+    NotFoundException(String message) {
+        super(message);
+    }
+}
+
+class NotImplementedException extends Exception {
+    NotImplementedException(String message) {
+        super(message);
+    }
+}
+
 public class ZentityPlugin extends Plugin implements ActionPlugin {
 
-    public static final String INDEX = ".zentity-models";
     private static final Properties properties = new Properties();
 
     public ZentityPlugin() throws IOException {
@@ -34,37 +49,6 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
         pluginDescriptorProperties.load(pluginDescriptorStream);
         properties.putAll(zentityProperties);
         properties.putAll(pluginDescriptorProperties);
-    }
-
-    public static void createIndex(NodeClient client) {
-        client.admin().indices().prepareCreate(INDEX)
-                .setSettings(Settings.builder()
-                        .put("index.number_of_shards", 1)
-                        .put("index.number_of_replicas", 1)
-                )
-                .addMapping("doc",
-                        "{\n" +
-                                "  \"doc\": {\n" +
-                                "    \"dynamic\": \"strict\",\n" +
-                                "    \"properties\": {\n" +
-                                "      \"attributes\": {\n" +
-                                "        \"type\": \"object\",\n" +
-                                "        \"enabled\": false\n" +
-                                "      },\n" +
-                                "      \"indices\": {\n" +
-                                "        \"type\": \"object\",\n" +
-                                "        \"enabled\": false\n" +
-                                "      },\n" +
-                                "      \"resolvers\": {\n" +
-                                "        \"type\": \"object\",\n" +
-                                "        \"enabled\": false\n" +
-                                "      }\n" +
-                                "    }\n" +
-                                "  }\n" +
-                                "}",
-                        XContentType.JSON
-                )
-                .get();
     }
 
     public static Properties properties() {
