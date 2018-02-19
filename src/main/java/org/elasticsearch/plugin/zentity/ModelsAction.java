@@ -88,6 +88,10 @@ public class ModelsAction extends BaseRestHandler {
             createIndex(client);
     }
 
+    public static boolean hasInvalidChars(String value) {
+        return INVALID_CHARS.matcher(value).find();
+    }
+
     /**
      * Retrieve all entity models.
      *
@@ -190,8 +194,10 @@ public class ModelsAction extends BaseRestHandler {
         Iterator<Map.Entry<String, JsonNode>> attributes = entityModel.get("attributes").fields();
         while (attributes.hasNext()) {
             Map.Entry<String, JsonNode> attribute = attributes.next();
-            if (INVALID_CHARS.matcher(attribute.getKey()).find())
-                throw new BadRequestException("'attributes." + attribute.getKey() + "' must not have periods in the field name.");
+            if (attribute.getKey().equals(""))
+                throw new BadRequestException("The 'attributes' field of the entity model has an attribute with an empty name.");
+            if (hasInvalidChars(attribute.getKey()))
+                throw new BadRequestException("'attributes." + attribute.getKey() + "' must not have periods in its name.");
             if (!attribute.getValue().isObject())
                 throw new BadRequestException("'attributes." + attribute.getKey() + "' must be an object.");
             if (attribute.getValue().size() == 0)
@@ -200,8 +206,10 @@ public class ModelsAction extends BaseRestHandler {
             Iterator<Map.Entry<String, JsonNode>> matchers = entityModel.get("attributes").get(attribute.getKey()).fields();
             while (matchers.hasNext()) {
                 Map.Entry<String, JsonNode> matcher = matchers.next();
-                if (INVALID_CHARS.matcher(matcher.getKey()).find())
-                    throw new BadRequestException("'attributes." + matcher.getKey() + "' must not have periods in the field name.");
+                if (matcher.getKey().equals(""))
+                    throw new BadRequestException("'attributes." + attribute.getKey() + "' has a matcher with an empty name.");
+                if (hasInvalidChars(matcher.getKey()))
+                    throw new BadRequestException("'attributes." + attribute.getKey() + "." + matcher.getKey() + "' must not have periods in its name.");
                 if (!matcher.getValue().isObject())
                     throw new BadRequestException("'attributes." + attribute.getKey() + "." + matcher.getKey() + "' must be an object.");
                 if (matcher.getValue().size() == 0)
@@ -231,6 +239,8 @@ public class ModelsAction extends BaseRestHandler {
         while (indices.hasNext()) {
             String index = indices.next();
             indicesObj.put(index, new HashMap<>());
+            if (index.equals(""))
+                throw new BadRequestException("The 'indices' field of the entity model has an index with an empty name.");
             if (!entityModel.get("indices").get(index).isObject())
                 throw new BadRequestException("'indices." + index + "' must be an object.");
             if (entityModel.get("indices").get(index).size() == 0)
@@ -239,7 +249,11 @@ public class ModelsAction extends BaseRestHandler {
             while (modelFields.hasNext()) {
                 String modelField = modelFields.next();
                 JsonNode indexFieldNode = entityModel.get("indices").get(index).get(modelField);
-                if (indexFieldNode.isObject() || indexFieldNode.isArray())
+                if (modelField.equals(""))
+                    throw new BadRequestException("'indices." + index + "' has an attribute matcher with an empty name.");
+                if (modelField.split("\\.").length != 2)
+                    throw new BadRequestException("'indices." + index + "." + modelField + "' must be formatted as 'ATTRIBUTE_NAME'.'MATCHER_NAME'.");
+                if (!indexFieldNode.isTextual())
                     throw new BadRequestException("'indices." + index + "." + modelField + "' must be a string.");
                 String indexField = indexFieldNode.asText();
                 if (indexField == null || indexField.equals(""))
@@ -268,20 +282,22 @@ public class ModelsAction extends BaseRestHandler {
         Iterator<String> resolvers = entityModel.get("resolvers").fieldNames();
         while (resolvers.hasNext()) {
             String resolver = resolvers.next();
-            if (INVALID_CHARS.matcher(resolver).find())
-                throw new BadRequestException("'resolver." + resolver + "' must not have periods in the field name.");
+            if (resolver.equals(""))
+                throw new BadRequestException("The 'resolvers' field of the entity model has a resolver with an empty name.");
+            if (hasInvalidChars(resolver))
+                throw new BadRequestException("'resolver." + resolver + "' must not have periods in its name.");
             resolversObj.put(resolver, new ArrayList<>());
             if (!entityModel.get("resolvers").get(resolver).isArray())
                 throw new BadRequestException("'resolver." + resolver + "' must be an array of strings.");
             if (entityModel.get("resolvers").get(resolver).size() == 0)
                 throw new BadRequestException("'resolver." + resolver + "' is empty.");
             for (JsonNode attributeNode : entityModel.get("resolvers").get(resolver)) {
-                if (attributeNode.isArray() || attributeNode.isObject())
+                if (!attributeNode.isTextual())
                     throw new BadRequestException("'resolver." + resolver + "' must be an array of strings.");
                 String attributeName = attributeNode.asText();
                 if (attributeName == null || attributeName.equals(""))
                     throw new BadRequestException("'resolver." + resolver + "' must be an array of strings.");
-                if (INVALID_CHARS.matcher(attributeName).find())
+                if (hasInvalidChars(attributeName))
                     throw new BadRequestException("'resolver." + resolver + "' must not have periods in its values.");
                 resolversObj.get(resolver).add(attributeName);
             }
@@ -292,17 +308,32 @@ public class ModelsAction extends BaseRestHandler {
     /**
      * Parse and validate the entity model.
      *
-     * @param entityModel The entity model.
+     * @param model The entity model.
      * @return The parsed "model" field from the request body, or an object from ".zentity-models" index.
      * @throws BadRequestException
      * @throws IOException
      */
-    public static JsonNode parseEntityModel(String entityModel) throws BadRequestException, IOException {
+    public static JsonNode parseEntityModel(String model) throws BadRequestException, IOException {
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode entityModelNode = mapper.readTree(entityModel);
-        if (!entityModelNode.isObject())
+        JsonNode entityModel = mapper.readTree(model);
+        if (!entityModel.isObject())
             throw new BadRequestException("Entity model must be an object.");
-        return entityModelNode;
+
+        // Parse and validate the "attributes" field of the entity model.
+        HashMap<String, HashMap<String, String>> attributeObj = parseAttributes(entityModel);
+        if (attributeObj.isEmpty())
+            throw new BadRequestException("No attributes have been provided for the entity model.");
+
+        // Parse and validate the "resolvers" field of the entity model.
+        HashMap<String, ArrayList<String>> resolversObj = parseResolvers(entityModel);
+        if (resolversObj.isEmpty())
+            throw new BadRequestException("No resolvers have been provided for the entity model.");
+
+        // Parse and validate the "indices" field of the entity model.
+        HashMap<String, HashMap<String, String>> indicesObj = parseIndices(entityModel);
+        if (indicesObj.isEmpty())
+            throw new BadRequestException("No indices have been provided for the entity model.");
+        return entityModel;
     }
 
     @Override
@@ -331,21 +362,6 @@ public class ModelsAction extends BaseRestHandler {
 
                     // Parse and validate the entity model.
                     JsonNode entityModel = parseEntityModel(requestBody);
-
-                    // Parse and validate the "attributes" field of the entity model.
-                    HashMap<String, HashMap<String, String>> attributeObj = parseAttributes(entityModel);
-                    if (attributeObj.isEmpty())
-                        throw new BadRequestException("No attributes have been provided for the entity model.");
-
-                    // Parse and validate the "resolvers" field of the entity model.
-                    HashMap<String, ArrayList<String>> resolversObj = parseResolvers(entityModel);
-                    if (resolversObj.isEmpty())
-                        throw new BadRequestException("No resolvers have been provided for the entity model.");
-
-                    // Parse and validate the "indices" field of the entity model.
-                    HashMap<String, HashMap<String, String>> indicesObj = parseIndices(entityModel);
-                    if (indicesObj.isEmpty())
-                        throw new BadRequestException("No indices have been provided for the entity model.");
                 }
 
                 // Handle request

@@ -15,9 +15,15 @@
         <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
         <zentity.website>http://zentity.io</zentity.website>
         <zentity.version>0.1.1</zentity.version>
+        <!-- dependency versions -->
         <elasticsearch.version>6.2.1</elasticsearch.version>
         <jackson.version>2.9.4</jackson.version>
         <jdk.version>1.8</jdk.version>
+        <log4j.version>2.9.1</log4j.version>
+        <!-- maven plugin versions -->
+        <maven.assembly.version>2.6</maven.assembly.version>
+        <maven.junit.version>2.5.3</maven.junit.version>
+        <maven.surefire.version>2.20.1</maven.surefire.version>
     </properties>
 
     <dependencies>
@@ -39,6 +45,19 @@
             <version>${jackson.version}</version>
             <scope>compile</scope><!-- not provided by elasticsearch -->
         </dependency>
+        <!-- test infrastructure -->
+        <dependency>
+            <groupId>org.elasticsearch.test</groupId>
+            <artifactId>framework</artifactId>
+            <version>${elasticsearch.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -54,7 +73,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
+                <version>${maven.assembly.version}</version>
                 <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
                     <outputDirectory>${project.build.directory}/releases/</outputDirectory>
@@ -67,6 +86,37 @@
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.version}</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.carrotsearch.randomizedtesting</groupId>
+                <artifactId>junit4-maven-plugin</artifactId>
+                <version>${maven.junit.version}</version>
+                <configuration>
+                    <argLine>-Dtests.security.manager=false</argLine>
+                    <assertions enableSystemAssertions="false">
+                        <enable/>
+                    </assertions>
+                    <listeners>
+                        <report-text/>
+                    </listeners>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>unit-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>junit4</goal>
                         </goals>
                     </execution>
                 </executions>
