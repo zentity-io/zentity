@@ -20,6 +20,9 @@ public class ResolutionActionTest {
     private static final String filterIndicesValid = "\"filter_indices\":[\"index_name\"]";
     private static final String filterResolversValid = "\"filter_resolvers\":[\"resolver_name\"]";
     private static final String inputValid = "{" + attributesValid + "," + modelValid + "," + filterIndicesValid + "," + filterResolversValid + "}";
+    private static final String inputValidNoFilterIndices = "{" + attributesValid + "," + modelValid + "," + filterResolversValid + "}";
+    private static final String inputValidNoFilterResolvers= "{" + attributesValid + "," + modelValid + "," + filterIndicesValid + "}";
+    private static final String inputValidNoFilters= "{" + attributesValid + "," + modelValid + "}";
 
     // Invalid attribute
     private static final String attributeArrayInvalidNamePeriod = "\"attributes\":{\"attribute.string\":[\"abc\"]}";
@@ -80,7 +83,37 @@ public class ResolutionActionTest {
 
     @Test
     public void testInputValid() throws Exception {
-        parseRequestBody(inputValid);
+        JsonNode requestBody = parseRequestBody(inputValid);
+        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseEntityModel(requestBody);
+        ResolutionAction.parseIndicesFilter(requestBody);
+        ResolutionAction.parseResolversFilter(requestBody);
+        Assert.assertTrue(true);
+    }
+
+    @Test
+    public void testInputValidNoFilterIndices() throws Exception {
+        JsonNode requestBody = parseRequestBody(inputValidNoFilterIndices);
+        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseEntityModel(requestBody);
+        ResolutionAction.parseResolversFilter(requestBody);
+        Assert.assertTrue(true);
+    }
+
+    @Test
+    public void testInputValidNoFilterResolvers() throws Exception {
+        JsonNode requestBody = parseRequestBody(inputValidNoFilterResolvers);
+        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseEntityModel(requestBody);
+        ResolutionAction.parseIndicesFilter(requestBody);
+        Assert.assertTrue(true);
+    }
+
+    @Test
+    public void testInputValidNoFilters() throws Exception {
+        JsonNode requestBody = parseRequestBody(inputValidNoFilters);
+        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseEntityModel(requestBody);
         Assert.assertTrue(true);
     }
 

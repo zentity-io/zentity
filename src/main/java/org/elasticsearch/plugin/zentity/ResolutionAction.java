@@ -323,30 +323,34 @@ public class ResolutionAction extends BaseRestHandler {
                     throw new BadRequestException("No attributes have been provided for the entity resolution job.");
                 job.setAttributes(attributeObj);
 
-                // Parse and validate the "resolvers" field of the entity model.
+                // Parse and validate the "filter_resolvers" field of the entity model.
                 HashMap<String, ArrayList<String>> resolversObj = ModelsAction.parseResolvers(entityModel);
-                // Parse and validate the "filter_resolvers" field of the request body or URL.
-                HashSet<String> resolversFilter;
-                if (resolversFilterFromUrl != null && !resolversFilterFromUrl.equals(""))
-                    resolversFilter = parseResolversFilter(resolversFilterFromUrl);
-                else
-                    resolversFilter = parseResolversFilter(requestBody);
-                // Intersect the "resolvers" field of the entity model with the "filter_resolvers" field.
-                resolversObj = filterResolvers(resolversObj, resolversFilter);
+                if (requestBody.has("filter_resolvers")) {
+                    // Parse and validate the "filter_resolvers" field of the request body or URL.
+                    HashSet<String> resolversFilter;
+                    if (resolversFilterFromUrl != null && !resolversFilterFromUrl.equals(""))
+                        resolversFilter = parseResolversFilter(resolversFilterFromUrl);
+                    else
+                        resolversFilter = parseResolversFilter(requestBody);
+                    // Intersect the "resolvers" field of the entity model with the "filter_resolvers" field.
+                    resolversObj = filterResolvers(resolversObj, resolversFilter);
+                }
                 if (resolversObj.isEmpty())
                     throw new BadRequestException("No resolvers have been provided for the entity resolution job.");
                 job.setResolvers(resolversObj);
 
-                // Parse and validate the "indices" field of the entity model.
+                // Parse and validate the "filter_indices" field of the entity model.
                 HashMap<String, HashMap<String, String>> indicesObj = ModelsAction.parseIndices(entityModel);
-                // Parse and validate the "filter_indices" field of the request body or URL.
-                HashSet<String> indicesFilter;
-                if (indicesFilterFromUrl != null && !indicesFilterFromUrl.equals(""))
-                    indicesFilter = parseIndicesFilter(indicesFilterFromUrl);
-                else
-                    indicesFilter = parseIndicesFilter(requestBody);
-                // Intersect the "indices" field of the entity model with the "filter_indices" field.
-                indicesObj = filterIndices(indicesObj, indicesFilter);
+                if (requestBody.has("filter_indices")) {
+                    // Parse and validate the "filter_indices" field of the request body or URL.
+                    HashSet<String> indicesFilter;
+                    if (indicesFilterFromUrl != null && !indicesFilterFromUrl.equals(""))
+                        indicesFilter = parseIndicesFilter(indicesFilterFromUrl);
+                    else
+                        indicesFilter = parseIndicesFilter(requestBody);
+                    // Intersect the "indices" field of the entity model with the "filter_indices" field.
+                    indicesObj = filterIndices(indicesObj, indicesFilter);
+                }
                 if (indicesObj.isEmpty())
                     throw new BadRequestException("No indices have been provided for the entity resolution job.");
                 job.setIndices(indicesObj);

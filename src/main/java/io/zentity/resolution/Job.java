@@ -298,9 +298,12 @@ public class Job {
                 if (!resolverSupported(index, resolver))
                     continue;
 
-                // Construct a "should" clause for each matcher of this resolver.
+                // Construct a "should" clause for each attribute of this resolver.
                 ArrayList<String> attributeClauses = new ArrayList<>();
                 for (String attribute : this.resolvers.get(resolver)) {
+
+                    // Construct a "should" clause for each matcher of this resolver.
+                    // TODO: http_session not querying new IPs...
                     ArrayList<String> matcherClauses = new ArrayList<>();
                     for (String matcher : this.attributes.get(attribute).keySet()) {
 
@@ -427,6 +430,7 @@ public class Job {
                             value = "";
                         else
                             value = doc.get("_source").get(indexField).asText();
+                        System.out.println(attribute + " " + value);
                         docAttributes.put(attribute, value);
                         if (!nextInputAttributes.containsKey(attribute))
                             nextInputAttributes.put(attribute, new HashSet<>());
