@@ -226,9 +226,10 @@ public class Job {
                 boolean allQueried = true;
                 for (Object value : this.inputAttributes.get(attribute)) {
                     String attributeHash = String.join(":", index, resolver, attribute, matcher, value.toString());
-                    if (!this.attributesQueried.contains(attributeHash))
+                    if (!this.attributesQueried.contains(attributeHash)) {
                         allQueried = false;
-                    break;
+                        break;
+                    }
                 }
                 if (allQueried)
                     return false;
@@ -303,7 +304,6 @@ public class Job {
                 for (String attribute : this.resolvers.get(resolver)) {
 
                     // Construct a "should" clause for each matcher of this resolver.
-                    // TODO: http_session not querying new IPs...
                     ArrayList<String> matcherClauses = new ArrayList<>();
                     for (String matcher : this.attributes.get(attribute).keySet()) {
 
@@ -430,7 +430,6 @@ public class Job {
                             value = "";
                         else
                             value = doc.get("_source").get(indexField).asText();
-                        System.out.println(attribute + " " + value);
                         docAttributes.put(attribute, value);
                         if (!nextInputAttributes.containsKey(attribute))
                             nextInputAttributes.put(attribute, new HashSet<>());
