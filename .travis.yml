@@ -1,0 +1,8 @@
+language: java
+jdk:
+  - oraclejdk8
+env:
+  matrix:
+    - elasticsearch.version=6.2.2
+
+script: "mvn clean install -Delasticsearch.version=${elasticsearch.version}"
