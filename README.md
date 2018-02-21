@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/zentity-io/zentity.svg?branch=master)](https://travis-ci.org/zentity-io/zentity)
+
 # zentity
 
 zentity is an [Elasticsearch](https://www.elastic.co/products/elasticsearch) plugin for real-time entity
