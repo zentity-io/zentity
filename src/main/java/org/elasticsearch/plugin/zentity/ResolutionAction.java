@@ -82,126 +82,111 @@ public class ResolutionAction extends BaseRestHandler {
     }
 
     /**
-     * Parse and validate the "indices" field of the request body or URL.
-     *
-     * @param indicesFilter The value of the "indices" parameter of the URL.
-     * @return Names of indices to filter from the "indices" object of the entity model.
-     * @throws BadRequestException
-     */
-    public static HashSet<String> parseIndicesFilter(String indicesFilter) throws BadRequestException {
-        HashSet<String> indicesFilterSet = new HashSet<>();
-        for (String index : indicesFilter.split(",")) {
-            if (index == null || index.equals(""))
-                throw new BadRequestException("'filter_resolvers' must be an array of non-empty strings.");
-            if (ModelsAction.hasInvalidChars(index))
-                indicesFilterSet.add(index);
-        }
-        return indicesFilterSet;
-    }
-
-    /**
-     * Parse and validate the "indices" field of the request body or URL.
+     * Parse and validate the "scope.indices" field of the request body or URL.
      *
      * @param requestBody The request body.
-     * @return Names of indices to filter from the "indices" object of the entity model.
+     * @return Names of indices to filter from the "scope.indices" object of the entity model.
      * @throws BadRequestException
      */
-    public static HashSet<String> parseIndicesFilter(JsonNode requestBody) throws BadRequestException {
-        HashSet<String> indicesFilterSet = new HashSet<>();
-        if (!requestBody.get("filter_indices").isArray())
-            throw new BadRequestException("The 'filter_indices' field of the request body must be an array of strings.");
-        for (JsonNode indexNode : requestBody.get("filter_indices")) {
-            if (!indexNode.isTextual())
-                throw new BadRequestException("'filter_indices' must be an array of strings.");
-            String index = indexNode.asText();
-            if (index == null || index.equals(""))
-                throw new BadRequestException("'filter_indices' must be an array of non-empty strings.");
-            indicesFilterSet.add(index);
+    public static HashSet<String> parseIndicesScope(JsonNode requestBody) throws BadRequestException {
+        HashSet<String> indicesScopeSet = new HashSet<>();
+        if (!requestBody.has("scope") || requestBody.get("scope").isNull())
+            return indicesScopeSet;
+        if (!requestBody.get("scope").isObject())
+            throw new BadRequestException("The 'scope' field of the request body must be an object.");
+        if (!requestBody.get("scope").has("indices"))
+            return indicesScopeSet;
+        if (requestBody.get("scope").get("indices").isTextual()) {
+            String index = requestBody.get("scope").get("indices").asText();
+            indicesScopeSet.add(index);
+        } else if (requestBody.get("scope").get("indices").isArray()) {
+            for (JsonNode indexNode : requestBody.get("scope").get("indices")) {
+                if (!indexNode.isTextual())
+                    throw new BadRequestException("'scope.indices' must be a string or an array of strings.");
+                String index = indexNode.asText();
+                if (index == null || index.equals(""))
+                    throw new BadRequestException("'scope.indices' must be have non-empty strings.");
+                indicesScopeSet.add(index);
+            }
+        } else {
+            throw new BadRequestException("'scope.indices' must be a string or an array of strings.");
         }
-        return indicesFilterSet;
+        return indicesScopeSet;
     }
 
     /**
      * Filter indices based on what the client wants to use.
      *
-     * @param indicesObj    The parsed "indices" object of an entity model.
-     * @param indicesFilter Names of indices to filter from the "indices" object.
+     * @param indicesObj   The parsed "indices" object of an entity model.
+     * @param indicesScope Names of indices to filter from the "indices" object.
      * @return Filtered "indices" object.
      * @throws BadRequestException
      */
-    public static HashMap<String, HashMap<String, String>> filterIndices(HashMap<String, HashMap<String, String>> indicesObj, Set<String> indicesFilter) throws BadRequestException {
-        if (!indicesFilter.isEmpty()) {
-            for (String index : indicesFilter) {
+    public static HashMap<String, HashMap<String, String>> filterIndices(HashMap<String, HashMap<String, String>> indicesObj, Set<String> indicesScope) throws BadRequestException {
+        if (!indicesScope.isEmpty()) {
+            for (String index : indicesScope) {
                 if (index == null || index.equals(""))
                     continue;
                 if (!indicesObj.containsKey(index))
                     throw new BadRequestException("'" + index + "' is not in the 'indices' field of the entity model.");
             }
-            indicesObj.keySet().retainAll(indicesFilter);
+            indicesObj.keySet().retainAll(indicesScope);
         }
         return indicesObj;
     }
 
     /**
-     * Parse and validate the "resolvers" field of the request body or URL.
-     *
-     * @param resolversFilter The value of the "resolvers" parameter of the URL.
-     * @return Names of resolvers to filter from the "resolvers" object of the entity model.
-     * @throws BadRequestException
-     */
-    public static HashSet<String> parseResolversFilter(String resolversFilter) throws BadRequestException {
-        HashSet<String> resolversFilterSet = new HashSet<>();
-        for (String resolver : resolversFilter.split(",")) {
-            if (resolver == null || resolver.equals(""))
-                throw new BadRequestException("'filter_resolvers' must be an array of non-empty strings.");
-            if (ModelsAction.hasInvalidChars(resolver))
-                throw new BadRequestException("'filter_resolvers' must not have periods in its values.");
-            resolversFilterSet.add(resolver);
-        }
-        return resolversFilterSet;
-    }
-
-    /**
-     * Parse and validate the "resolvers" field of the request body or URL.
+     * Parse and validate the "scope.resolvers" field of the request body or URL.
      *
      * @param requestBody The request body.
-     * @return Names of resolvers to filter from the "resolvers" object of the entity model.
+     * @return Names of resolvers to filter from the "scope.resolvers" object of the entity model.
      * @throws BadRequestException
      */
-    public static HashSet<String> parseResolversFilter(JsonNode requestBody) throws BadRequestException {
-        HashSet<String> resolversFilterSet = new HashSet<>();
-        if (!requestBody.get("filter_resolvers").isArray())
-            throw new BadRequestException("The 'filter_resolvers' field of the request body must be an array of strings.");
-        for (JsonNode resolverNode : requestBody.get("filter_resolvers")) {
-            if (!resolverNode.isTextual())
-                throw new BadRequestException("'filter_resolvers' must be an array of strings.");
-            String resolver = resolverNode.asText();
-            if (resolver == null || resolver.equals(""))
-                throw new BadRequestException("'filter_resolvers' must be an array of non-empty strings.");
-            if (ModelsAction.hasInvalidChars(resolver))
-                throw new BadRequestException("'filter_resolvers' must not have periods in its values.");
-            resolversFilterSet.add(resolver);
+    public static HashSet<String> parseResolversScope(JsonNode requestBody) throws BadRequestException {
+        HashSet<String> resolversScopeSet = new HashSet<>();
+        if (!requestBody.has("scope") || requestBody.get("scope").isNull())
+            return resolversScopeSet;
+        if (!requestBody.get("scope").isObject())
+            throw new BadRequestException("The 'scope' field of the request body must be an object.");
+        if (!requestBody.get("scope").has("resolvers"))
+            return resolversScopeSet;
+        if (requestBody.get("scope").get("resolvers").isTextual()) {
+            String resolver = requestBody.get("scope").get("resolvers").asText();
+            resolversScopeSet.add(resolver);
+        } else if (requestBody.get("scope").get("resolvers").isArray()) {
+            for (JsonNode resolverNode : requestBody.get("scope").get("resolvers")) {
+                if (!resolverNode.isTextual())
+                    throw new BadRequestException("'scope.resolvers' must be a string or an array of strings.");
+                String resolver = resolverNode.asText();
+                if (resolver == null || resolver.equals(""))
+                    throw new BadRequestException("'scope.resolvers' must have non-empty strings.");
+                if (ModelsAction.hasInvalidChars(resolver))
+                    throw new BadRequestException("'scope.resolvers' must not have periods in its values.");
+                resolversScopeSet.add(resolver);
+            }
+        } else {
+            throw new BadRequestException("'scope.resolvers' must be a string or an array of strings.");
         }
-        return resolversFilterSet;
+        return resolversScopeSet;
     }
 
     /**
      * Filter resolvers based on what the client wants to use.
      *
-     * @param resolversObj    The parsed "resolvers" object of an entity model.
-     * @param resolversFilter Names of resolvers to filter from the "resolvers" object.
+     * @param resolversObj   The parsed "resolvers" object of an entity model.
+     * @param resolversScope Names of resolvers to filter from the "resolvers" object.
      * @return Filtered "resolvers" object.
      * @throws BadRequestException
      */
-    public static HashMap<String, ArrayList<String>> filterResolvers(HashMap<String, ArrayList<String>> resolversObj, Set<String> resolversFilter) throws BadRequestException {
-        if (!resolversFilter.isEmpty()) {
-            for (String resolver : resolversFilter) {
+    public static HashMap<String, ArrayList<String>> filterResolvers(HashMap<String, ArrayList<String>> resolversObj, Set<String> resolversScope) throws BadRequestException {
+        if (!resolversScope.isEmpty()) {
+            for (String resolver : resolversScope) {
                 if (resolver == null || resolver.equals(""))
                     continue;
                 if (!resolversObj.containsKey(resolver))
                     throw new BadRequestException("'" + resolver + "' is not in the 'resolvers' field of the entity model.");
             }
-            resolversObj.keySet().retainAll(resolversFilter);
+            resolversObj.keySet().retainAll(resolversScope);
         }
         return resolversObj;
     }
@@ -279,10 +264,6 @@ public class ResolutionAction extends BaseRestHandler {
         Boolean pretty = restRequest.paramAsBoolean("pretty", Job.DEFAULT_PRETTY);
         Boolean profile = restRequest.paramAsBoolean("profile", Job.DEFAULT_PROFILE);
 
-        // Parse other request params
-        String indicesFilterFromUrl = restRequest.param("filter_indices", "");
-        String resolversFilterFromUrl = restRequest.param("filter_resolvers", "");
-
         return channel -> {
             try {
 
@@ -323,33 +304,36 @@ public class ResolutionAction extends BaseRestHandler {
                     throw new BadRequestException("No attributes have been provided for the entity resolution job.");
                 job.setAttributes(attributeObj);
 
-                // Parse and validate the "filter_resolvers" field of the entity model.
+                // Validate the "scope" field of the request body.
+                if (requestBody.has("scope"))
+                    if (!requestBody.get("scope").isNull() && !requestBody.get("scope").isObject())
+                        throw new BadRequestException("The 'scope' field of the request body must be an object.");
+
+                // Parse and validate the "scope.resolvers" field of the request body.
                 HashMap<String, ArrayList<String>> resolversObj = ModelsAction.parseResolvers(entityModel);
-                if (requestBody.has("filter_resolvers")) {
-                    // Parse and validate the "filter_resolvers" field of the request body or URL.
-                    HashSet<String> resolversFilter;
-                    if (resolversFilterFromUrl != null && !resolversFilterFromUrl.equals(""))
-                        resolversFilter = parseResolversFilter(resolversFilterFromUrl);
-                    else
-                        resolversFilter = parseResolversFilter(requestBody);
-                    // Intersect the "resolvers" field of the entity model with the "filter_resolvers" field.
-                    resolversObj = filterResolvers(resolversObj, resolversFilter);
+                if (requestBody.has("scope")) {
+                    if (requestBody.get("scope").has("resolvers")) {
+                        // Parse and validate the "scope.resolvers" field of the request body.
+                        HashSet<String> scopeResolvers;
+                        scopeResolvers = parseResolversScope(requestBody);
+                        // Intersect the "resolvers" field of the entity model with the "scope.resolvers" field.
+                        resolversObj = filterResolvers(resolversObj, scopeResolvers);
+                    }
                 }
                 if (resolversObj.isEmpty())
                     throw new BadRequestException("No resolvers have been provided for the entity resolution job.");
                 job.setResolvers(resolversObj);
 
-                // Parse and validate the "filter_indices" field of the entity model.
+                // Parse and validate the "scope.indices" field of the request body.
                 HashMap<String, HashMap<String, String>> indicesObj = ModelsAction.parseIndices(entityModel);
-                if (requestBody.has("filter_indices")) {
-                    // Parse and validate the "filter_indices" field of the request body or URL.
-                    HashSet<String> indicesFilter;
-                    if (indicesFilterFromUrl != null && !indicesFilterFromUrl.equals(""))
-                        indicesFilter = parseIndicesFilter(indicesFilterFromUrl);
-                    else
-                        indicesFilter = parseIndicesFilter(requestBody);
-                    // Intersect the "indices" field of the entity model with the "filter_indices" field.
-                    indicesObj = filterIndices(indicesObj, indicesFilter);
+                if (requestBody.has("scope")) {
+                    if (requestBody.get("scope").has("indices")) {
+                        // Parse and validate the "scope.indices" field of the request body.
+                        HashSet<String> scopeIndices;
+                        scopeIndices = parseIndicesScope(requestBody);
+                        // Intersect the "indices" field of the entity model with the "scope.indices" field.
+                        indicesObj = filterIndices(indicesObj, scopeIndices);
+                    }
                 }
                 if (indicesObj.isEmpty())
                     throw new BadRequestException("No indices have been provided for the entity resolution job.");
