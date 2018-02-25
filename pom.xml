@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <name>zentity</name>
-    <description>Real-time entity resolution for Elasticsearch.</description>
+    <description>Entity resolution for Elasticsearch.</description>
     <groupId>io.zentity</groupId>
     <artifactId>zentity</artifactId>
     <version>${zentity.version}-elasticsearch-${elasticsearch.version}</version>
@@ -14,7 +14,7 @@
         <zentity.author>Dave Moore</zentity.author>
         <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
         <zentity.website>http://zentity.io</zentity.website>
-        <zentity.version>0.1.1</zentity.version>
+        <zentity.version>0.1.1-beta.1</zentity.version>
         <!-- dependency versions -->
         <elasticsearch.version>6.2.2</elasticsearch.version>
         <jackson.version>2.9.4</jackson.version>

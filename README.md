@@ -2,11 +2,12 @@
 
 # zentity
 
-zentity is an [Elasticsearch](https://www.elastic.co/products/elasticsearch) plugin for real-time entity
-resolution. It aims to be:
+zentity is an **[Elasticsearch](https://www.elastic.co/products/elasticsearch)** plugin for entity resolution.
+
+zentity aims to be:
 
 - **Simple** - Entity resolution is hard. zentity makes it easy.
-- **Fast** - Get results at interactive speeds. From milliseconds to low seconds.
+- **Fast** - Get results in real-time. From milliseconds to low seconds.
 - **Generic** - Resolve anything. People, companies, locations, sessions, and more.
 - **Transitive** - Resolve over multiple hops. Recursion finds dynamic identities.
 - **Multi-source** - Resolve over multiple indices with disparate mappings.
@@ -17,7 +18,40 @@ resolution. It aims to be:
 
 ## Documentation
 
-Github Wiki: https://github.com/zentity-io/zentity/wiki
+Documentation is hosted on the [Github Wiki](https://github.com/zentity-io/zentity/wiki). Eventually it will be
+migrated to [zentity.io](https://zentity.io/).
+
+
+## Quick start
+
+Once you have installed Elasticsearch, you can install zentity from a remote URL or a local file.
+
+### Install from remote URL
+
+1. Browse the **[releases](https://github.com/zentity-io/zentity/releases)**.
+2. Find a release that matches your version of Elasticsearch. Copy the name of the .zip file.
+3. Install the plugin using the `elasticsearch-plugin` script that comes with Elasticsearch.
+
+Example:
+
+`elasticsearch-plugin install https://github.com/zentity-io/zentity/releases/download/zentity-0.1.1-beta.1/zentity-0.1.1-beta.1-elasticsearch-6.2.2.zip`
+
+
+### Install from local file
+
+1. Browse the **[releases](https://github.com/zentity-io/zentity/releases)**.
+2. Find a release that matches your version of Elasticsearch. Download the .zip file.
+4. Install the plugin using the `elasticsearch-plugin` script that comes with Elasticsearch.
+
+Example:
+
+`elasticsearch-plugin install file:///path/to/zentity-0.1.1-beta.1-elasticsearch-6.2.2.zip`
+
+
+### Next steps
+
+Read the **[documentation](https://github.com/zentity-io/zentity/wiki/Basic-Usage)** to learn how to create and manage
+entity models and how to resolve entities.
 
 
 ## <a name="license">License</a>
