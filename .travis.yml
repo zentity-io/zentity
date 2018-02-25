@@ -20,3 +20,5 @@ deploy:
   file_glob: true
   file: target/releases/*.zip
   skip_cleanup: true
+  on:
+    tags: true
