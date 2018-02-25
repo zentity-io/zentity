@@ -13,3 +13,10 @@ env:
     - ELASTICSEARCH_VERSION=6.0.0
 
 script: "mvn clean install -Delasticsearch.version=${ELASTICSEARCH_VERSION}"
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file_glob: true
+  file: target/releases/*.zip
+  skip_cleanup: true
