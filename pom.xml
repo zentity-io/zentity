@@ -13,7 +13,7 @@
     <properties>
         <zentity.author>Dave Moore</zentity.author>
         <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
-        <zentity.website>http://zentity.io</zentity.website>
+        <zentity.website>https://zentity.io</zentity.website>
         <zentity.version>0.1.1-beta.1</zentity.version>
         <!-- dependency versions -->
         <elasticsearch.version>6.2.2</elasticsearch.version>
