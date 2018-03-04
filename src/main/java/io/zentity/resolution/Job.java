@@ -53,9 +53,8 @@ public class Job {
     private boolean profile = DEFAULT_PROFILE;
 
     // Job state
-    private HashSet<String> attributesQueried = new HashSet<>();
     private NodeClient client;
-    private HashSet<String> docIds = new HashSet<>();
+    private HashMap<String, HashSet<String>> docIds = new HashMap<>();
     private List<String> hits = new ArrayList<>();
     private int hop = 0;
     private List<String> queries = new ArrayList<>();
@@ -69,8 +68,7 @@ public class Job {
      * Resets the variables that hold the state of the job, in case the same Job object is reused.
      */
     private void resetState() {
-        this.attributesQueried = new HashSet<>();
-        this.docIds = new HashSet<>();
+        this.docIds = new HashMap<>();
         this.hits = new ArrayList<>();
         this.hop = 0;
         this.queries = new ArrayList<>();
@@ -220,19 +218,10 @@ public class Job {
             // The index must have at least one matcher of each attribute in the resolver.
             boolean matcherFound = false;
             for (String matcher : this.attributes.get(attribute).keySet()) {
-                if (matcherSupported(index, attribute, matcher))
+                if (matcherSupported(index, attribute, matcher)) {
                     matcherFound = true;
-                // The input must have at least one value that has not yet been queried for each field in the resolver.
-                boolean allQueried = true;
-                for (Object value : this.inputAttributes.get(attribute)) {
-                    String attributeHash = String.join(":", index, resolver, attribute, matcher, value.toString());
-                    if (!this.attributesQueried.contains(attributeHash)) {
-                        allQueried = false;
-                        break;
-                    }
+                    break;
                 }
-                if (allQueried)
-                    return false;
             }
             if (!matcherFound)
                 return false;
@@ -287,9 +276,14 @@ public class Job {
 
         // Prepare to collect attributes from the results of these queries as the inputs to subsequent queries.
         HashMap<String, HashSet<Object>> nextInputAttributes = new HashMap<>();
+        Boolean newHits = false;
 
         // Construct a query for each index that maps to a resolver.
         for (String index : this.indices.keySet()) {
+
+            // Track _ids for this index.
+            if (!this.docIds.containsKey(index))
+                this.docIds.put(index, new HashSet<>());
 
             // Construct a subquery for each resolver that maps to the index.
             ArrayList<String> resolverClauses = new ArrayList<>();
@@ -319,13 +313,8 @@ public class Job {
                             if (value == null || value.equals(""))
                                 continue;
 
-                            // Mark this value as having been queried for this index, resolver, attribute, and matcher.
-                            String valueString = value.toString();
-                            String attributeHash = String.join(":", index, resolver, attribute, matcher, valueString);
-                            this.attributesQueried.add(attributeHash);
-
                             // Populate the {{ field }} and {{ value }} variables of the matcher template.
-                            valueClauses.add(populateMatcherQueryTemplate(attribute, matcher, index, valueString));
+                            valueClauses.add(populateMatcherQueryTemplate(attribute, matcher, index, value.toString()));
                         }
                         if (valueClauses.size() == 0)
                             continue;
@@ -366,8 +355,9 @@ public class Job {
 
             // Construct query for this index.
             String query;
-            if (this.docIds.size() > 0) {
-                String idsFilter = "\"must_not\":{\"ids\":{\"values\":[" + String.join(",", this.docIds) + "]}}";
+            HashSet<String> ids = this.docIds.get(index);
+            if (ids.size() > 0) {
+                String idsFilter = "\"must_not\":{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}";
                 resolversClause = "{\"bool\":{" + idsFilter + ",\"filter\":" + resolversClause + "}}";
             }
             if (this.profile)
@@ -401,9 +391,10 @@ public class Job {
 
                 // Skip doc if already fetched. Otherwise mark doc as fetched and then proceed.
                 String _id = jsonStringFormat(doc.get("_id").textValue());
-                if (this.docIds.contains(_id))
+                if (this.docIds.get(index).contains(_id))
                     continue;
-                this.docIds.add(_id);
+                this.docIds.get(index).add(_id);
+                newHits = true;
 
                 // Gather attributes from doc. Store them in the "_attributes" field of the doc,
                 // and include them in the attributes for subsequent queries.
@@ -434,9 +425,6 @@ public class Job {
                         if (!nextInputAttributes.containsKey(attribute))
                             nextInputAttributes.put(attribute, new HashSet<>());
                         nextInputAttributes.get(attribute).add(value);
-                        if (!this.inputAttributes.containsKey(attribute))
-                            this.inputAttributes.put(attribute, new HashSet<>());
-                        this.inputAttributes.get(attribute).add(value);
                     }
                 }
 
@@ -477,12 +465,20 @@ public class Job {
         }
 
         // Stop traversing if we've reached max depth.
-        if (this.maxHops > -1 && this.hop >= this.maxHops) {
+        if (this.maxHops > -1 && this.hop >= this.maxHops)
             return;
-        }
+
         // Stop traversing if there are no more attributes to query.
-        if (nextInputAttributes.keySet().size() == 0) {
+        if (!newHits)
             return;
+
+        // Update input attributes for the next queries.
+        for (String attribute : nextInputAttributes.keySet()) {
+            if (!this.inputAttributes.containsKey(attribute))
+                this.inputAttributes.put(attribute, new HashSet<>());
+            for (Object value : nextInputAttributes.get(attribute)) {
+                this.inputAttributes.get(attribute).add(value);
+            }
         }
         // Update hop count and traverse.
         this.hop++;
