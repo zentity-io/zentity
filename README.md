@@ -18,8 +18,7 @@ zentity aims to be:
 
 ## Documentation
 
-Documentation is hosted on the [Github Wiki](https://github.com/zentity-io/zentity/wiki). Eventually it will be
-migrated to [zentity.io](https://zentity.io/).
+Documentation is hosted at [https://zentity.io/#/docs](https://zentity.io/#/docs)
 
 
 ## Quick start
@@ -28,7 +27,7 @@ Once you have installed Elasticsearch, you can install zentity from a remote URL
 
 ### Install from remote URL
 
-1. Browse the **[releases](https://github.com/zentity-io/zentity/releases)**.
+1. Browse the **[releases](https://zentity.io/#/releases)**.
 2. Find a release that matches your version of Elasticsearch. Copy the name of the .zip file.
 3. Install the plugin using the `elasticsearch-plugin` script that comes with Elasticsearch.
 
@@ -39,7 +38,7 @@ Example:
 
 ### Install from local file
 
-1. Browse the **[releases](https://github.com/zentity-io/zentity/releases)**.
+1. Browse the **[releases](https://zentity.io/#/releases)**.
 2. Find a release that matches your version of Elasticsearch. Download the .zip file.
 4. Install the plugin using the `elasticsearch-plugin` script that comes with Elasticsearch.
 
@@ -50,7 +49,7 @@ Example:
 
 ### Next steps
 
-Read the **[documentation](https://github.com/zentity-io/zentity/wiki/Basic-Usage)** to learn how to create and manage
+Read the **[documentation](https://zentity.io/#/docs/basic-usage)** to learn how to create and manage
 entity models and how to resolve entities.
 
 
