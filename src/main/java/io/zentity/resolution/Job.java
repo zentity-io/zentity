@@ -509,7 +509,7 @@ public class Job {
             if (this.includeHits)
                 responseParts.add("\"hits\":{\"total\":" + this.hits.size() + ",\"hits\":[" + String.join(",", this.hits) + "]}");
             if (this.includeQueries || this.profile)
-                responseParts.add("\"queries\":[" + queries + "]}");
+                responseParts.add("\"queries\":[" + queries + "]");
             String response = "{" + String.join(",", responseParts) + "}";
             if (this.pretty)
                 response = this.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mapper.readTree(response));
