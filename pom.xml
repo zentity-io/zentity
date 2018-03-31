@@ -24,6 +24,12 @@
         <maven.assembly.version>2.6</maven.assembly.version>
         <maven.junit.version>2.5.3</maven.junit.version>
         <maven.surefire.version>2.20.1</maven.surefire.version>
+        <!-- test properties -->
+        <skipTests>false</skipTests>
+        <skipUnitTests>${skipTests}</skipUnitTests>
+        <skipIntegTests>${skipTests}</skipIntegTests>
+        <integ.http.port>9400</integ.http.port>
+        <integ.transport.port>9500</integ.transport.port>
     </properties>
 
     <dependencies>
@@ -103,7 +109,6 @@
                 <artifactId>junit4-maven-plugin</artifactId>
                 <version>${maven.junit.version}</version>
                 <configuration>
-                    <argLine>-Dtests.security.manager=false</argLine>
                     <assertions enableSystemAssertions="false">
                         <enable/>
                     </assertions>
@@ -118,6 +123,95 @@
                         <goals>
                             <goal>junit4</goal>
                         </goals>
+                        <inherited>true</inherited>
+                        <configuration>
+                            <skipTests>${skipUnitTests}</skipTests>
+                            <includes>
+                                <include>**/*Test.class</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*$*</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>junit4</goal>
+                        </goals>
+                        <inherited>true</inherited>
+                        <configuration>
+                            <skipTests>${skipIntegTests}</skipTests>
+                            <includes>
+                                <include>**/*IT.class</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*$*</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>integ-setup-dependencies</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipIntegTests}</skip>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.elasticsearch.distribution.zip</groupId>
+                                    <artifactId>elasticsearch</artifactId>
+                                    <version>${elasticsearch.version}</version>
+                                    <type>zip</type>
+                                </artifactItem>
+                            </artifactItems>
+                            <useBaseVersion>true</useBaseVersion>
+                            <outputDirectory>${project.build.directory}/integration-tests/binaries</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <!-- start up external cluster -->
+                    <execution>
+                        <id>integ-setup</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipIntegTests}</skip>
+                            <target>
+                                <ant antfile="src/test/ant/integration-tests.xml" target="start-external-cluster-with-plugin"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <!-- shut down external cluster -->
+                    <execution>
+                        <id>integ-teardown</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipIntegTests}</skip>
+                            <target>
+                                <ant antfile="src/test/ant/integration-tests.xml" target="stop-external-cluster"/>
+                            </target>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

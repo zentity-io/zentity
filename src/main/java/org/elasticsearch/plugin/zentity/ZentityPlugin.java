@@ -55,10 +55,6 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
         return properties;
     }
 
-    public String name() {
-        return properties.getProperty("name");
-    }
-
     public String version() {
         return properties.getProperty("version");
     }
