@@ -1,0 +1,78 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "filter": {
+        "strip_punct": {
+          "type": "pattern_replace",
+          "pattern": "[^a-zA-Z0-9]",
+          "replacement": ""
+        }
+      },
+      "analyzer": {
+        "strip_punct": {
+          "filter": [ "strip_punct" ],
+          "tokenizer": "keyword"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "field_a": {
+          "type": "text",
+          "fields": {
+            "clean": {
+              "type": "text",
+              "analyzer": "strip_punct"
+            },
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "field_b": {
+          "type": "text",
+          "fields": {
+            "clean": {
+              "type": "text",
+              "analyzer": "strip_punct"
+            },
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "field_c": {
+          "type": "text",
+          "fields": {
+            "clean": {
+              "type": "text",
+              "analyzer": "strip_punct"
+            },
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "field_d": {
+          "type": "text",
+          "fields": {
+            "clean": {
+              "type": "text",
+              "analyzer": "strip_punct"
+            },
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "_hop": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
