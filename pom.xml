@@ -202,7 +202,10 @@
                         <configuration>
                             <skip>${skipIntegTests}</skip>
                             <target>
-                                <ant antfile="src/test/ant/integration-tests.xml" target="start-external-cluster-with-plugin"/>
+                                <ant antfile="src/test/ant/integration-tests.xml"
+                                     target="start-external-cluster-with-plugin">
+                                    <property name="elasticsearch.version" value="${elasticsearch.version}"/>
+                                </ant>
                             </target>
                         </configuration>
                     </execution>
@@ -216,7 +219,9 @@
                         <configuration>
                             <skip>${skipIntegTests}</skip>
                             <target>
-                                <ant antfile="src/test/ant/integration-tests.xml" target="stop-external-cluster"/>
+                                <ant antfile="src/test/ant/integration-tests.xml" target="stop-external-cluster">
+                                    <property name="elasticsearch.version" value="${elasticsearch.version}"/>
+                                </ant>
                             </target>
                         </configuration>
                     </execution>
