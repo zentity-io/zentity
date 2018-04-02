@@ -15,7 +15,7 @@ public class JobIT extends AbstractITCase {
 
     private final Map<String, String> params = Collections.emptyMap();
 
-    private final StringEntity testResolutionRequestPayload = new StringEntity("{\n" +
+    private final StringEntity testJobPayload = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_a\": \"a_00\"\n" +
             "  },\n" +
@@ -32,9 +32,27 @@ public class JobIT extends AbstractITCase {
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
+    private final StringEntity testJobMaxHopsAndDocsPayload = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_d\": \"d_00\"\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
     private byte[] readFile(String filename) throws IOException {
         InputStream stream = this.getClass().getResourceAsStream("/" + filename);
         return IOUtils.toByteArray(stream);
+    }
+
+    private void destroyTestReources() throws IOException {
+
+        // Delete indices
+        client.performRequest("DELETE", ".zentity_test_index_a");
+        client.performRequest("DELETE", ".zentity_test_index_b");
+        client.performRequest("DELETE", ".zentity_test_index_c");
+        client.performRequest("DELETE", ".zentity_test_index_d");
+
+        // Delete entity model
+        client.performRequest("DELETE", "_zentity/models/zentity_test_entity_a");
     }
 
     private void prepareTestResources() throws IOException {
@@ -59,7 +77,8 @@ public class JobIT extends AbstractITCase {
 
     public void testJob() throws Exception {
         prepareTestResources();
-        Response response = client.performRequest("POST", "_zentity/resolution/zentity_test_entity_a", params, testResolutionRequestPayload);
+        String endpoint = "_zentity/resolution/zentity_test_entity_a";
+        Response response = client.performRequest("POST", endpoint, params, testJobPayload);
         JsonNode json = mapper.readTree(response.getEntity().getContent());
         assertEquals(json.get("hits").get("total").asInt(), 6);
 
@@ -79,5 +98,46 @@ public class JobIT extends AbstractITCase {
         }
 
         assertEquals(docsExpected, docsActual);
+        destroyTestReources();
+    }
+
+    public void testJobMaxHopsAndDocs() throws Exception {
+        prepareTestResources();
+        String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_hop=2";
+        Response response = client.performRequest("POST", endpoint, params, testJobMaxHopsAndDocsPayload);
+        JsonNode json = mapper.readTree(response.getEntity().getContent());
+        assertEquals(json.get("hits").get("total").asInt(), 20);
+
+        Set<String> docsExpected = new HashSet<>();
+        docsExpected.add("a0,0");
+        docsExpected.add("a1,0");
+        docsExpected.add("b0,0");
+        docsExpected.add("b1,0");
+        docsExpected.add("c0,0");
+        docsExpected.add("c1,0");
+        docsExpected.add("d0,0");
+        docsExpected.add("d1,0");
+        docsExpected.add("a2,1");
+        docsExpected.add("b2,1");
+        docsExpected.add("c2,1");
+        docsExpected.add("d2,1");
+        docsExpected.add("a3,2");
+        docsExpected.add("a4,2");
+        docsExpected.add("b3,2");
+        docsExpected.add("b4,2");
+        docsExpected.add("c3,2");
+        docsExpected.add("c4,2");
+        docsExpected.add("d3,2");
+        docsExpected.add("d4,2");
+
+        Set<String> docsActual = new HashSet<>();
+        for (JsonNode node : json.get("hits").get("hits")) {
+            String _id = node.get("_id").asText();
+            int _hop = node.get("_hop").asInt();
+            docsActual.add(_id + "," + _hop);
+        }
+
+        assertEquals(docsExpected, docsActual);
+        destroyTestReources();
     }
 }

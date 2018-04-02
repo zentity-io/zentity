@@ -68,9 +68,6 @@
               "type": "keyword"
             }
           }
-        },
-        "_hop": {
-          "type": "integer"
         }
       }
     }
