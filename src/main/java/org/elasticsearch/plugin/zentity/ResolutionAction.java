@@ -259,7 +259,7 @@ public class ResolutionAction extends BaseRestHandler {
         Boolean includeHits = restRequest.paramAsBoolean("hits", Job.DEFAULT_INCLUDE_HITS);
         Boolean includeQueries = restRequest.paramAsBoolean("queries", Job.DEFAULT_INCLUDE_QUERIES);
         Boolean includeSource = restRequest.paramAsBoolean("_source", Job.DEFAULT_INCLUDE_SOURCE);
-        int maxDocsPerQuery = restRequest.paramAsInt("max_docs_per_hop", Job.DEFAULT_MAX_DOCS_PER_QUERY);
+        int maxDocsPerQuery = restRequest.paramAsInt("max_docs_per_query", Job.DEFAULT_MAX_DOCS_PER_QUERY);
         int maxHops = restRequest.paramAsInt("max_hops", Job.DEFAULT_MAX_HOPS);
         Boolean pretty = restRequest.paramAsBoolean("pretty", Job.DEFAULT_PRETTY);
         Boolean profile = restRequest.paramAsBoolean("profile", Job.DEFAULT_PROFILE);

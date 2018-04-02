@@ -103,7 +103,7 @@ public class JobIT extends AbstractITCase {
 
     public void testJobMaxHopsAndDocs() throws Exception {
         prepareTestResources();
-        String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_hop=2";
+        String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
         Response response = client.performRequest("POST", endpoint, params, testJobMaxHopsAndDocsPayload);
         JsonNode json = mapper.readTree(response.getEntity().getContent());
         assertEquals(json.get("hits").get("total").asInt(), 20);
