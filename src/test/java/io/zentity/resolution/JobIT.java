@@ -20,21 +20,101 @@ public class JobIT extends AbstractITCase {
             "    \"attribute_a\": \"a_00\"\n" +
             "  },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [\n" +
-            "      \".zentity_test_index_a\",\n" +
-            "      \".zentity_test_index_b\",\n" +
-            "      \".zentity_test_index_c\"\n" +
-            "    ],\n" +
-            "    \"resolvers\": [\n" +
-            "      \"resolver_a\",\n" +
-            "      \"resolver_b\"\n" +
-            "    ]\n" +
+            "    \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "    \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity testJobMaxHopsAndDocsPayload = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_d\": \"d_00\"\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesBooleanTrue = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_boolean\": true },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesBooleanFalse = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_boolean\": false },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesDoublePositive = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_double\": 3.141592653589793 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesDoubleNegative = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_double\": -3.141592653589793 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesFloatPositive = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_float\": 1.0 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesFloatNegative = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_float\": -1.0 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesIntegerPositive = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_integer\": 1 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesIntegerNegative = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_integer\": -1 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesLongPositive = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_long\": 922337203685477 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesLongNegative = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_long\": -922337203685477 },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesStringA = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_string\": \"a\" },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity testJobDataTypesStringB = new StringEntity("{\n" +
+            "  \"attributes\": { \"attribute_type_string\": \"b\" },\n" +
+            "  \"scope\": {\n" +
+            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
@@ -75,6 +155,16 @@ public class JobIT extends AbstractITCase {
         client.performRequest("POST", "_zentity/models/zentity_test_entity_a", params, testEntityModel);
     }
 
+    private Set<String> getActual(JsonNode json) {
+        Set<String> docsActual = new HashSet<>();
+        for (JsonNode node : json.get("hits").get("hits")) {
+            String _id = node.get("_id").asText();
+            int _hop = node.get("_hop").asInt();
+            docsActual.add(_id + "," + _hop);
+        }
+        return docsActual;
+    }
+
     public void testJob() throws Exception {
         try {
             prepareTestResources();
@@ -91,14 +181,7 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("b1,3");
             docsExpected.add("c1,4");
 
-            Set<String> docsActual = new HashSet<>();
-            for (JsonNode node : json.get("hits").get("hits")) {
-                String _id = node.get("_id").asText();
-                int _hop = node.get("_hop").asInt();
-                docsActual.add(_id + "," + _hop);
-            }
-
-            assertEquals(docsExpected, docsActual);
+            assertEquals(docsExpected, getActual(json));
         } finally {
             destroyTestResources();
         }
@@ -134,14 +217,105 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("d3,2");
             docsExpected.add("d4,2");
 
-            Set<String> docsActual = new HashSet<>();
-            for (JsonNode node : json.get("hits").get("hits")) {
-                String _id = node.get("_id").asText();
-                int _hop = node.get("_hop").asInt();
-                docsActual.add(_id + "," + _hop);
-            }
+            assertEquals(docsExpected, getActual(json));
+        } finally {
+            destroyTestResources();
+        }
+    }
 
-            assertEquals(docsExpected, docsActual);
+    public void testJobDataTypes() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+
+            Set<String> docsExpectedA = new HashSet<>();
+            docsExpectedA.add("a0,0");
+            docsExpectedA.add("a2,0");
+            docsExpectedA.add("a4,0");
+            docsExpectedA.add("a6,0");
+            docsExpectedA.add("a8,0");
+
+            Set<String> docsExpectedB = new HashSet<>();
+            docsExpectedB.add("a1,0");
+            docsExpectedB.add("a3,0");
+            docsExpectedB.add("a5,0");
+            docsExpectedB.add("a7,0");
+            docsExpectedB.add("a9,0");
+
+            // TODO: Check types of returned values
+
+            // Boolean true
+            Response r1 = client.performRequest("POST", endpoint, params, testJobDataTypesBooleanTrue);
+            JsonNode j1 = mapper.readTree(r1.getEntity().getContent());
+            assertEquals(j1.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedA, getActual(j1));
+
+            // Boolean false
+            Response r2 = client.performRequest("POST", endpoint, params, testJobDataTypesBooleanFalse);
+            JsonNode j2 = mapper.readTree(r2.getEntity().getContent());
+            assertEquals(j2.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedB, getActual(j2));
+
+            // Double positive
+            Response r3 = client.performRequest("POST", endpoint, params, testJobDataTypesDoublePositive);
+            JsonNode j3 = mapper.readTree(r3.getEntity().getContent());
+            assertEquals(j3.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedA, getActual(j3));
+
+            // Double negative
+            Response r4 = client.performRequest("POST", endpoint, params, testJobDataTypesDoubleNegative);
+            JsonNode j4 = mapper.readTree(r4.getEntity().getContent());
+            assertEquals(j4.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedB, getActual(j4));
+
+            // Float positive
+            Response r5 = client.performRequest("POST", endpoint, params, testJobDataTypesFloatPositive);
+            JsonNode j5 = mapper.readTree(r5.getEntity().getContent());
+            assertEquals(j5.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedA, getActual(j5));
+
+            // Float negative
+            Response r6 = client.performRequest("POST", endpoint, params, testJobDataTypesFloatNegative);
+            JsonNode j6 = mapper.readTree(r6.getEntity().getContent());
+            assertEquals(j6.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedB, getActual(j6));
+
+            // Integer positive
+            Response r7 = client.performRequest("POST", endpoint, params, testJobDataTypesIntegerPositive);
+            JsonNode j7 = mapper.readTree(r7.getEntity().getContent());
+            assertEquals(j7.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedA, getActual(j7));
+
+            // Integer negative
+            Response r8 = client.performRequest("POST", endpoint, params, testJobDataTypesIntegerNegative);
+            JsonNode j8 = mapper.readTree(r8.getEntity().getContent());
+            assertEquals(j8.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedB, getActual(j8));
+
+            // Long positive
+            Response r9 = client.performRequest("POST", endpoint, params, testJobDataTypesLongPositive);
+            JsonNode j9 = mapper.readTree(r9.getEntity().getContent());
+            assertEquals(j9.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedA, getActual(j9));
+
+            // Long negative
+            Response r10 = client.performRequest("POST", endpoint, params, testJobDataTypesLongNegative);
+            JsonNode j10 = mapper.readTree(r10.getEntity().getContent());
+            assertEquals(j10.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedB, getActual(j10));
+
+            // String A
+            Response r11 = client.performRequest("POST", endpoint, params, testJobDataTypesStringA);
+            JsonNode j11 = mapper.readTree(r11.getEntity().getContent());
+            assertEquals(j11.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedA, getActual(j11));
+
+            // String B
+            Response r12 = client.performRequest("POST", endpoint, params, testJobDataTypesStringB);
+            JsonNode j12 = mapper.readTree(r12.getEntity().getContent());
+            assertEquals(j12.get("hits").get("total").asInt(), 5);
+            assertEquals(docsExpectedB, getActual(j12));
+
         } finally {
             destroyTestResources();
         }

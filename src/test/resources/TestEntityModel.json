@@ -5,7 +5,25 @@
     },
     "attribute_b": {},
     "attribute_c": {},
-    "attribute_d": {}
+    "attribute_d": {},
+    "attribute_type_boolean": {
+      "type": "boolean"
+    },
+    "attribute_type_double": {
+      "type": "double"
+    },
+    "attribute_type_float": {
+      "type": "float"
+    },
+    "attribute_type_integer": {
+      "type": "integer"
+    },
+    "attribute_type_long": {
+      "type": "long"
+    },
+    "attribute_type_string": {
+      "type": "string"
+    }
   },
   "resolvers": {
     "resolver_a": {
@@ -22,6 +40,36 @@
     "resolver_c": {
       "attributes": [
         "attribute_d"
+      ]
+    },
+    "resolver_type_boolean": {
+      "attributes": [
+        "attribute_type_boolean"
+      ]
+    },
+    "resolver_type_double": {
+      "attributes": [
+        "attribute_type_double"
+      ]
+    },
+    "resolver_type_float": {
+      "attributes": [
+        "attribute_type_float"
+      ]
+    },
+    "resolver_type_integer": {
+      "attributes": [
+        "attribute_type_integer"
+      ]
+    },
+    "resolver_type_long": {
+      "attributes": [
+        "attribute_type_long"
+      ]
+    },
+    "resolver_type_string": {
+      "attributes": [
+        "attribute_type_string"
       ]
     }
   },
@@ -76,6 +124,30 @@
         "field_d.keyword": {
           "attribute": "attribute_d",
           "matcher": "matcher_b"
+        },
+        "type_boolean": {
+          "attribute": "attribute_type_boolean",
+          "matcher": "matcher_b"
+        },
+        "type_double": {
+          "attribute": "attribute_type_double",
+          "matcher": "matcher_b"
+        },
+        "type_float": {
+          "attribute": "attribute_type_float",
+          "matcher": "matcher_b"
+        },
+        "type_integer": {
+          "attribute": "attribute_type_integer",
+          "matcher": "matcher_b"
+        },
+        "type_long": {
+          "attribute": "attribute_type_long",
+          "matcher": "matcher_b"
+        },
+        "type_string": {
+          "attribute": "attribute_type_string",
+          "matcher": "matcher_b"
         }
       }
     },
@@ -111,6 +183,30 @@
         },
         "field_d.keyword": {
           "attribute": "attribute_d",
+          "matcher": "matcher_b"
+        },
+        "type_boolean": {
+          "attribute": "attribute_type_boolean",
+          "matcher": "matcher_b"
+        },
+        "type_double": {
+          "attribute": "attribute_type_double",
+          "matcher": "matcher_b"
+        },
+        "type_float": {
+          "attribute": "attribute_type_float",
+          "matcher": "matcher_b"
+        },
+        "type_integer": {
+          "attribute": "attribute_type_integer",
+          "matcher": "matcher_b"
+        },
+        "type_long": {
+          "attribute": "attribute_type_long",
+          "matcher": "matcher_b"
+        },
+        "type_string": {
+          "attribute": "attribute_type_string",
           "matcher": "matcher_b"
         }
       }
@@ -148,6 +244,30 @@
         "field_d.keyword": {
           "attribute": "attribute_d",
           "matcher": "matcher_b"
+        },
+        "type_boolean": {
+          "attribute": "attribute_type_boolean",
+          "matcher": "matcher_b"
+        },
+        "type_double": {
+          "attribute": "attribute_type_double",
+          "matcher": "matcher_b"
+        },
+        "type_float": {
+          "attribute": "attribute_type_float",
+          "matcher": "matcher_b"
+        },
+        "type_integer": {
+          "attribute": "attribute_type_integer",
+          "matcher": "matcher_b"
+        },
+        "type_long": {
+          "attribute": "attribute_type_long",
+          "matcher": "matcher_b"
+        },
+        "type_string": {
+          "attribute": "attribute_type_string",
+          "matcher": "matcher_b"
         }
       }
     },
@@ -183,6 +303,30 @@
         },
         "field_d.keyword": {
           "attribute": "attribute_d",
+          "matcher": "matcher_b"
+        },
+        "type_boolean": {
+          "attribute": "attribute_type_boolean",
+          "matcher": "matcher_b"
+        },
+        "type_double": {
+          "attribute": "attribute_type_double",
+          "matcher": "matcher_b"
+        },
+        "type_float": {
+          "attribute": "attribute_type_float",
+          "matcher": "matcher_b"
+        },
+        "type_integer": {
+          "attribute": "attribute_type_integer",
+          "matcher": "matcher_b"
+        },
+        "type_long": {
+          "attribute": "attribute_type_long",
+          "matcher": "matcher_b"
+        },
+        "type_string": {
+          "attribute": "attribute_type_string",
           "matcher": "matcher_b"
         }
       }

@@ -389,7 +389,7 @@ public class Job {
                         if (doc.get("_source").get(indexFieldName).isBoolean())
                             value = doc.get("_source").get(indexFieldName).booleanValue();
                         else if (doc.get("_source").get(indexFieldName).isDouble())
-                            value = doc.get("_source").get(indexFieldName).isDouble();
+                            value = doc.get("_source").get(indexFieldName).doubleValue();
                         else if (doc.get("_source").get(indexFieldName).isFloat())
                             value = doc.get("_source").get(indexFieldName).floatValue();
                         else if (doc.get("_source").get(indexFieldName).isInt())
