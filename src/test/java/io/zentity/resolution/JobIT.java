@@ -43,7 +43,7 @@ public class JobIT extends AbstractITCase {
         return IOUtils.toByteArray(stream);
     }
 
-    private void destroyTestReources() throws IOException {
+    private void destroyTestResources() throws IOException {
 
         // Delete indices
         client.performRequest("DELETE", ".zentity_test_index_a");
@@ -76,68 +76,74 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJob() throws Exception {
-        prepareTestResources();
-        String endpoint = "_zentity/resolution/zentity_test_entity_a";
-        Response response = client.performRequest("POST", endpoint, params, testJobPayload);
-        JsonNode json = mapper.readTree(response.getEntity().getContent());
-        assertEquals(json.get("hits").get("total").asInt(), 6);
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Response response = client.performRequest("POST", endpoint, params, testJobPayload);
+            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 6);
 
-        Set<String> docsExpected = new HashSet<>();
-        docsExpected.add("a0,0");
-        docsExpected.add("b0,0");
-        docsExpected.add("c0,1");
-        docsExpected.add("a1,2");
-        docsExpected.add("b1,3");
-        docsExpected.add("c1,4");
+            Set<String> docsExpected = new HashSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("b0,0");
+            docsExpected.add("c0,1");
+            docsExpected.add("a1,2");
+            docsExpected.add("b1,3");
+            docsExpected.add("c1,4");
 
-        Set<String> docsActual = new HashSet<>();
-        for (JsonNode node : json.get("hits").get("hits")) {
-            String _id = node.get("_id").asText();
-            int _hop = node.get("_hop").asInt();
-            docsActual.add(_id + "," + _hop);
+            Set<String> docsActual = new HashSet<>();
+            for (JsonNode node : json.get("hits").get("hits")) {
+                String _id = node.get("_id").asText();
+                int _hop = node.get("_hop").asInt();
+                docsActual.add(_id + "," + _hop);
+            }
+
+            assertEquals(docsExpected, docsActual);
+        } finally {
+            destroyTestResources();
         }
-
-        assertEquals(docsExpected, docsActual);
-        destroyTestReources();
     }
 
     public void testJobMaxHopsAndDocs() throws Exception {
-        prepareTestResources();
-        String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
-        Response response = client.performRequest("POST", endpoint, params, testJobMaxHopsAndDocsPayload);
-        JsonNode json = mapper.readTree(response.getEntity().getContent());
-        assertEquals(json.get("hits").get("total").asInt(), 20);
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
+            Response response = client.performRequest("POST", endpoint, params, testJobMaxHopsAndDocsPayload);
+            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 20);
 
-        Set<String> docsExpected = new HashSet<>();
-        docsExpected.add("a0,0");
-        docsExpected.add("a1,0");
-        docsExpected.add("b0,0");
-        docsExpected.add("b1,0");
-        docsExpected.add("c0,0");
-        docsExpected.add("c1,0");
-        docsExpected.add("d0,0");
-        docsExpected.add("d1,0");
-        docsExpected.add("a2,1");
-        docsExpected.add("b2,1");
-        docsExpected.add("c2,1");
-        docsExpected.add("d2,1");
-        docsExpected.add("a3,2");
-        docsExpected.add("a4,2");
-        docsExpected.add("b3,2");
-        docsExpected.add("b4,2");
-        docsExpected.add("c3,2");
-        docsExpected.add("c4,2");
-        docsExpected.add("d3,2");
-        docsExpected.add("d4,2");
+            Set<String> docsExpected = new HashSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("a1,0");
+            docsExpected.add("b0,0");
+            docsExpected.add("b1,0");
+            docsExpected.add("c0,0");
+            docsExpected.add("c1,0");
+            docsExpected.add("d0,0");
+            docsExpected.add("d1,0");
+            docsExpected.add("a2,1");
+            docsExpected.add("b2,1");
+            docsExpected.add("c2,1");
+            docsExpected.add("d2,1");
+            docsExpected.add("a3,2");
+            docsExpected.add("a4,2");
+            docsExpected.add("b3,2");
+            docsExpected.add("b4,2");
+            docsExpected.add("c3,2");
+            docsExpected.add("c4,2");
+            docsExpected.add("d3,2");
+            docsExpected.add("d4,2");
 
-        Set<String> docsActual = new HashSet<>();
-        for (JsonNode node : json.get("hits").get("hits")) {
-            String _id = node.get("_id").asText();
-            int _hop = node.get("_hop").asInt();
-            docsActual.add(_id + "," + _hop);
+            Set<String> docsActual = new HashSet<>();
+            for (JsonNode node : json.get("hits").get("hits")) {
+                String _id = node.get("_id").asText();
+                int _hop = node.get("_hop").asInt();
+                docsActual.add(_id + "," + _hop);
+            }
+
+            assertEquals(docsExpected, docsActual);
+        } finally {
+            destroyTestResources();
         }
-
-        assertEquals(docsExpected, docsActual);
-        destroyTestReources();
     }
 }
