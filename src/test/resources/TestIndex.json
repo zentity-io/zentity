@@ -68,6 +68,24 @@
               "type": "keyword"
             }
           }
+        },
+        "type_boolean": {
+          "type": "boolean"
+        },
+        "type_double": {
+          "type": "double"
+        },
+        "type_float": {
+          "type": "float"
+        },
+        "type_integer": {
+          "type": "integer"
+        },
+        "type_long": {
+          "type": "long"
+        },
+        "type_string": {
+          "type": "keyword"
         }
       }
     }

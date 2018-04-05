@@ -217,7 +217,7 @@ public class ResolutionAction extends BaseRestHandler {
                     if (valueNode.isBoolean())
                         value = valueNode.booleanValue();
                     else if (valueNode.isDouble())
-                        value = valueNode.isDouble();
+                        value = valueNode.doubleValue();
                     else if (valueNode.isFloat())
                         value = valueNode.floatValue();
                     else if (valueNode.isInt())
