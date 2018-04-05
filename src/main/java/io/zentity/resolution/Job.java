@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.zentity.model.Matcher;
+import io.zentity.model.Model;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -39,10 +41,8 @@ public class Job {
     private final JsonStringEncoder encoder = new JsonStringEncoder();
 
     // Job configuration
-    private HashMap<String, HashMap<String, String>> attributes = new HashMap<>();
-    private HashMap<String, HashMap<String, String>> indices = new HashMap<>();
+    private Model model;
     private HashMap<String, HashSet<Object>> inputAttributes = new HashMap<>();
-    private HashMap<String, ArrayList<String>> resolvers = new HashMap<>();
     private boolean includeAttributes = DEFAULT_INCLUDE_ATTRIBUTES;
     private boolean includeHits = DEFAULT_INCLUDE_QUERIES;
     private boolean includeQueries = DEFAULT_INCLUDE_QUERIES;
@@ -72,102 +72,87 @@ public class Job {
         this.hits = new ArrayList<>();
         this.hop = 0;
         this.queries = new ArrayList<>();
+        this.ran = false;
     }
 
     public HashMap<String, HashSet<Object>> getInputAttributes() {
         return this.inputAttributes;
     }
 
-    public void setInputAttributes(HashMap<String, HashSet<Object>> inputAttributes) {
+    public void inputAttributes(HashMap<String, HashSet<Object>> inputAttributes) {
         this.inputAttributes = inputAttributes;
     }
 
-    public boolean getIncludeAttributes() {
+    public boolean includeAttributes() {
         return this.includeAttributes;
     }
 
-    public void setIncludeAttributes(boolean includeAttributes) {
+    public void includeAttributes(boolean includeAttributes) {
         this.includeAttributes = includeAttributes;
     }
 
-    public boolean getIncludeHits() {
+    public boolean includeHits() {
         return this.includeHits;
     }
 
-    public void setIncludeHits(boolean includeHits) {
+    public void includeHits(boolean includeHits) {
         this.includeHits = includeHits;
     }
 
-    public boolean getIncludeQueries() {
+    public boolean includeQueries() {
         return this.includeQueries;
     }
 
-    public void setIncludeQueries(boolean includeQueries) {
+    public void includeQueries(boolean includeQueries) {
         this.includeQueries = includeQueries;
     }
 
-    public boolean getIncludeSource() {
+    public boolean includeSource() {
         return this.includeSource;
     }
 
-    public void setIncludeSource(boolean includeSource) {
+    public void includeSource(boolean includeSource) {
         this.includeSource = includeSource;
     }
 
-    public HashMap<String, HashMap<String, String>> getIndices() {
-        return this.indices;
+    public Model model() {
+        return this.model;
     }
 
-    public void setIndices(HashMap<String, HashMap<String, String>> indices) {
-        this.indices = indices;
+    public void model(Model model) {
+        this.model = model;
     }
 
-    public boolean getPretty() {
-        return this.pretty;
-    }
-
-    public void setPretty(boolean pretty) {
-        this.pretty = pretty;
-    }
-
-    public HashMap<String, HashMap<String, String>> getAttributes() {
-        return this.attributes;
-    }
-
-    public void setAttributes(HashMap<String, HashMap<String, String>> attributes) {
-        this.attributes = attributes;
-    }
-
-    public int getMaxHops() {
+    public int maxHops() {
         return this.maxHops;
     }
 
-    public void setMaxHops(int maxHops) {
+    public void maxHops(int maxHops) {
         this.maxHops = maxHops;
     }
 
-    public int getMaxDocsPerQuery() {
+    public int maxDocsPerQuery() {
         return this.maxDocsPerQuery;
     }
 
-    public void setMaxDocsPerQuery(int maxDocsPerQuery) {
+    public void maxDocsPerQuery(int maxDocsPerQuery) {
         this.maxDocsPerQuery = maxDocsPerQuery;
     }
 
-    public Boolean getProfile() {
+    public boolean pretty() {
+        return this.pretty;
+    }
+
+    public void pretty(boolean pretty) {
+        this.pretty = pretty;
+    }
+
+    public Boolean profile() {
         return this.profile;
     }
 
-    public void setProfile(Boolean profile) {
+    public void profile(Boolean profile) {
         this.profile = profile;
-    }
-
-    public HashMap<String, ArrayList<String>> getResolvers() {
-        return this.resolvers;
-    }
-
-    public void setResolvers(HashMap<String, ArrayList<String>> resolvers) {
-        this.resolvers = resolvers;
     }
 
     private String jsonStringEscape(String value) {
@@ -183,80 +168,70 @@ public class Job {
     }
 
     /**
-     * Determine if a matcher of an attribute exists in an index.
+     * Determine if we can construct a query for a given resolver on a given index with a given input.
+     * Each attribute of the resolver must be mapped to a field of the index and have a matcher defined for it.
      *
-     * @param index     The name of the index to reference in the entity model.
-     * @param attribute The name of the attribute to reference in the entity model.
-     * @param matcher   The name of the matcher to reference in the entity model.
+     * @param indexName    The name of the index to reference in the entity model.
+     * @param resolverName The name of the resolver to reference in the entity model.
      * @return Boolean decision.
      */
-    private boolean matcherSupported(String index, String attribute, String matcher) {
-        // The input must have the attribute.
-        if (!this.inputAttributes.containsKey(attribute))
-            return false;
-        // The index must have the attribute and matcher.
-        if (!this.indices.get(index).containsKey(attribute + "." + matcher))
-            return false;
-        return true;
-    }
+    private boolean canQuery(String indexName, String resolverName) {
 
-    /**
-     * Determine if the fields used by the matchers of a resolver exist in an index and the current input.
-     *
-     * @param index    The name of the index to reference in the entity model.
-     * @param resolver The name of the resolver to reference in the entity model.
-     * @return Boolean decision.
-     */
-    private boolean resolverSupported(String index, String resolver) {
-        for (String attribute : this.resolvers.get(resolver)) {
-            // The input must have each field in the resolver.
-            if (!this.inputAttributes.containsKey(attribute))
+        // Each attribute of the resolver must pass these conditions:
+        for (String attributeName : this.model.resolvers().get(resolverName).attributes()) {
+
+            // The input must have the attribute.
+            if (!this.inputAttributes.containsKey(attributeName))
                 return false;
-            // The input must have at least one value for each field in the resolver.
-            if (this.inputAttributes.get(attribute).size() == 0)
+
+            // The input must have at least one value for the attribute.
+            if (this.inputAttributes.get(attributeName).isEmpty())
                 return false;
-            // The index must have at least one matcher of each attribute in the resolver.
-            boolean matcherFound = false;
-            for (String matcher : this.attributes.get(attribute).keySet()) {
-                if (matcherSupported(index, attribute, matcher)) {
-                    matcherFound = true;
+
+            // The index must have at least one index field mapped to the attribute.
+            if (!this.model.indices().get(indexName).attributeIndexFieldsMap().containsKey(attributeName))
+                return false;
+            if (this.model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).isEmpty())
+                return false;
+
+            // The index field must have a matcher defined for it.
+            boolean hasMatcher = false;
+            for (String indexFieldName : this.model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
+                if (this.model.indices().get(indexName).fields().get(indexFieldName).matcher() != null) {
+                    hasMatcher = true;
                     break;
                 }
             }
-            if (!matcherFound)
+            if (!hasMatcher)
                 return false;
         }
         return true;
     }
 
     /**
-     * Given a matcher template from the "attributes" field of an entity model, replace the {{ field }} and {{ value }}
-     * variables.
+     * Given a clause from the "matchers" field of an entity model, replace the {{ field }} and {{ value }} variables.
      *
-     * @param attribute The name of the attribute to reference in the entity model.
-     * @param matcher   The name of the matcher whose query template will be pulled from the entity model.
-     * @param index     The name of the index to reference in the entity model.
-     * @param value     The value to populate in the query template.
+     * @param matcher        The matcher object.
+     * @param indexFieldName The name of the index field to populate in the clause.
+     * @param value          The value to populate in the clause.
      * @return A "bool" clause that references the desired field and value.
      */
-    private String populateMatcherQueryTemplate(String attribute, String matcher, String index, String value) {
-        String attributeMatcher = attribute + "." + matcher;
-        String indexField = this.indices.get(index).get(attributeMatcher);
-        String matcherTemplate = this.attributes.get(attribute).get(matcher);
-        matcherTemplate = ATTRIBUTE_FIELD.matcher(matcherTemplate).replaceAll(indexField);
-        matcherTemplate = ATTRIBUTE_VALUE.matcher(matcherTemplate).replaceAll(value);
-        return matcherTemplate;
+    private String populateMatcherClause(Matcher matcher, String indexFieldName, String value) {
+        String matcherClause = matcher.clause();
+        matcherClause = ATTRIBUTE_FIELD.matcher(matcherClause).replaceAll(indexFieldName);
+        matcherClause = ATTRIBUTE_VALUE.matcher(matcherClause).replaceAll(value);
+        return matcherClause;
     }
 
     /**
      * Submit a search query to Elasticsearch.
      *
-     * @param index The name of the index to search.
-     * @param query The query to search.
+     * @param indexName The name of the index to search.
+     * @param query     The query to search.
      * @return The search response returned by Elasticsearch.
      * @throws IOException
      */
-    private SearchResponse search(String index, String query) throws IOException {
+    private SearchResponse search(String indexName, String query) throws IOException {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         SearchModule searchModule = new SearchModule(Settings.EMPTY, false, Collections.emptyList());
         try (XContentParser parser = XContentFactory.xContent(XContentType.JSON).createParser(new NamedXContentRegistry(searchModule
@@ -264,7 +239,7 @@ public class Job {
             searchSourceBuilder.parseXContent(parser);
         }
         SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client, SearchAction.INSTANCE);
-        return searchRequestBuilder.setIndices(index).setSource(searchSourceBuilder).execute().actionGet();
+        return searchRequestBuilder.setIndices(indexName).setSource(searchSourceBuilder).execute().actionGet();
     }
 
     /**
@@ -279,42 +254,46 @@ public class Job {
         Boolean newHits = false;
 
         // Construct a query for each index that maps to a resolver.
-        for (String index : this.indices.keySet()) {
+        for (String indexName : this.model.indices().keySet()) {
 
             // Track _ids for this index.
-            if (!this.docIds.containsKey(index))
-                this.docIds.put(index, new HashSet<>());
+            if (!this.docIds.containsKey(indexName))
+                this.docIds.put(indexName, new HashSet<>());
 
-            // Construct a subquery for each resolver that maps to the index.
+            // Construct a "should" clause for each resolver that maps to the index.
             ArrayList<String> resolverClauses = new ArrayList<>();
-            for (String resolver : this.resolvers.keySet()) {
+            for (String resolverName : this.model.resolvers().keySet()) {
 
                 // Can we use this resolver on this index and this input?
-                if (!resolverSupported(index, resolver))
+                boolean canQuery = canQuery(indexName, resolverName);
+                if (!canQuery)
                     continue;
 
-                // Construct a "should" clause for each attribute of this resolver.
+                // Construct a "filter" clause for each attribute of this resolver.
                 ArrayList<String> attributeClauses = new ArrayList<>();
-                for (String attribute : this.resolvers.get(resolver)) {
+                for (String attributeName : this.model.resolvers().get(resolverName).attributes()) {
 
-                    // Construct a "should" clause for each matcher of this resolver.
-                    ArrayList<String> matcherClauses = new ArrayList<>();
-                    for (String matcher : this.attributes.get(attribute).keySet()) {
+                    // Construct a "should" clause for each index field mapped to this attribute.
+                    ArrayList<String> indexFieldClauses = new ArrayList<>();
+                    for (String indexFieldName : this.model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
 
-                        // Can we use this matcher on this index and this input?
-                        if (!matcherSupported(index, attribute, matcher))
+                        // Can we use this index field?
+                        boolean hasMatcher = this.model.indices().get(indexName).fields().get(indexFieldName).matcher() != null;
+                        if (!hasMatcher)
                             continue;
 
                         // Construct a clause for each input value for this attribute.
                         ArrayList<String> valueClauses = new ArrayList<>();
-                        for (Object value : this.inputAttributes.get(attribute)) {
+                        for (Object value : this.inputAttributes.get(attributeName)) {
 
                             // Skip value if it's blank.
                             if (value == null || value.equals(""))
                                 continue;
 
                             // Populate the {{ field }} and {{ value }} variables of the matcher template.
-                            valueClauses.add(populateMatcherQueryTemplate(attribute, matcher, index, value.toString()));
+                            String matcherName = this.model.indices().get(indexName).fields().get(indexFieldName).matcher();
+                            Matcher matcher = this.model.matchers().get(matcherName);
+                            valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
                         }
                         if (valueClauses.size() == 0)
                             continue;
@@ -323,16 +302,16 @@ public class Job {
                         String valuesClause = String.join(",", valueClauses);
                         if (valueClauses.size() > 1)
                             valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
-                        matcherClauses.add(valuesClause);
+                        indexFieldClauses.add(valuesClause);
                     }
-                    if (matcherClauses.size() == 0)
+                    if (indexFieldClauses.size() == 0)
                         continue;
 
                     // Combine each matcher clause into a single "should" clause.
-                    String matchersClause = String.join(",", matcherClauses);
-                    if (matcherClauses.size() > 1)
-                        matchersClause = "{\"bool\":{\"should\":[" + matchersClause + "]}}";
-                    attributeClauses.add(matchersClause);
+                    String indexFieldsClause = String.join(",", indexFieldClauses);
+                    if (indexFieldClauses.size() > 1)
+                        indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
+                    attributeClauses.add(indexFieldsClause);
                 }
                 if (attributeClauses.size() == 0)
                     continue;
@@ -355,7 +334,7 @@ public class Job {
 
             // Construct query for this index.
             String query;
-            HashSet<String> ids = this.docIds.get(index);
+            HashSet<String> ids = this.docIds.get(indexName);
             if (ids.size() > 0) {
                 String idsFilter = "\"must_not\":{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}";
                 resolversClause = "{\"bool\":{" + idsFilter + ",\"filter\":" + resolversClause + "}}";
@@ -366,7 +345,7 @@ public class Job {
                 query = "{\"query\": " + resolversClause + ",\"size\": " + this.maxDocsPerQuery + "}";
 
             // Submit query to Elasticsearch.
-            SearchResponse response = this.search(index, query);
+            SearchResponse response = this.search(indexName, query);
 
             // Read response from Elasticsearch.
             String responseBody = response.toString();
@@ -391,40 +370,42 @@ public class Job {
 
                 // Skip doc if already fetched. Otherwise mark doc as fetched and then proceed.
                 String _id = jsonStringFormat(doc.get("_id").textValue());
-                if (this.docIds.get(index).contains(_id))
+                if (this.docIds.get(indexName).contains(_id))
                     continue;
-                this.docIds.get(index).add(_id);
-                newHits = true;
+                this.docIds.get(indexName).add(_id);
 
-                // Gather attributes from doc. Store them in the "_attributes" field of the doc,
+                // Gather attributes from the doc. Store them in the "_attributes" field of the doc,
                 // and include them in the attributes for subsequent queries.
                 TreeMap<String, Object> docAttributes = new TreeMap<>();
-                for (String attributeMatcher : this.indices.get(index).keySet()) {
-                    String indexSubfield = this.indices.get(index).get(attributeMatcher);
-                    String indexField = indexSubfield.split("\\.")[0];
-                    String attribute = attributeMatcher.split("\\.")[0];
-                    if (doc.get("_source").has(indexField)) {
+                for (String indexFieldName : this.model.indices().get(indexName).fields().keySet()) {
+                    String attributeName = this.model.indices().get(indexName).fields().get(indexFieldName).attribute();
+                    // The index field name might not refer to the _source property.
+                    // If it's not in the _source, remove the last part of the index field name from the dot notation.
+                    // Index field names can reference multi-fields, which are not returned in the _source.
+                    if (!doc.get("_source").has(indexFieldName))
+                        indexFieldName = indexFieldName.split("\\.")[0];
+                    if (doc.get("_source").has(indexFieldName)) {
                         Object value;
-                        if (doc.get("_source").get(indexField).isBoolean())
-                            value = doc.get("_source").get(indexField).booleanValue();
-                        else if (doc.get("_source").get(indexField).isDouble())
-                            value = doc.get("_source").get(indexField).isDouble();
-                        else if (doc.get("_source").get(indexField).isFloat())
-                            value = doc.get("_source").get(indexField).floatValue();
-                        else if (doc.get("_source").get(indexField).isInt())
-                            value = doc.get("_source").get(indexField).intValue();
-                        else if (doc.get("_source").get(indexField).isLong())
-                            value = doc.get("_source").get(indexField).longValue();
-                        else if (doc.get("_source").get(indexField).isShort())
-                            value = doc.get("_source").get(indexField).shortValue();
-                        else if (doc.get("_source").get(indexField).isNull())
+                        if (doc.get("_source").get(indexFieldName).isBoolean())
+                            value = doc.get("_source").get(indexFieldName).booleanValue();
+                        else if (doc.get("_source").get(indexFieldName).isDouble())
+                            value = doc.get("_source").get(indexFieldName).isDouble();
+                        else if (doc.get("_source").get(indexFieldName).isFloat())
+                            value = doc.get("_source").get(indexFieldName).floatValue();
+                        else if (doc.get("_source").get(indexFieldName).isInt())
+                            value = doc.get("_source").get(indexFieldName).intValue();
+                        else if (doc.get("_source").get(indexFieldName).isLong())
+                            value = doc.get("_source").get(indexFieldName).longValue();
+                        else if (doc.get("_source").get(indexFieldName).isShort())
+                            value = doc.get("_source").get(indexFieldName).shortValue();
+                        else if (doc.get("_source").get(indexFieldName).isNull())
                             value = "";
                         else
-                            value = doc.get("_source").get(indexField).asText();
-                        docAttributes.put(attribute, value);
-                        if (!nextInputAttributes.containsKey(attribute))
-                            nextInputAttributes.put(attribute, new HashSet<>());
-                        nextInputAttributes.get(attribute).add(value);
+                            value = doc.get("_source").get(indexFieldName).asText();
+                        docAttributes.put(attributeName, value);
+                        if (!nextInputAttributes.containsKey(attributeName))
+                            nextInputAttributes.put(attributeName, new HashSet<>());
+                        nextInputAttributes.get(attributeName).add(value);
                     }
                 }
 
@@ -465,11 +446,8 @@ public class Job {
         }
 
         // Stop traversing if we've reached max depth.
-        if (this.maxHops > -1 && this.hop >= this.maxHops)
-            return;
-
-        // Stop traversing if there are no more attributes to query.
-        if (!newHits)
+        boolean maxDepthReached = this.maxHops > -1 && this.hop >= this.maxHops;
+        if (maxDepthReached)
             return;
 
         // Update input attributes for the next queries.
@@ -477,9 +455,17 @@ public class Job {
             if (!this.inputAttributes.containsKey(attribute))
                 this.inputAttributes.put(attribute, new HashSet<>());
             for (Object value : nextInputAttributes.get(attribute)) {
-                this.inputAttributes.get(attribute).add(value);
+                if (!this.inputAttributes.get(attribute).contains(value)) {
+                    this.inputAttributes.get(attribute).add(value);
+                    newHits = true;
+                }
             }
         }
+
+        // Stop traversing if there are no more attributes to query.
+        if (!newHits)
+            return;
+
         // Update hop count and traverse.
         this.hop++;
         this.traverse();

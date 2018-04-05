@@ -2,6 +2,8 @@ package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.model.Model;
+import io.zentity.model.ValidationException;
 import io.zentity.resolution.Job;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
@@ -49,16 +51,16 @@ public class ResolutionAction extends BaseRestHandler {
      * @param requestBody The request body.
      * @return The parsed "model" field from the request body, or an object from ".zentity-models" index.
      * @throws BadRequestException
+     * @throws IOException
+     * @throws ValidationException
      */
-    public static JsonNode parseEntityModel(JsonNode requestBody) throws BadRequestException, IOException {
+    public static Model parseEntityModel(JsonNode requestBody) throws BadRequestException, IOException, ValidationException {
         if (!requestBody.has("model"))
             throw new BadRequestException("The 'model' field is missing from the request body while 'entity_type' is undefined.");
-        JsonNode entityModel;
-        entityModel = requestBody.get("model");
-        if (!entityModel.isObject())
+        JsonNode model = requestBody.get("model");
+        if (!model.isObject())
             throw new BadRequestException("Entity model must be an object.");
-        entityModel = ModelsAction.parseEntityModel(entityModel.toString());
-        return entityModel;
+        return new Model(model.toString());
     }
 
     /**
@@ -68,17 +70,15 @@ public class ResolutionAction extends BaseRestHandler {
      * @param entityType The entity type.
      * @param client     The client that will communicate with Elasticsearch.
      * @return The parsed "model" field from the request body, or an object from ".zentity-models" index.
-     * @throws BadRequestException
      * @throws NotFoundException
      * @throws IOException
+     * @throws ValidationException
      */
-    public static JsonNode parseEntityModel(String entityType, NodeClient client) throws BadRequestException, NotFoundException, IOException {
-        JsonNode entityModel;
-        String entityModelSource = ModelsAction.getEntityModel(entityType, client).getSourceAsString();
-        if (entityModelSource == null || entityModelSource.equals(""))
+    public static Model parseEntityModel(String entityType, NodeClient client) throws NotFoundException, IOException, ValidationException {
+        String model = ModelsAction.getEntityModel(entityType, client).getSourceAsString();
+        if (model == null || model.equals(""))
             throw new NotFoundException("Model not found for entity type '" + entityType + "'.");
-        entityModel = ModelsAction.parseEntityModel(entityModelSource);
-        return entityModel;
+        return new Model(model);
     }
 
     /**
@@ -88,7 +88,7 @@ public class ResolutionAction extends BaseRestHandler {
      * @return Names of indices to filter from the "scope.indices" object of the entity model.
      * @throws BadRequestException
      */
-    public static HashSet<String> parseIndicesScope(JsonNode requestBody) throws BadRequestException {
+    public static HashSet<String> parseScopeIndices(JsonNode requestBody) throws BadRequestException {
         HashSet<String> indicesScopeSet = new HashSet<>();
         if (!requestBody.has("scope") || requestBody.get("scope").isNull())
             return indicesScopeSet;
@@ -117,22 +117,22 @@ public class ResolutionAction extends BaseRestHandler {
     /**
      * Filter indices based on what the client wants to use.
      *
-     * @param indicesObj   The parsed "indices" object of an entity model.
-     * @param indicesScope Names of indices to filter from the "indices" object.
+     * @param model        The entity model.
+     * @param scopeIndices Names of indices to filter from the "indices" object.
      * @return Filtered "indices" object.
      * @throws BadRequestException
      */
-    public static HashMap<String, HashMap<String, String>> filterIndices(HashMap<String, HashMap<String, String>> indicesObj, Set<String> indicesScope) throws BadRequestException {
-        if (!indicesScope.isEmpty()) {
-            for (String index : indicesScope) {
+    public static Model filterIndices(Model model, Set<String> scopeIndices) throws BadRequestException {
+        if (!scopeIndices.isEmpty()) {
+            for (String index : scopeIndices) {
                 if (index == null || index.equals(""))
                     continue;
-                if (!indicesObj.containsKey(index))
-                    throw new BadRequestException("'" + index + "' is not in the 'indices' field of the entity model.");
+                if (!model.indices().containsKey(index))
+                    throw new BadRequestException("'" + index + "' is not in the 'indices' field.");
             }
-            indicesObj.keySet().retainAll(indicesScope);
+            model.indices().keySet().retainAll(scopeIndices);
         }
-        return indicesObj;
+        return model;
     }
 
     /**
@@ -142,7 +142,7 @@ public class ResolutionAction extends BaseRestHandler {
      * @return Names of resolvers to filter from the "scope.resolvers" object of the entity model.
      * @throws BadRequestException
      */
-    public static HashSet<String> parseResolversScope(JsonNode requestBody) throws BadRequestException {
+    public static HashSet<String> parseScopeResolvers(JsonNode requestBody) throws BadRequestException {
         HashSet<String> resolversScopeSet = new HashSet<>();
         if (!requestBody.has("scope") || requestBody.get("scope").isNull())
             return resolversScopeSet;
@@ -160,8 +160,6 @@ public class ResolutionAction extends BaseRestHandler {
                 String resolver = resolverNode.asText();
                 if (resolver == null || resolver.equals(""))
                     throw new BadRequestException("'scope.resolvers' must have non-empty strings.");
-                if (ModelsAction.hasInvalidChars(resolver))
-                    throw new BadRequestException("'scope.resolvers' must not have periods in its values.");
                 resolversScopeSet.add(resolver);
             }
         } else {
@@ -173,22 +171,22 @@ public class ResolutionAction extends BaseRestHandler {
     /**
      * Filter resolvers based on what the client wants to use.
      *
-     * @param resolversObj   The parsed "resolvers" object of an entity model.
-     * @param resolversScope Names of resolvers to filter from the "resolvers" object.
+     * @param model          The entity model.
+     * @param scopeResolvers Names of resolvers to filter from the "resolvers" object.
      * @return Filtered "resolvers" object.
      * @throws BadRequestException
      */
-    public static HashMap<String, ArrayList<String>> filterResolvers(HashMap<String, ArrayList<String>> resolversObj, Set<String> resolversScope) throws BadRequestException {
-        if (!resolversScope.isEmpty()) {
-            for (String resolver : resolversScope) {
+    public static Model filterResolvers(Model model, Set<String> scopeResolvers) throws BadRequestException {
+        if (!scopeResolvers.isEmpty()) {
+            for (String resolver : scopeResolvers) {
                 if (resolver == null || resolver.equals(""))
                     continue;
-                if (!resolversObj.containsKey(resolver))
-                    throw new BadRequestException("'" + resolver + "' is not in the 'resolvers' field of the entity model.");
+                if (!model.resolvers().containsKey(resolver))
+                    throw new BadRequestException("'" + resolver + "' is not in the 'resolvers' field.");
             }
-            resolversObj.keySet().retainAll(resolversScope);
+            model.resolvers().keySet().retainAll(scopeResolvers);
         }
-        return resolversObj;
+        return model;
     }
 
     /**
@@ -200,7 +198,7 @@ public class ResolutionAction extends BaseRestHandler {
      */
     public static HashMap<String, HashSet<Object>> parseAttributes(JsonNode requestBody) throws BadRequestException {
         if (!requestBody.has("attributes"))
-            throw new BadRequestException("'attributes' field is missing from the request body.");
+            throw new BadRequestException("The 'attributes' field is missing from the request body.");
         if (requestBody.get("attributes").size() == 0)
             throw new BadRequestException("The 'attributes' field of the request body must not be empty.");
         JsonNode attributes = requestBody.get("attributes");
@@ -208,8 +206,6 @@ public class ResolutionAction extends BaseRestHandler {
         Iterator<String> attributeFields = attributes.fieldNames();
         while (attributeFields.hasNext()) {
             String attribute = attributeFields.next();
-            if (ModelsAction.hasInvalidChars(attribute))
-                throw new BadRequestException("'attributes." + attribute + "' must not have periods in its name.");
             attributesObj.put(attribute, new HashSet<>());
             if (attributes.get(attribute).isObject())
                 throw new BadRequestException("'attributes." + attribute + "' must be a string or an array of values.");
@@ -269,14 +265,14 @@ public class ResolutionAction extends BaseRestHandler {
 
                 // Prepare the entity resolution job.
                 Job job = new Job(client);
-                job.setIncludeAttributes(includeAttributes);
-                job.setIncludeHits(includeHits);
-                job.setIncludeQueries(includeQueries);
-                job.setIncludeSource(includeSource);
-                job.setMaxDocsPerQuery(maxDocsPerQuery);
-                job.setMaxHops(maxHops);
-                job.setPretty(pretty);
-                job.setProfile(profile);
+                job.includeAttributes(includeAttributes);
+                job.includeHits(includeHits);
+                job.includeQueries(includeQueries);
+                job.includeSource(includeSource);
+                job.maxDocsPerQuery(maxDocsPerQuery);
+                job.maxHops(maxHops);
+                job.pretty(pretty);
+                job.profile(profile);
 
                 // Parse the request body.
                 if (body == null || body.equals(""))
@@ -286,23 +282,17 @@ public class ResolutionAction extends BaseRestHandler {
 
                 // Parse and validate the input attributes.
                 HashMap<String, HashSet<Object>> inputAttributesObj = parseAttributes(requestBody);
-                job.setInputAttributes(inputAttributesObj);
+                job.inputAttributes(inputAttributesObj);
 
                 // Parse the entity type.
                 String entityType = parseEntityType(entityTypeFromUrl, requestBody);
 
                 // Parse and validate the entity model.
-                JsonNode entityModel;
+                Model model;
                 if (entityType == null || entityType.equals(""))
-                    entityModel = parseEntityModel(requestBody);
+                    model = parseEntityModel(requestBody);
                 else
-                    entityModel = parseEntityModel(entityType, client);
-
-                // Parse and validate the "attributes" field of the entity model.
-                HashMap<String, HashMap<String, String>> attributeObj = ModelsAction.parseAttributes(entityModel);
-                if (attributeObj.isEmpty())
-                    throw new BadRequestException("No attributes have been provided for the entity resolution job.");
-                job.setAttributes(attributeObj);
+                    model = parseEntityModel(entityType, client);
 
                 // Validate the "scope" field of the request body.
                 if (requestBody.has("scope"))
@@ -310,40 +300,35 @@ public class ResolutionAction extends BaseRestHandler {
                         throw new BadRequestException("The 'scope' field of the request body must be an object.");
 
                 // Parse and validate the "scope.resolvers" field of the request body.
-                HashMap<String, ArrayList<String>> resolversObj = ModelsAction.parseResolvers(entityModel);
                 if (requestBody.has("scope")) {
                     if (requestBody.get("scope").has("resolvers")) {
                         // Parse and validate the "scope.resolvers" field of the request body.
-                        HashSet<String> scopeResolvers;
-                        scopeResolvers = parseResolversScope(requestBody);
+                        HashSet<String> scopeResolvers = parseScopeResolvers(requestBody);
                         // Intersect the "resolvers" field of the entity model with the "scope.resolvers" field.
-                        resolversObj = filterResolvers(resolversObj, scopeResolvers);
+                        model = filterResolvers(model, scopeResolvers);
                     }
                 }
-                if (resolversObj.isEmpty())
+                if (model.resolvers().isEmpty())
                     throw new BadRequestException("No resolvers have been provided for the entity resolution job.");
-                job.setResolvers(resolversObj);
 
                 // Parse and validate the "scope.indices" field of the request body.
-                HashMap<String, HashMap<String, String>> indicesObj = ModelsAction.parseIndices(entityModel);
                 if (requestBody.has("scope")) {
                     if (requestBody.get("scope").has("indices")) {
                         // Parse and validate the "scope.indices" field of the request body.
-                        HashSet<String> scopeIndices;
-                        scopeIndices = parseIndicesScope(requestBody);
+                        HashSet<String> scopeIndices = parseScopeIndices(requestBody);
                         // Intersect the "indices" field of the entity model with the "scope.indices" field.
-                        indicesObj = filterIndices(indicesObj, scopeIndices);
+                        model = filterIndices(model, scopeIndices);
                     }
                 }
-                if (indicesObj.isEmpty())
+                if (model.indices().isEmpty())
                     throw new BadRequestException("No indices have been provided for the entity resolution job.");
-                job.setIndices(indicesObj);
 
                 // Run the entity resolution job.
+                job.model(model);
                 String response = job.run();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
 
-            } catch (BadRequestException e) {
+            } catch (BadRequestException | ValidationException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
             } catch (NotFoundException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_FOUND, e));

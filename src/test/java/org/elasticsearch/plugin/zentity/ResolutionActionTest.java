@@ -2,12 +2,13 @@ package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.model.Model;
+import io.zentity.model.ModelTest;
+import io.zentity.model.ValidationException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class ResolutionActionTest {
@@ -16,7 +17,7 @@ public class ResolutionActionTest {
     private static final String validAttributeString = "\"attribute_string\":\"abc\"";
     private static final String validAttributeArray = "\"attribute_array\":[\"abc\"]";
     private static final String validAttributes = "\"attributes\":{" + validAttributeString + "," + validAttributeArray + "}";
-    private static final String validModel = "\"model\":" + ModelsActionTest.validEntityModel;
+    private static final String validModel = "\"model\":" + ModelTest.VALID_OBJECT;
     private static final String validScopeIndicesTypeArray = "\"indices\":[\"index_name\"]";
     private static final String validScopeIndicesTypeArrayEmpty = "\"indices\":[]";
     private static final String validScopeIndicesTypeString = "\"indices\":\"index_name\"";
@@ -26,10 +27,6 @@ public class ResolutionActionTest {
     private static final String validScopeEmpty = "\"scope\":{}";
     private static final String validScopeTypeNull = "\"scope\":null";
     private static final String validInput = "{" + validAttributes + "," + validModel + "}";
-
-    // Invalid attribute
-    private static final String invalidAttributeArrayNamePeriod = "\"attributes\":{\"attribute.string\":[\"abc\"]}";
-    private static final String invalidAttributeStringNamePeriod = "\"attributes\":{\"attribute.string\":\"abc\"}";
 
     // Invalid attributes
     private static final String invalidAttributesEmpty = "\"attributes\":{}";
@@ -107,8 +104,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(validInput);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -118,8 +115,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -129,8 +126,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -140,8 +137,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -151,8 +148,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -162,8 +159,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -173,8 +170,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -184,8 +181,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
@@ -195,41 +192,27 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseAttributes(requestBody);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
         Assert.assertTrue(true);
     }
 
     @Test
     public void testValidScopeIndices() throws Exception {
         JsonNode requestBody = parseRequestBody(validInput);
-        HashSet<String> indicesFilter = ResolutionAction.parseIndicesScope(requestBody);
-        HashMap<String, HashMap<String, String>> indicesObj = ModelsAction.parseIndices(requestBody.get("model"));
-        indicesObj = ResolutionAction.filterIndices(indicesObj, indicesFilter);
-        Assert.assertTrue(indicesObj.containsKey("index_name"));
+        HashSet<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
+        Model model = new Model(requestBody.get("model"));
+        model = ResolutionAction.filterIndices(model, indicesFilter);
+        Assert.assertTrue(model.indices().containsKey("index_name"));
     }
 
     @Test
     public void testValidScopeResolvers() throws Exception {
         JsonNode requestBody = parseRequestBody(validInput);
-        HashSet<String> resolversFilter = ResolutionAction.parseResolversScope(requestBody);
-        HashMap<String, ArrayList<String>> resolversObj = ModelsAction.parseResolvers(requestBody.get("model"));
-        resolversObj = ResolutionAction.filterResolvers(resolversObj, resolversFilter);
-        Assert.assertTrue(resolversObj.containsKey("resolver_name"));
-    }
-
-    @Test(expected = BadRequestException.class)
-    public void testInvalidAttributeArrayNamePeriod() throws Exception {
-        String mock = inputAttributes(invalidAttributeArrayNamePeriod);
-        JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
-    }
-
-    @Test(expected = BadRequestException.class)
-    public void testInvalidAttributeStringNamePeriod() throws Exception {
-        String mock = inputAttributes(invalidAttributeStringNamePeriod);
-        JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        HashSet<String> resolversFilter = ResolutionAction.parseScopeResolvers(requestBody);
+        Model model = new Model(requestBody.get("model"));
+        model = ResolutionAction.filterResolvers(model, resolversFilter);
+        Assert.assertTrue(model.resolvers().containsKey("resolver_name"));
     }
 
     @Test(expected = BadRequestException.class)
@@ -274,7 +257,7 @@ public class ResolutionActionTest {
         ResolutionAction.parseAttributes(requestBody);
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = ValidationException.class)
     public void testInvalidModelEmpty() throws Exception {
         String mock = inputModel(invalidModelEmpty);
         JsonNode requestBody = parseRequestBody(mock);
@@ -298,9 +281,8 @@ public class ResolutionActionTest {
     @Test(expected = BadRequestException.class)
     public void testInvalidModelTypeInteger() throws Exception {
         String mock = inputModel(invalidModelTypeInteger);
-        JsonNode requestBody = ModelsAction.parseEntityModel(mock);
+        JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseEntityModel(requestBody);
-        Assert.assertTrue(true);
     }
 
     @Test(expected = BadRequestException.class)
@@ -322,8 +304,8 @@ public class ResolutionActionTest {
         String mock = inputScope(invalidScopeTypeArray);
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
@@ -331,8 +313,8 @@ public class ResolutionActionTest {
         String mock = inputScope(invalidScopeTypeFloat);
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
@@ -340,8 +322,8 @@ public class ResolutionActionTest {
         String mock = inputScope(invalidScopeTypeInteger);
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
@@ -349,152 +331,152 @@ public class ResolutionActionTest {
         String mock = inputScope(invalidScopeTypeString);
         JsonNode requestBody = parseRequestBody(mock);
         ResolutionAction.parseEntityModel(requestBody);
-        ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesNotFoundArray() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesNotFoundArray);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> indicesFilter = ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.filterIndices(ModelsAction.parseIndices(requestBody.get("model")), indicesFilter);
+        HashSet<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.filterIndices(new Model(requestBody.get("model")), indicesFilter);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesNotFoundString() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesNotFoundString);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> indicesFilter = ResolutionAction.parseIndicesScope(requestBody);
-        ResolutionAction.filterIndices(ModelsAction.parseIndices(requestBody.get("model")), indicesFilter);
+        HashSet<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
+        ResolutionAction.filterIndices(new Model(requestBody.get("model")), indicesFilter);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeArrayFloat() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeArrayFloat);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeArrayInteger() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeArrayInteger);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeArrayObject() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeArrayObject);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeArrayNull() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeArrayNull);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeArrayStringEmpty() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeArrayStringEmpty);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeFloat() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeFloat);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeInteger() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeInteger);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeIndicesTypeObject() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesTypeObject);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseIndicesScope(requestBody);
+        ResolutionAction.parseScopeIndices(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversNotFoundArray() throws Exception {
         String mock = inputScopeIndices(invalidScopeResolversNotFoundArray);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> resolversScope = ResolutionAction.parseResolversScope(requestBody);
-        ResolutionAction.filterResolvers(ModelsAction.parseResolvers(requestBody.get("model")), resolversScope);
+        HashSet<String> resolversScope = ResolutionAction.parseScopeResolvers(requestBody);
+        ResolutionAction.filterResolvers(new Model(requestBody.get("model")), resolversScope);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversNotFoundString() throws Exception {
         String mock = inputScopeIndices(invalidScopeResolversNotFoundString);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> resolversScope = ResolutionAction.parseResolversScope(requestBody);
-        ResolutionAction.filterResolvers(ModelsAction.parseResolvers(requestBody.get("model")), resolversScope);
+        HashSet<String> resolversScope = ResolutionAction.parseScopeResolvers(requestBody);
+        ResolutionAction.filterResolvers(new Model(requestBody.get("model")), resolversScope);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeArrayFloat() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeArrayFloat);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeArrayInteger() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeArrayInteger);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeArrayObject() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeArrayObject);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeArrayNull() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeArrayNull);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeArrayStringEmpty() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeArrayStringEmpty);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeFloat() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeFloat);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeInteger() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeInteger);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidScopeResolversTypeObject() throws Exception {
         String mock = inputScopeResolvers(invalidScopeResolversTypeObject);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseResolversScope(requestBody);
+        ResolutionAction.parseScopeResolvers(requestBody);
     }
 
 }
