@@ -242,8 +242,6 @@ public class JobIT extends AbstractITCase {
             docsExpectedB.add("a7,0");
             docsExpectedB.add("a9,0");
 
-            // TODO: Check types of returned values
-
             // Boolean true
             Response r1 = client.performRequest("POST", endpoint, params, testJobDataTypesBooleanTrue);
             JsonNode j1 = mapper.readTree(r1.getEntity().getContent());

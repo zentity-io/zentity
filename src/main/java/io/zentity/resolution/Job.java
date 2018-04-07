@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.zentity.model.Attribute;
 import io.zentity.model.Matcher;
 import io.zentity.model.Model;
+import io.zentity.model.ValidationException;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -247,7 +249,7 @@ public class Job {
      *
      * @throws IOException
      */
-    private void traverse() throws IOException {
+    private void traverse() throws IOException, ValidationException {
 
         // Prepare to collect attributes from the results of these queries as the inputs to subsequent queries.
         HashMap<String, HashSet<Object>> nextInputAttributes = new HashMap<>();
@@ -376,35 +378,21 @@ public class Job {
 
                 // Gather attributes from the doc. Store them in the "_attributes" field of the doc,
                 // and include them in the attributes for subsequent queries.
-                TreeMap<String, Object> docAttributes = new TreeMap<>();
+                TreeMap<String, JsonNode> docAttributes = new TreeMap<>();
                 for (String indexFieldName : this.model.indices().get(indexName).fields().keySet()) {
                     String attributeName = this.model.indices().get(indexName).fields().get(indexFieldName).attribute();
+                    String attributeType = this.model.attributes().get(attributeName).type();
                     // The index field name might not refer to the _source property.
                     // If it's not in the _source, remove the last part of the index field name from the dot notation.
                     // Index field names can reference multi-fields, which are not returned in the _source.
+                    if (!nextInputAttributes.containsKey(attributeName))
+                        nextInputAttributes.put(attributeName, new HashSet<>());
                     if (!doc.get("_source").has(indexFieldName))
                         indexFieldName = indexFieldName.split("\\.")[0];
                     if (doc.get("_source").has(indexFieldName)) {
-                        Object value;
-                        if (doc.get("_source").get(indexFieldName).isBoolean())
-                            value = doc.get("_source").get(indexFieldName).booleanValue();
-                        else if (doc.get("_source").get(indexFieldName).isDouble())
-                            value = doc.get("_source").get(indexFieldName).doubleValue();
-                        else if (doc.get("_source").get(indexFieldName).isFloat())
-                            value = doc.get("_source").get(indexFieldName).floatValue();
-                        else if (doc.get("_source").get(indexFieldName).isInt())
-                            value = doc.get("_source").get(indexFieldName).intValue();
-                        else if (doc.get("_source").get(indexFieldName).isLong())
-                            value = doc.get("_source").get(indexFieldName).longValue();
-                        else if (doc.get("_source").get(indexFieldName).isShort())
-                            value = doc.get("_source").get(indexFieldName).shortValue();
-                        else if (doc.get("_source").get(indexFieldName).isNull())
-                            value = "";
-                        else
-                            value = doc.get("_source").get(indexFieldName).asText();
-                        docAttributes.put(attributeName, value);
-                        if (!nextInputAttributes.containsKey(attributeName))
-                            nextInputAttributes.put(attributeName, new HashSet<>());
+                        JsonNode valueNode = doc.get("_source").get(indexFieldName);
+                        docAttributes.put(attributeName, valueNode);
+                        Object value = Attribute.convertType(attributeType, valueNode);
                         nextInputAttributes.get(attributeName).add(value);
                     }
                 }
@@ -418,24 +406,9 @@ public class Job {
                         docObjNode.remove("_source");
                     if (this.includeAttributes) {
                         ObjectNode docAttributesObjNode = docObjNode.putObject("_attributes");
-                        for (String attribute : docAttributes.keySet()) {
-                            Object value = docAttributes.get(attribute);
-                            if (value.getClass() == Boolean.class)
-                                docAttributesObjNode.put(attribute, (Boolean) value);
-                            else if (value.getClass() == Double.class)
-                                docAttributesObjNode.put(attribute, (Double) value);
-                            else if (value.getClass() == Float.class)
-                                docAttributesObjNode.put(attribute, (Float) value);
-                            else if (value.getClass() == Integer.class)
-                                docAttributesObjNode.put(attribute, (Integer) value);
-                            else if (value.getClass() == Long.class)
-                                docAttributesObjNode.put(attribute, (Long) value);
-                            else if (value.getClass() == Short.class)
-                                docAttributesObjNode.put(attribute, (Short) value);
-                            else if (value.getClass() == null)
-                                docAttributesObjNode.put(attribute, "");
-                            else
-                                docAttributesObjNode.put(attribute, (String) value);
+                        for (String attributeName : docAttributes.keySet()) {
+                            JsonNode values = docAttributes.get(attributeName);
+                            docAttributesObjNode.set(attributeName, values);
                         }
                     }
 
@@ -451,12 +424,12 @@ public class Job {
             return;
 
         // Update input attributes for the next queries.
-        for (String attribute : nextInputAttributes.keySet()) {
-            if (!this.inputAttributes.containsKey(attribute))
-                this.inputAttributes.put(attribute, new HashSet<>());
-            for (Object value : nextInputAttributes.get(attribute)) {
-                if (!this.inputAttributes.get(attribute).contains(value)) {
-                    this.inputAttributes.get(attribute).add(value);
+        for (String attributeName : nextInputAttributes.keySet()) {
+            if (!this.inputAttributes.containsKey(attributeName))
+                this.inputAttributes.put(attributeName, new HashSet<>());
+            for (Object value : nextInputAttributes.get(attributeName)) {
+                if (!this.inputAttributes.get(attributeName).contains(value)) {
+                    this.inputAttributes.get(attributeName).add(value);
                     newHits = true;
                 }
             }
@@ -477,7 +450,7 @@ public class Job {
      * @return A JSON string to be returned as the body of the response to a client.
      * @throws IOException
      */
-    public String run() throws IOException {
+    public String run() throws IOException, ValidationException {
         try {
 
             // Reset the state of the job if reusing this Job object.

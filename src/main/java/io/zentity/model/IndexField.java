@@ -5,17 +5,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class IndexField {
 
     public static final Set<String> REQUIRED_FIELDS = new HashSet<>(
             Arrays.asList("attribute")
     );
+    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String index;
     private final String name;
     private String attribute;
-    private String matcher = null;
+    private String matcher;
 
     public IndexField(String index, String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -54,25 +56,25 @@ public class IndexField {
 
     public void matcher(JsonNode value) throws ValidationException {
         validateMatcher(value);
-        this.matcher = value.isTextual() ? value.textValue() : null;
+        this.matcher = value.textValue();
     }
 
     private void validateName(String value) throws ValidationException {
-        if (value.matches("^\\s*$"))
+        if (REGEX_EMPTY.matcher(value).matches())
             throw new ValidationException("'indices." + this.index + "' has a field with an empty name.");
     }
 
     private void validateAttribute(JsonNode value) throws ValidationException {
         if (!value.isTextual())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".attribute' must be a string.");
-        if (value.textValue().matches("^\\s*$"))
+        if (REGEX_EMPTY.matcher(value.textValue()).matches())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".attribute' must not be empty.");
     }
 
     private void validateMatcher(JsonNode value) throws ValidationException {
-        if (!value.isTextual() && !value.isNull())
-            throw new ValidationException("'indices." + this.index + "." + this.name + ".matcher' must be a string or null.");
-        if (value.textValue().matches("^\\s*$"))
+        if (!value.isTextual())
+            throw new ValidationException("'indices." + this.index + "." + this.name + ".matcher' must be a string.");
+        if (REGEX_EMPTY.matcher(value.textValue()).matches())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".matcher' must not be empty.");
     }
 

@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class Index {
 
     public static final Set<String> REQUIRED_FIELDS = new HashSet<>(
             Arrays.asList("fields")
     );
+    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String name;
     private HashMap<String, IndexField> fields;
@@ -56,7 +58,7 @@ public class Index {
     }
 
     private void validateName(String value) throws ValidationException {
-        if (value.matches("^\\s*$"))
+        if (REGEX_EMPTY.matcher(value).matches())
             throw new ValidationException("'indices' has an index with an empty name.");
     }
 

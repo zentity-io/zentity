@@ -2,6 +2,7 @@ package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.model.Attribute;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.Job;
@@ -193,10 +194,11 @@ public class ResolutionAction extends BaseRestHandler {
      * Parse and validate the "attributes" field of the request body.
      *
      * @param requestBody The request body.
+     * @param model       The entity model.
      * @return The parsed "attributes" field from the request body.
      * @throws BadRequestException
      */
-    public static HashMap<String, HashSet<Object>> parseAttributes(JsonNode requestBody) throws BadRequestException {
+    public static HashMap<String, HashSet<Object>> parseAttributes(JsonNode requestBody, Model model) throws BadRequestException, ValidationException {
         if (!requestBody.has("attributes"))
             throw new BadRequestException("The 'attributes' field is missing from the request body.");
         if (requestBody.get("attributes").size() == 0)
@@ -205,35 +207,35 @@ public class ResolutionAction extends BaseRestHandler {
         HashMap<String, HashSet<Object>> attributesObj = new HashMap<>();
         Iterator<String> attributeFields = attributes.fieldNames();
         while (attributeFields.hasNext()) {
-            String attribute = attributeFields.next();
-            attributesObj.put(attribute, new HashSet<>());
-            if (attributes.get(attribute).isObject())
-                throw new BadRequestException("'attributes." + attribute + "' must be a string or an array of values.");
-            if (attributes.get(attribute).isArray()) {
-                for (JsonNode valueNode : attributes.get(attribute)) {
-                    if (valueNode.isObject() || valueNode.isArray())
-                        throw new BadRequestException("'attributes." + attribute + "' must be a string or an array of values.");
-                    Object value;
-                    if (valueNode.isBoolean())
-                        value = valueNode.booleanValue();
-                    else if (valueNode.isDouble())
-                        value = valueNode.doubleValue();
-                    else if (valueNode.isFloat())
-                        value = valueNode.floatValue();
-                    else if (valueNode.isInt())
-                        value = valueNode.intValue();
-                    else if (valueNode.isLong())
-                        value = valueNode.longValue();
-                    else if (valueNode.isShort())
-                        value = valueNode.shortValue();
-                    else if (valueNode.isNull())
-                        value = "";
-                    else
-                        value = valueNode.asText();
-                    attributesObj.get(attribute).add(value);
+            String attributeName = attributeFields.next();
+
+            // Validate that the attribute exists in the entity model.
+            if (!model.attributes().containsKey(attributeName))
+                throw new BadRequestException("'attributes." + attributeName + "' is not defined in the entity model.");
+            attributesObj.put(attributeName, new HashSet<>());
+            String attributeType = model.attributes().get(attributeName).type();
+
+            if (attributes.get(attributeName).isObject())
+                throw new BadRequestException("'attributes." + attributeName + "' must be a string or an array of values.");
+            if (attributes.get(attributeName).isArray()) {
+                for (JsonNode valueNode : attributes.get(attributeName)) {
+                    try {
+                        Attribute.validateType(attributeType, valueNode);
+                    } catch (ValidationException e) {
+                        throw new ValidationException("'attributes." + attributeName + "' must be a " + attributeType + " data type.");
+                    }
+                    Object value = Attribute.convertType(attributeType, valueNode);
+                    attributesObj.get(attributeName).add(value);
                 }
             } else {
-                attributesObj.get(attribute).add(attributes.get(attribute).asText());
+                JsonNode valueNode = attributes.get(attributeName);
+                try {
+                    Attribute.validateType(attributeType, valueNode);
+                } catch (ValidationException e) {
+                    throw new ValidationException("'attributes." + attributeName + "' must be a " + attributeType + " data type.");
+                }
+                Object value = Attribute.convertType(attributeType, valueNode);
+                attributesObj.get(attributeName).add(value);
             }
         }
         return attributesObj;
@@ -280,10 +282,6 @@ public class ResolutionAction extends BaseRestHandler {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode requestBody = mapper.readTree(body);
 
-                // Parse and validate the input attributes.
-                HashMap<String, HashSet<Object>> inputAttributesObj = parseAttributes(requestBody);
-                job.inputAttributes(inputAttributesObj);
-
                 // Parse the entity type.
                 String entityType = parseEntityType(entityTypeFromUrl, requestBody);
 
@@ -293,6 +291,10 @@ public class ResolutionAction extends BaseRestHandler {
                     model = parseEntityModel(requestBody);
                 else
                     model = parseEntityModel(entityType, client);
+
+                // Parse and validate the input attributes.
+                HashMap<String, HashSet<Object>> inputAttributesObj = parseAttributes(requestBody, model);
+                job.inputAttributes(inputAttributesObj);
 
                 // Validate the "scope" field of the request body.
                 if (requestBody.has("scope"))

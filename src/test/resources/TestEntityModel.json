@@ -10,16 +10,16 @@
       "type": "boolean"
     },
     "attribute_type_double": {
-      "type": "double"
+      "type": "number"
     },
     "attribute_type_float": {
-      "type": "float"
+      "type": "number"
     },
     "attribute_type_integer": {
-      "type": "integer"
+      "type": "number"
     },
     "attribute_type_long": {
-      "type": "long"
+      "type": "number"
     },
     "attribute_type_string": {
       "type": "string"

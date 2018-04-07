@@ -6,7 +6,7 @@ import org.junit.Test;
 public class ModelTest {
 
     public final static String VALID_OBJECT = "{\n" +
-            "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+            "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + ",\"attribute_string\":" + AttributeTest.VALID_OBJECT + ",\"attribute_array\":" + AttributeTest.VALID_OBJECT + "},\n" +
             "  \"resolvers\":{\"resolver_name\":" + ResolverTest.VALID_OBJECT + "},\n" +
             "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
             "  \"indices\":{\"index_name\":" + IndexTest.VALID_OBJECT + "}\n" +
