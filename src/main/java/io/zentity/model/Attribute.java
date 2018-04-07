@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class Attribute {
 
     public static final Set<String> VALID_TYPES = new HashSet<>(
-            Arrays.asList("string", "long", "integer", "short", "byte", "double", "float", "boolean")
+            Arrays.asList("string", "number", "boolean")
     );
+    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String name;
     private String type = "string";
@@ -27,6 +29,85 @@ public class Attribute {
         this.deserialize(json);
     }
 
+    public static Boolean convertTypeBoolean(JsonNode value) {
+        if (value.isNull())
+            return null;
+        return value.booleanValue();
+    }
+
+    public static Number convertTypeNumber(JsonNode value) {
+        if (value.isNull())
+            return null;
+        else if (value.isIntegralNumber())
+            return value.bigIntegerValue();
+        else if (value.isFloatingPointNumber())
+            return value.doubleValue();
+        else
+            return value.numberValue();
+    }
+
+    public static String convertTypeString(JsonNode value) {
+        if (value.isNull())
+            return null;
+        return value.textValue();
+    }
+
+    public static Object convertType(String targetType, JsonNode value) throws ValidationException {
+        switch (targetType) {
+            case "boolean":
+                return convertTypeBoolean(value);
+            case "number":
+                return convertTypeNumber(value);
+            case "string":
+                return convertTypeString(value);
+            default:
+                throw new ValidationException("'" + targetType + " is not a recognized attribute data type.");
+        }
+    }
+
+    public static boolean isTypeBoolean(JsonNode value) {
+        return value.isBoolean();
+    }
+
+    public static boolean isTypeNumber(JsonNode value) {
+        return value.isNumber();
+    }
+
+    public static boolean isTypeString(JsonNode value) {
+        return value.isTextual();
+    }
+
+    public static void validateTypeBoolean(JsonNode value) throws ValidationException {
+        if (!isTypeBoolean(value) && !value.isNull())
+            throw new ValidationException("Expected 'boolean' attribute data type.");
+    }
+
+    public static void validateTypeNumber(JsonNode value) throws ValidationException {
+        if (!isTypeNumber(value) && !value.isNull())
+            throw new ValidationException("Expected 'number' attribute data type.");
+    }
+
+    public static void validateTypeString(JsonNode value) throws ValidationException {
+        if (!isTypeString(value) && !value.isNull())
+            throw new ValidationException("Expected 'string' attribute data type.");
+    }
+
+    public static void validateType(String expectedType, JsonNode value) throws ValidationException {
+        switch (expectedType) {
+            case "boolean":
+                validateTypeBoolean(value);
+                break;
+            case "number":
+                validateTypeNumber(value);
+                break;
+            case "string":
+                validateTypeString(value);
+                break;
+            default:
+                throw new ValidationException("'" + expectedType + " is not a recognized attribute data type.");
+        }
+    }
+
     public String name() {
         return this.name;
     }
@@ -41,15 +122,17 @@ public class Attribute {
     }
 
     private void validateName(String value) throws ValidationException {
-        if (value.matches("^\\s*$"))
+        if (REGEX_EMPTY.matcher(value).matches())
             throw new ValidationException("'attributes' has an attribute with empty name.");
     }
 
     private void validateType(JsonNode value) throws ValidationException {
         if (!value.isTextual())
             throw new ValidationException("'attributes." + this.name + ".type' must be a string.");
+        if (REGEX_EMPTY.matcher(value.textValue()).matches())
+            throw new ValidationException("'attributes." + this.name + ".type'' must not be empty.");
         if (!VALID_TYPES.contains(value.textValue()))
-            throw new ValidationException("'attributes." + this.name + ".type' does not support the value '" + value.textValue() + "'.");
+            throw new ValidationException("'attributes." + this.name + ".type' has an unrecognized data type '" + value.textValue() + "'.");
     }
 
     private void validateObject(JsonNode object) throws ValidationException {

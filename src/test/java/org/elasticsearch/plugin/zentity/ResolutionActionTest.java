@@ -102,7 +102,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidInput() throws Exception {
         JsonNode requestBody = parseRequestBody(validInput);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -113,7 +113,7 @@ public class ResolutionActionTest {
     public void testValidScopeIndicesTypeArray() throws Exception {
         String mock = inputScopeIndices(validScopeIndicesTypeArray);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -124,7 +124,7 @@ public class ResolutionActionTest {
     public void testValidScopeIndicesTypeArrayEmpty() throws Exception {
         String mock = inputScopeIndices(validScopeIndicesTypeArrayEmpty);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -135,7 +135,7 @@ public class ResolutionActionTest {
     public void testValidScopeIndicesTypeString() throws Exception {
         String mock = inputScopeIndices(validScopeIndicesTypeString);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -146,7 +146,7 @@ public class ResolutionActionTest {
     public void testValidScopeResolversTypeArray() throws Exception {
         String mock = inputScopeResolvers(validScopeResolversTypeArray);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -157,7 +157,7 @@ public class ResolutionActionTest {
     public void testValidScopeResolversTypeArrayEmpty() throws Exception {
         String mock = inputScopeResolvers(validScopeResolversTypeArrayEmpty);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -168,7 +168,7 @@ public class ResolutionActionTest {
     public void testValidScopeResolversTypeString() throws Exception {
         String mock = inputScopeResolvers(validScopeResolversTypeString);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -179,7 +179,7 @@ public class ResolutionActionTest {
     public void testValidScopeEmpty() throws Exception {
         String mock = inputScope(validScopeEmpty);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -190,7 +190,7 @@ public class ResolutionActionTest {
     public void testValidScopeTypeNull() throws Exception {
         String mock = inputScope(validScopeTypeNull);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
         ResolutionAction.parseEntityModel(requestBody);
         ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.parseScopeResolvers(requestBody);
@@ -219,42 +219,42 @@ public class ResolutionActionTest {
     public void testInvalidAttributesEmpty() throws Exception {
         String mock = inputAttributes(invalidAttributesEmpty);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidAttributesTypeArray() throws Exception {
         String mock = inputAttributes(invalidAttributesTypeArray);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidAttributesTypeFloat() throws Exception {
         String mock = inputAttributes(invalidAttributesTypeFloat);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidAttributesTypeInteger() throws Exception {
         String mock = inputAttributes(invalidAttributesTypeInteger);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidAttributesTypeNull() throws Exception {
         String mock = inputAttributes(invalidAttributesTypeNull);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
     }
 
     @Test(expected = BadRequestException.class)
     public void testInvalidAttributesTypeString() throws Exception {
         String mock = inputAttributes(invalidAttributesTypeString);
         JsonNode requestBody = parseRequestBody(mock);
-        ResolutionAction.parseAttributes(requestBody);
+        ResolutionAction.parseAttributes(requestBody, new Model(ModelTest.VALID_OBJECT));
     }
 
     @Test(expected = ValidationException.class)

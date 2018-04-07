@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class Matcher {
 
@@ -15,6 +16,7 @@ public class Matcher {
     public static final Set<String> VALID_TYPES = new HashSet<>(
             Arrays.asList("value")
     );
+    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final String name;
@@ -56,7 +58,7 @@ public class Matcher {
     }
 
     private void validateName(String value) throws ValidationException {
-        if (value.matches("^\\s*$"))
+        if (REGEX_EMPTY.matcher(value).matches())
             throw new ValidationException("'matchers' field has a matcher with an empty name.");
     }
 
@@ -70,8 +72,10 @@ public class Matcher {
     private void validateType(JsonNode value) throws ValidationException {
         if (!value.isTextual())
             throw new ValidationException("'matchers." + this.name + ".type' must be a string.");
+        if (REGEX_EMPTY.matcher(value.textValue()).matches())
+            throw new ValidationException("'attributes." + this.name + ".type'' must not be empty.");
         if (!VALID_TYPES.contains(value.textValue()))
-            throw new ValidationException("'matchers." + this.name + ".type' does not support the value '" + value.textValue() + "'.");
+            throw new ValidationException("'matchers." + this.name + ".type' has an unrecognized data type '" + value.textValue() + "'.");
     }
 
     private void validateObject(JsonNode object) throws ValidationException {
