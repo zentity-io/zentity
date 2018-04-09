@@ -13,9 +13,12 @@ public class IndexField {
             Arrays.asList("attribute")
     );
     private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
+    private static final Pattern REGEX_PERIOD = Pattern.compile("\\.");
 
     private final String index;
     private final String name;
+    private String path;
+    private String pathParent;
     private String attribute;
     private String matcher;
 
@@ -23,6 +26,7 @@ public class IndexField {
         validateName(name);
         this.index = index;
         this.name = name;
+        this.nameToPaths(name);
         this.deserialize(json);
     }
 
@@ -30,6 +34,7 @@ public class IndexField {
         validateName(name);
         this.index = index;
         this.name = name;
+        this.nameToPaths(name);
         this.deserialize(json);
     }
 
@@ -39,6 +44,14 @@ public class IndexField {
 
     public String name() {
         return this.name;
+    }
+
+    public String path() {
+        return this.path;
+    }
+
+    public String pathParent() {
+        return this.pathParent;
     }
 
     public String attribute() {
@@ -57,6 +70,13 @@ public class IndexField {
     public void matcher(JsonNode value) throws ValidationException {
         validateMatcher(value);
         this.matcher = value.textValue();
+    }
+
+    private void nameToPaths(String name) {
+        String[] parts = REGEX_PERIOD.split(name);
+        this.path = "/" + String.join("/", parts);
+        if (parts.length > 1)
+            this.pathParent = "/" + String.join("/", Arrays.copyOf(parts, parts.length - 1));
     }
 
     private void validateName(String value) throws ValidationException {
