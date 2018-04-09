@@ -169,6 +169,15 @@ public class Job {
         return jsonStringQuote(jsonStringEscape(value));
     }
 
+    private boolean indexFieldHasMatcher(String indexName, String indexFieldName) {
+        String matcherName = this.model.indices().get(indexName).fields().get(indexFieldName).matcher();
+        if (matcherName == null)
+            return false;
+        if (this.model.matchers().get(matcherName) == null)
+            return false;
+        return true;
+    }
+
     /**
      * Determine if we can construct a query for a given resolver on a given index with a given input.
      * Each attribute of the resolver must be mapped to a field of the index and have a matcher defined for it.
@@ -199,7 +208,7 @@ public class Job {
             // The index field must have a matcher defined for it.
             boolean hasMatcher = false;
             for (String indexFieldName : this.model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
-                if (this.model.indices().get(indexName).fields().get(indexFieldName).matcher() != null) {
+                if (this.indexFieldHasMatcher(indexName, indexFieldName)) {
                     hasMatcher = true;
                     break;
                 }
@@ -280,8 +289,7 @@ public class Job {
                     for (String indexFieldName : this.model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
 
                         // Can we use this index field?
-                        boolean hasMatcher = this.model.indices().get(indexName).fields().get(indexFieldName).matcher() != null;
-                        if (!hasMatcher)
+                        if (!this.indexFieldHasMatcher(indexName, indexFieldName))
                             continue;
 
                         // Construct a clause for each input value for this attribute.
@@ -381,20 +389,24 @@ public class Job {
                 TreeMap<String, JsonNode> docAttributes = new TreeMap<>();
                 for (String indexFieldName : this.model.indices().get(indexName).fields().keySet()) {
                     String attributeName = this.model.indices().get(indexName).fields().get(indexFieldName).attribute();
+                    if (this.model.attributes().get(attributeName) == null)
+                        continue;
                     String attributeType = this.model.attributes().get(attributeName).type();
+                    if (!nextInputAttributes.containsKey(attributeName))
+                        nextInputAttributes.put(attributeName, new HashSet<>());
                     // The index field name might not refer to the _source property.
                     // If it's not in the _source, remove the last part of the index field name from the dot notation.
                     // Index field names can reference multi-fields, which are not returned in the _source.
-                    if (!nextInputAttributes.containsKey(attributeName))
-                        nextInputAttributes.put(attributeName, new HashSet<>());
-                    if (!doc.get("_source").has(indexFieldName))
-                        indexFieldName = indexFieldName.split("\\.")[0];
-                    if (doc.get("_source").has(indexFieldName)) {
-                        JsonNode valueNode = doc.get("_source").get(indexFieldName);
-                        docAttributes.put(attributeName, valueNode);
-                        Object value = Attribute.convertType(attributeType, valueNode);
-                        nextInputAttributes.get(attributeName).add(value);
-                    }
+                    String path = this.model.indices().get(indexName).fields().get(indexFieldName).path();
+                    String pathParent = this.model.indices().get(indexName).fields().get(indexFieldName).pathParent();
+                    JsonNode valueNode = doc.get("_source").at(path);
+                    if (valueNode.isMissingNode())
+                        valueNode = doc.get("_source").at(pathParent);
+                    if (valueNode.isMissingNode())
+                        continue;
+                    docAttributes.put(attributeName, valueNode);
+                    Object value = Attribute.convertType(attributeType, valueNode);
+                    nextInputAttributes.get(attributeName).add(value);
                 }
 
                 // Modify doc metadata.
