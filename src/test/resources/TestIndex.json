@@ -12,7 +12,9 @@
       },
       "analyzer": {
         "strip_punct": {
-          "filter": [ "strip_punct" ],
+          "filter": [
+            "strip_punct"
+          ],
           "tokenizer": "keyword"
         }
       }
@@ -86,6 +88,26 @@
         },
         "type_string": {
           "type": "keyword"
+        },
+        "object": {
+          "properties": {
+            "a": {
+              "properties": {
+                "b": {
+                  "properties": {
+                    "c": {
+                      "type": "text",
+                      "fields": {
+                        "keyword": {
+                          "type": "keyword"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
