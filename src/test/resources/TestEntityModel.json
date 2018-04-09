@@ -23,6 +23,9 @@
     },
     "attribute_type_string": {
       "type": "string"
+    },
+    "attribute_object": {
+      "type": "string"
     }
   },
   "resolvers": {
@@ -70,6 +73,11 @@
     "resolver_type_string": {
       "attributes": [
         "attribute_type_string"
+      ]
+    },
+    "resolver_object": {
+      "attributes": [
+        "attribute_object"
       ]
     }
   },
@@ -148,6 +156,10 @@
         "type_string": {
           "attribute": "attribute_type_string",
           "matcher": "matcher_b"
+        },
+        "object.a.b.c.keyword": {
+          "attribute": "attribute_object",
+          "matcher": "matcher_b"
         }
       }
     },
@@ -207,6 +219,10 @@
         },
         "type_string": {
           "attribute": "attribute_type_string",
+          "matcher": "matcher_b"
+        },
+        "object.a.b.c.keyword": {
+          "attribute": "attribute_object",
           "matcher": "matcher_b"
         }
       }
@@ -268,6 +284,10 @@
         "type_string": {
           "attribute": "attribute_type_string",
           "matcher": "matcher_b"
+        },
+        "object.a.b.c.keyword": {
+          "attribute": "attribute_object",
+          "matcher": "matcher_b"
         }
       }
     },
@@ -327,6 +347,10 @@
         },
         "type_string": {
           "attribute": "attribute_type_string",
+          "matcher": "matcher_b"
+        },
+        "object.a.b.c.keyword": {
+          "attribute": "attribute_object",
           "matcher": "matcher_b"
         }
       }
