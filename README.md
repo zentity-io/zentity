@@ -35,6 +35,7 @@ Example:
 
 Read the [installation](https://zentity.io/#/docs/installation) docs for more details.
 
+
 ### Next steps
 
 Read the **[documentation](https://zentity.io/#/docs/basic-usage)** to learn about [entity models](https://zentity.io/#/docs/entity-models),
