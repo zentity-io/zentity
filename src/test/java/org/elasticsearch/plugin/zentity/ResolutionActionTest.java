@@ -9,7 +9,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.Set;
 
 public class ResolutionActionTest {
 
@@ -200,7 +200,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIndices() throws Exception {
         JsonNode requestBody = parseRequestBody(validInput);
-        HashSet<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
+        Set<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
         Model model = new Model(requestBody.get("model"));
         model = ResolutionAction.filterIndices(model, indicesFilter);
         Assert.assertTrue(model.indices().containsKey("index_name"));
@@ -209,7 +209,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeResolvers() throws Exception {
         JsonNode requestBody = parseRequestBody(validInput);
-        HashSet<String> resolversFilter = ResolutionAction.parseScopeResolvers(requestBody);
+        Set<String> resolversFilter = ResolutionAction.parseScopeResolvers(requestBody);
         Model model = new Model(requestBody.get("model"));
         model = ResolutionAction.filterResolvers(model, resolversFilter);
         Assert.assertTrue(model.resolvers().containsKey("resolver_name"));
@@ -339,7 +339,7 @@ public class ResolutionActionTest {
     public void testInvalidScopeIndicesNotFoundArray() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesNotFoundArray);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
+        Set<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.filterIndices(new Model(requestBody.get("model")), indicesFilter);
     }
 
@@ -347,7 +347,7 @@ public class ResolutionActionTest {
     public void testInvalidScopeIndicesNotFoundString() throws Exception {
         String mock = inputScopeIndices(invalidScopeIndicesNotFoundString);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
+        Set<String> indicesFilter = ResolutionAction.parseScopeIndices(requestBody);
         ResolutionAction.filterIndices(new Model(requestBody.get("model")), indicesFilter);
     }
 
@@ -411,7 +411,7 @@ public class ResolutionActionTest {
     public void testInvalidScopeResolversNotFoundArray() throws Exception {
         String mock = inputScopeIndices(invalidScopeResolversNotFoundArray);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> resolversScope = ResolutionAction.parseScopeResolvers(requestBody);
+        Set<String> resolversScope = ResolutionAction.parseScopeResolvers(requestBody);
         ResolutionAction.filterResolvers(new Model(requestBody.get("model")), resolversScope);
     }
 
@@ -419,7 +419,7 @@ public class ResolutionActionTest {
     public void testInvalidScopeResolversNotFoundString() throws Exception {
         String mock = inputScopeIndices(invalidScopeResolversNotFoundString);
         JsonNode requestBody = parseRequestBody(mock);
-        HashSet<String> resolversScope = ResolutionAction.parseScopeResolvers(requestBody);
+        Set<String> resolversScope = ResolutionAction.parseScopeResolvers(requestBody);
         ResolutionAction.filterResolvers(new Model(requestBody.get("model")), resolversScope);
     }
 

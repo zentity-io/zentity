@@ -15,7 +15,7 @@ public class Resolver {
     private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String name;
-    private HashSet<String> attributes = new HashSet<>();
+    private Set<String> attributes = new HashSet<>();
 
     public Resolver(String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -33,13 +33,13 @@ public class Resolver {
         return this.name;
     }
 
-    public HashSet<String> attributes() {
+    public Set<String> attributes() {
         return this.attributes;
     }
 
     public void attributes(JsonNode value) throws ValidationException {
         validateAttributes(value);
-        HashSet<String> attributes = new HashSet<>();
+        Set<String> attributes = new HashSet<>();
         for (JsonNode attribute : value)
             attributes.add(attribute.textValue());
         this.attributes = attributes;

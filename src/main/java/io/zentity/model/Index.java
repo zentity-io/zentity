@@ -15,8 +15,8 @@ public class Index {
     private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String name;
-    private HashMap<String, IndexField> fields;
-    private HashMap<String, HashMap<String, IndexField>> attributeIndexFieldsMap = new HashMap<>();
+    private Map<String, IndexField> fields;
+    private Map<String, Map<String, IndexField>> attributeIndexFieldsMap = new HashMap<>();
 
     public Index(String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -34,17 +34,17 @@ public class Index {
         return this.name;
     }
 
-    public HashMap<String, HashMap<String, IndexField>> attributeIndexFieldsMap() {
+    public Map<String, Map<String, IndexField>> attributeIndexFieldsMap() {
         return this.attributeIndexFieldsMap;
     }
 
-    public HashMap<String, IndexField> fields() {
+    public Map<String, IndexField> fields() {
         return this.fields;
     }
 
     public void fields(JsonNode value) throws ValidationException {
         validateFields(value);
-        HashMap<String, IndexField> fields = new HashMap<>();
+        Map<String, IndexField> fields = new HashMap<>();
         Iterator<Map.Entry<String, JsonNode>> children = value.fields();
         while (children.hasNext()) {
             Map.Entry<String, JsonNode> child = children.next();

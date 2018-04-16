@@ -89,8 +89,8 @@ public class ResolutionAction extends BaseRestHandler {
      * @return Names of indices to filter from the "scope.indices" object of the entity model.
      * @throws BadRequestException
      */
-    public static HashSet<String> parseScopeIndices(JsonNode requestBody) throws BadRequestException {
-        HashSet<String> indicesScopeSet = new HashSet<>();
+    public static Set<String> parseScopeIndices(JsonNode requestBody) throws BadRequestException {
+        Set<String> indicesScopeSet = new HashSet<>();
         if (!requestBody.has("scope") || requestBody.get("scope").isNull())
             return indicesScopeSet;
         if (!requestBody.get("scope").isObject())
@@ -143,8 +143,8 @@ public class ResolutionAction extends BaseRestHandler {
      * @return Names of resolvers to filter from the "scope.resolvers" object of the entity model.
      * @throws BadRequestException
      */
-    public static HashSet<String> parseScopeResolvers(JsonNode requestBody) throws BadRequestException {
-        HashSet<String> resolversScopeSet = new HashSet<>();
+    public static Set<String> parseScopeResolvers(JsonNode requestBody) throws BadRequestException {
+        Set<String> resolversScopeSet = new HashSet<>();
         if (!requestBody.has("scope") || requestBody.get("scope").isNull())
             return resolversScopeSet;
         if (!requestBody.get("scope").isObject())
@@ -198,13 +198,13 @@ public class ResolutionAction extends BaseRestHandler {
      * @return The parsed "attributes" field from the request body.
      * @throws BadRequestException
      */
-    public static HashMap<String, HashSet<Object>> parseAttributes(JsonNode requestBody, Model model) throws BadRequestException, ValidationException {
+    public static Map<String, Set<Object>> parseAttributes(JsonNode requestBody, Model model) throws BadRequestException, ValidationException {
         if (!requestBody.has("attributes"))
             throw new BadRequestException("The 'attributes' field is missing from the request body.");
         if (requestBody.get("attributes").size() == 0)
             throw new BadRequestException("The 'attributes' field of the request body must not be empty.");
         JsonNode attributes = requestBody.get("attributes");
-        HashMap<String, HashSet<Object>> attributesObj = new HashMap<>();
+        Map<String, Set<Object>> attributesObj = new HashMap<>();
         Iterator<String> attributeFields = attributes.fieldNames();
         while (attributeFields.hasNext()) {
             String attributeName = attributeFields.next();
@@ -293,7 +293,7 @@ public class ResolutionAction extends BaseRestHandler {
                     model = parseEntityModel(entityType, client);
 
                 // Parse and validate the input attributes.
-                HashMap<String, HashSet<Object>> inputAttributesObj = parseAttributes(requestBody, model);
+                Map<String, Set<Object>> inputAttributesObj = parseAttributes(requestBody, model);
                 job.inputAttributes(inputAttributesObj);
 
                 // Validate the "scope" field of the request body.
@@ -305,7 +305,7 @@ public class ResolutionAction extends BaseRestHandler {
                 if (requestBody.has("scope")) {
                     if (requestBody.get("scope").has("resolvers")) {
                         // Parse and validate the "scope.resolvers" field of the request body.
-                        HashSet<String> scopeResolvers = parseScopeResolvers(requestBody);
+                        Set<String> scopeResolvers = parseScopeResolvers(requestBody);
                         // Intersect the "resolvers" field of the entity model with the "scope.resolvers" field.
                         model = filterResolvers(model, scopeResolvers);
                     }
@@ -317,7 +317,7 @@ public class ResolutionAction extends BaseRestHandler {
                 if (requestBody.has("scope")) {
                     if (requestBody.get("scope").has("indices")) {
                         // Parse and validate the "scope.indices" field of the request body.
-                        HashSet<String> scopeIndices = parseScopeIndices(requestBody);
+                        Set<String> scopeIndices = parseScopeIndices(requestBody);
                         // Intersect the "indices" field of the entity model with the "scope.indices" field.
                         model = filterIndices(model, scopeIndices);
                     }

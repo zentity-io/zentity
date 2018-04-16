@@ -44,7 +44,7 @@ public class Job {
 
     // Job configuration
     private Model model;
-    private HashMap<String, HashSet<Object>> inputAttributes = new HashMap<>();
+    private Map<String, Set<Object>> inputAttributes = new HashMap<>();
     private boolean includeAttributes = DEFAULT_INCLUDE_ATTRIBUTES;
     private boolean includeHits = DEFAULT_INCLUDE_QUERIES;
     private boolean includeQueries = DEFAULT_INCLUDE_QUERIES;
@@ -56,7 +56,7 @@ public class Job {
 
     // Job state
     private NodeClient client;
-    private HashMap<String, HashSet<String>> docIds = new HashMap<>();
+    private Map<String, Set<String>> docIds = new HashMap<>();
     private List<String> hits = new ArrayList<>();
     private int hop = 0;
     private List<String> queries = new ArrayList<>();
@@ -93,7 +93,7 @@ public class Job {
      * @param inputAttributes The values for the input attributes.
      * @return Boolean decision.
      */
-    public static boolean canQuery(Model model, String indexName, String resolverName, HashMap<String, HashSet<Object>> inputAttributes) {
+    public static boolean canQuery(Model model, String indexName, String resolverName, Map<String, Set<Object>> inputAttributes) {
 
         // Each attribute of the resolver must pass these conditions:
         for (String attributeName : model.resolvers().get(resolverName).attributes()) {
@@ -150,14 +150,14 @@ public class Job {
      * @param inputAttributes     The values for the input attributes.
      * @return A "bool" clause for all applicable resolvers.
      */
-    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, HashMap<String, HashSet<Object>> inputAttributes) {
+    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Set<Object>> inputAttributes) {
 
         // Construct a "filter" clause for each attribute at this level of the filter tree.
-        ArrayList<String> attributeClauses = new ArrayList<>();
+        List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : resolversFilterTree.keySet()) {
 
             // Construct a "should" clause for each index field mapped to this attribute.
-            ArrayList<String> indexFieldClauses = new ArrayList<>();
+            List<String> indexFieldClauses = new ArrayList<>();
             for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
 
                 // Can we use this index field?
@@ -165,7 +165,7 @@ public class Job {
                     continue;
 
                 // Construct a clause for each input value for this attribute.
-                ArrayList<String> valueClauses = new ArrayList<>();
+                List<String> valueClauses = new ArrayList<>();
                 for (Object value : inputAttributes.get(attributeName)) {
 
                     // Skip value if it's blank.
@@ -214,15 +214,15 @@ public class Job {
     }
 
     /**
-     * Reorganize the attributes of all resolvers into a tree of HashMaps.
+     * Reorganize the attributes of all resolvers into a tree of Maps.
      *
      * @param resolversSorted The attributes for each resolver. Attributes are sorted first by priority and then lexicographically.
      * @return The attributes of all applicable resolvers nested in a tree.
      */
-    public static TreeMap<String, TreeMap> makeResolversFilterTree(ArrayList<ArrayList<String>> resolversSorted) {
+    public static TreeMap<String, TreeMap> makeResolversFilterTree(List<List<String>> resolversSorted) {
         TreeMap<String, TreeMap> filterTree = new TreeMap<>();
         filterTree.put("root", new TreeMap<>());
-        for (ArrayList<String> resolverSorted : resolversSorted) {
+        for (List<String> resolverSorted : resolversSorted) {
             TreeMap<String, TreeMap> current = filterTree.get("root");
             for (String attributeName : resolverSorted) {
                 if (!current.containsKey(attributeName))
@@ -242,11 +242,11 @@ public class Job {
      * @param counts    For each attribute, the number of resolvers it appears in.
      * @return For each resolver, a list of attributes sorted first by priority and then lexicographically.
      */
-    public static ArrayList<ArrayList<String>> sortResolverAttributes(Model model, ArrayList<String> resolvers, HashMap<String, Integer> counts) {
-        ArrayList<ArrayList<String>> resolversSorted = new ArrayList<>();
+    public static List<List<String>> sortResolverAttributes(Model model, List<String> resolvers, Map<String, Integer> counts) {
+        List<List<String>> resolversSorted = new ArrayList<>();
         for (String resolverName : resolvers) {
-            ArrayList<String> resolverSorted = new ArrayList<>();
-            HashMap<Integer, TreeSet<String>> attributeGroups = new HashMap<>();
+            List<String> resolverSorted = new ArrayList<>();
+            Map<Integer, TreeSet<String>> attributeGroups = new HashMap<>();
             for (String attributeName : model.resolvers().get(resolverName).attributes()) {
                 int count = counts.get(attributeName);
                 if (!attributeGroups.containsKey(count))
@@ -271,8 +271,8 @@ public class Job {
      * @param resolvers The names of the resolvers to reference in the entity model.
      * @return For each attribute, the number of resolvers it appears in.
      */
-    public static HashMap<String, Integer> countAttributesAcrossResolvers(Model model, ArrayList<String> resolvers) {
-        HashMap<String, Integer> counts = new HashMap<>();
+    public static Map<String, Integer> countAttributesAcrossResolvers(Model model, List<String> resolvers) {
+        Map<String, Integer> counts = new HashMap<>();
         for (String resolverName : resolvers)
             for (String attributeName : model.resolvers().get(resolverName).attributes())
                 counts.put(attributeName, counts.getOrDefault(attributeName, 0) + 1);
@@ -290,11 +290,11 @@ public class Job {
         this.ran = false;
     }
 
-    public HashMap<String, HashSet<Object>> getInputAttributes() {
+    public Map<String, Set<Object>> getInputAttributes() {
         return this.inputAttributes;
     }
 
-    public void inputAttributes(HashMap<String, HashSet<Object>> inputAttributes) {
+    public void inputAttributes(Map<String, Set<Object>> inputAttributes) {
         this.inputAttributes = inputAttributes;
     }
 
@@ -410,7 +410,7 @@ public class Job {
     private void traverse() throws IOException, ValidationException {
 
         // Prepare to collect attributes from the results of these queries as the inputs to subsequent queries.
-        HashMap<String, HashSet<Object>> nextInputAttributes = new HashMap<>();
+        Map<String, Set<Object>> nextInputAttributes = new HashMap<>();
         Boolean newHits = false;
 
         // Construct a query for each index that maps to a resolver.
@@ -421,7 +421,7 @@ public class Job {
                 this.docIds.put(indexName, new HashSet<>());
 
             // Determine which resolvers can be queried for this index.
-            ArrayList<String> resolvers = new ArrayList<>();
+            List<String> resolvers = new ArrayList<>();
             for (String resolverName : this.model.resolvers().keySet())
                 if (canQuery(this.model, indexName, resolverName, this.inputAttributes))
                     resolvers.add(resolverName);
@@ -429,14 +429,14 @@ public class Job {
                 continue;
 
             // Construct the resolvers clause.
-            HashMap<String, Integer> counts = countAttributesAcrossResolvers(this.model, resolvers);
-            ArrayList<ArrayList<String>> resolversSorted = sortResolverAttributes(this.model, resolvers, counts);
+            Map<String, Integer> counts = countAttributesAcrossResolvers(this.model, resolvers);
+            List<List<String>> resolversSorted = sortResolverAttributes(this.model, resolvers, counts);
             TreeMap<String, TreeMap> resolversFilterTree = makeResolversFilterTree(resolversSorted);
             String resolversClause = populateResolversFilterTree(this.model, indexName, resolversFilterTree, this.inputAttributes);
 
             // Construct query for this index.
             String query;
-            HashSet<String> ids = this.docIds.get(indexName);
+            Set<String> ids = this.docIds.get(indexName);
             if (ids.size() > 0) {
                 String idsFilter = "\"must_not\":{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}";
                 resolversClause = "{\"bool\":{" + idsFilter + ",\"filter\":" + resolversClause + "}}";
@@ -580,7 +580,7 @@ public class Job {
             long took = TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 
             // Format response
-            ArrayList<String> responseParts = new ArrayList<>();
+            List<String> responseParts = new ArrayList<>();
             responseParts.add("\"took\":" + Long.toString(took));
             if (this.includeHits)
                 responseParts.add("\"hits\":{\"total\":" + this.hits.size() + ",\"hits\":[" + String.join(",", this.hits) + "]}");
