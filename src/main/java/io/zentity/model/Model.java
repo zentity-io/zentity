@@ -11,10 +11,10 @@ import java.util.Map;
 
 public class Model {
 
-    private HashMap<String, Attribute> attributes = new HashMap<>();
-    private HashMap<String, Index> indices = new HashMap<>();
-    private HashMap<String, Matcher> matchers = new HashMap<>();
-    private HashMap<String, Resolver> resolvers = new HashMap<>();
+    private Map<String, Attribute> attributes = new HashMap<>();
+    private Map<String, Index> indices = new HashMap<>();
+    private Map<String, Matcher> matchers = new HashMap<>();
+    private Map<String, Resolver> resolvers = new HashMap<>();
 
     public Model(JsonNode json) throws ValidationException, JsonProcessingException {
         this.deserialize(json);
@@ -24,19 +24,19 @@ public class Model {
         this.deserialize(json);
     }
 
-    public HashMap<String, Attribute> attributes() {
+    public Map<String, Attribute> attributes() {
         return this.attributes;
     }
 
-    public HashMap<String, Index> indices() {
+    public Map<String, Index> indices() {
         return this.indices;
     }
 
-    public HashMap<String, Matcher> matchers() {
+    public Map<String, Matcher> matchers() {
         return this.matchers;
     }
 
-    public HashMap<String, Resolver> resolvers() {
+    public Map<String, Resolver> resolvers() {
         return this.resolvers;
     }
 
