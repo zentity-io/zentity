@@ -446,23 +446,152 @@ public class Job {
             if (resolvers.size() == 0)
                 continue;
 
+            // Construct query for this index.
+            String query;
+            String queryClause = "{}";
+            List<String> queryClauses = new ArrayList<>();
+            List<String> queryMustNotClauses = new ArrayList<>();
+            List<String> queryFilterClauses = new ArrayList<>();
+
+            // Exclude docs by _id
+            Set<String> ids = this.docIds.get(indexName);
+            if (!ids.isEmpty())
+                queryMustNotClauses.add("{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}");
+
+            // Apply "scope.exclude.attributes"
+            if (!this.scopeExcludeAttributes.isEmpty()) {
+                List<String> attributeClauses = new ArrayList<>();
+                for (String attributeName : this.scopeExcludeAttributes.keySet()) {
+
+                    // Construct a "should" clause for each index field mapped to this attribute.
+                    List<String> indexFieldClauses = new ArrayList<>();
+                    for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
+
+                        // Can we use this index field?
+                        if (!indexFieldHasMatcher(model, indexName, indexFieldName))
+                            continue;
+
+                        // Construct a clause for each input value for this attribute.
+                        List<String> valueClauses = new ArrayList<>();
+                        for (Object value : this.scopeExcludeAttributes.get(attributeName)) {
+
+                            // Skip value if it's blank.
+                            if (value == null || value.equals(""))
+                                continue;
+
+                            // Populate the {{ field }} and {{ value }} variables of the matcher template.
+                            String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
+                            Matcher matcher = model.matchers().get(matcherName);
+                            valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
+                        }
+                        if (valueClauses.size() == 0)
+                            continue;
+
+                        // Combine each value clause into a single "should" clause.
+                        String valuesClause = String.join(",", valueClauses);
+                        if (valueClauses.size() > 1)
+                            valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
+                        indexFieldClauses.add(valuesClause);
+                    }
+                    if (indexFieldClauses.size() == 0)
+                        continue;
+
+                    // Combine each matcher clause into a single "should" clause.
+                    String indexFieldsClause = String.join(",", indexFieldClauses);
+                    if (indexFieldClauses.size() > 1)
+                        indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
+                    attributeClauses.add(indexFieldsClause);
+                }
+
+                // Combine each attribute clause into a single "should" clause.
+                int size = attributeClauses.size();
+                if (size > 1)
+                    queryMustNotClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
+                else if (size == 1)
+                    queryMustNotClauses.add(attributeClauses.get(0));
+            }
+
+            // Construct the top-level "must_not" clause.
+            if (!queryMustNotClauses.isEmpty())
+                queryClauses.add("\"must_not\":[" + String.join(",", queryMustNotClauses) + "]");
+
+            // Apply "scope.include.attributes"
+            if (!this.scopeIncludeAttributes.isEmpty()) {
+                List<String> attributeClauses = new ArrayList<>();
+                for (String attributeName : this.scopeIncludeAttributes.keySet()) {
+
+                    // Construct a "should" clause for each index field mapped to this attribute.
+                    List<String> indexFieldClauses = new ArrayList<>();
+                    for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
+
+                        // Can we use this index field?
+                        if (!indexFieldHasMatcher(model, indexName, indexFieldName))
+                            continue;
+
+                        // Construct a clause for each input value for this attribute.
+                        List<String> valueClauses = new ArrayList<>();
+                        for (Object value : this.scopeIncludeAttributes.get(attributeName)) {
+
+                            // Skip value if it's blank.
+                            if (value == null || value.equals(""))
+                                continue;
+
+                            // Populate the {{ field }} and {{ value }} variables of the matcher template.
+                            String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
+                            Matcher matcher = model.matchers().get(matcherName);
+                            valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
+                        }
+                        if (valueClauses.size() == 0)
+                            continue;
+
+                        // Combine each value clause into a single "should" clause.
+                        String valuesClause = String.join(",", valueClauses);
+                        if (valueClauses.size() > 1)
+                            valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
+                        indexFieldClauses.add(valuesClause);
+                    }
+                    if (indexFieldClauses.size() == 0)
+                        continue;
+
+                    // Combine each matcher clause into a single "should" clause.
+                    String indexFieldsClause = String.join(",", indexFieldClauses);
+                    if (indexFieldClauses.size() > 1)
+                        indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
+                    attributeClauses.add(indexFieldsClause);
+                }
+
+                // Combine each attribute clause into a single "should" clause.
+                int size = attributeClauses.size();
+                if (size > 1)
+                    queryFilterClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
+                else if (size == 1)
+                    queryFilterClauses.add(attributeClauses.get(0));
+            }
+
             // Construct the resolvers clause.
             Map<String, Integer> counts = countAttributesAcrossResolvers(this.model, resolvers);
             List<List<String>> resolversSorted = sortResolverAttributes(this.model, resolvers, counts);
             TreeMap<String, TreeMap> resolversFilterTree = makeResolversFilterTree(resolversSorted);
             String resolversClause = populateResolversFilterTree(this.model, indexName, resolversFilterTree, this.inputAttributes);
+            queryFilterClauses.add(resolversClause);
 
-            // Construct query for this index.
-            String query;
-            Set<String> ids = this.docIds.get(indexName);
-            if (ids.size() > 0) {
-                String idsFilter = "\"must_not\":{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}";
-                resolversClause = "{\"bool\":{" + idsFilter + ",\"filter\":" + resolversClause + "}}";
+            // Construct the top-level "filter" clause.
+            if (!queryFilterClauses.isEmpty()) {
+                if (queryFilterClauses.size() > 1)
+                    queryClauses.add("\"filter\":[" + String.join(",", queryFilterClauses) + "]");
+                else
+                    queryClauses.add("\"filter\":" + queryFilterClauses.get(0));
             }
+
+            // Construct the "query" clause.
+            if (!queryClauses.isEmpty())
+                queryClause = "{\"bool\":{" + String.join(",", queryClauses) + "}}";
+
+            // Construct the final query.
             if (this.profile)
-                query = "{\"query\": " + resolversClause + ",\"size\": " + this.maxDocsPerQuery + ",\"profile\":true}";
+                query = "{\"query\":" + queryClause + ",\"size\": " + this.maxDocsPerQuery + ",\"profile\":true}";
             else
-                query = "{\"query\": " + resolversClause + ",\"size\": " + this.maxDocsPerQuery + "}";
+                query = "{\"query\":" + queryClause + ",\"size\": " + this.maxDocsPerQuery + "}";
 
             // Submit query to Elasticsearch.
             SearchResponse response = this.search(indexName, query);
