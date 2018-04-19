@@ -144,50 +144,93 @@ public class Job {
     }
 
     /**
+     * Given an entity model, an index name, a set of attribute values, and an attribute name,
+     * find all index field names that are mapped to the attribute name and populate their matcher clauses.
+     *
+     * @param model         The entity model.
+     * @param indexName     The name of the index to reference in the entity model.
+     * @param attributeSet  The names and values of the input attributes.
+     * @param attributeName The name of the attribute to reference in the attributeSet.
+     * @return
+     */
+    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet, String attributeName) {
+        List<String> indexFieldClauses = new ArrayList<>();
+        for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
+
+            // Can we use this index field?
+            if (!indexFieldHasMatcher(model, indexName, indexFieldName))
+                continue;
+
+            // Construct a clause for each input value for this attribute.
+            List<String> valueClauses = new ArrayList<>();
+            for (Object value : attributeSet.get(attributeName)) {
+
+                // Skip value if it's blank.
+                if (value == null || value.equals(""))
+                    continue;
+
+                // Populate the {{ field }} and {{ value }} variables of the matcher template.
+                String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
+                Matcher matcher = model.matchers().get(matcherName);
+                valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
+            }
+            if (valueClauses.size() == 0)
+                continue;
+
+            // Combine each value clause into a single "should" clause.
+            String valuesClause = String.join(",", valueClauses);
+            if (valueClauses.size() > 1)
+                valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
+            indexFieldClauses.add(valuesClause);
+        }
+        return indexFieldClauses;
+    }
+
+    /**
+     * Given an entity model, an index name, and a set of attribute values,
+     * for each attribute name in the set of attributes, find all index field names that are mapped to the attribute
+     * name and populate their matcher clauses.
+     *
+     * @param model        The entity model.
+     * @param indexName    The name of the index to reference in the entity model.
+     * @param attributeSet The names and values of the input attributes.
+     * @return
+     */
+    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet) {
+        List<String> attributeClauses = new ArrayList<>();
+        for (String attributeName : attributeSet.keySet()) {
+
+            // Construct a "should" clause for each index field mapped to this attribute.
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName);
+            if (indexFieldClauses.size() == 0)
+                continue;
+
+            // Combine each matcher clause into a single "should" clause.
+            String indexFieldsClause = String.join(",", indexFieldClauses);
+            if (indexFieldClauses.size() > 1)
+                indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
+            attributeClauses.add(indexFieldsClause);
+        }
+        return attributeClauses;
+    }
+
+    /**
      * Populate the field names and values of the resolver clause of a query.
      *
      * @param model               The entity model.
      * @param indexName           The name of the index to reference in the entity model.
      * @param resolversFilterTree The filter tree for the resolvers to be queried.
-     * @param inputAttributes     The values for the input attributes.
+     * @param attributeSet        The names and values for the input attributes.
      * @return A "bool" clause for all applicable resolvers.
      */
-    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Set<Object>> inputAttributes) {
+    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Set<Object>> attributeSet) {
 
         // Construct a "filter" clause for each attribute at this level of the filter tree.
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : resolversFilterTree.keySet()) {
 
             // Construct a "should" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = new ArrayList<>();
-            for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
-
-                // Can we use this index field?
-                if (!indexFieldHasMatcher(model, indexName, indexFieldName))
-                    continue;
-
-                // Construct a clause for each input value for this attribute.
-                List<String> valueClauses = new ArrayList<>();
-                for (Object value : inputAttributes.get(attributeName)) {
-
-                    // Skip value if it's blank.
-                    if (value == null || value.equals(""))
-                        continue;
-
-                    // Populate the {{ field }} and {{ value }} variables of the matcher template.
-                    String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
-                    Matcher matcher = model.matchers().get(matcherName);
-                    valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
-                }
-                if (valueClauses.size() == 0)
-                    continue;
-
-                // Combine each value clause into a single "should" clause.
-                String valuesClause = String.join(",", valueClauses);
-                if (valueClauses.size() > 1)
-                    valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
-                indexFieldClauses.add(valuesClause);
-            }
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName);
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -197,7 +240,7 @@ public class Job {
                 indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
 
             // Populate any child filters.
-            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), inputAttributes);
+            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributeSet);
             if (!filter.equals("{}"))
                 attributeClauses.add("{\"bool\":{\"filter\":[" + indexFieldsClause + "," + filter + "]}}");
             else
@@ -458,52 +501,9 @@ public class Job {
             if (!ids.isEmpty())
                 queryMustNotClauses.add("{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}");
 
-            // Apply "scope.exclude.attributes"
+            // Create "scope.exclude.attributes" clauses. Combine them into a single "should" clause.
             if (!this.scopeExcludeAttributes.isEmpty()) {
-                List<String> attributeClauses = new ArrayList<>();
-                for (String attributeName : this.scopeExcludeAttributes.keySet()) {
-
-                    // Construct a "should" clause for each index field mapped to this attribute.
-                    List<String> indexFieldClauses = new ArrayList<>();
-                    for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
-
-                        // Can we use this index field?
-                        if (!indexFieldHasMatcher(model, indexName, indexFieldName))
-                            continue;
-
-                        // Construct a clause for each input value for this attribute.
-                        List<String> valueClauses = new ArrayList<>();
-                        for (Object value : this.scopeExcludeAttributes.get(attributeName)) {
-
-                            // Skip value if it's blank.
-                            if (value == null || value.equals(""))
-                                continue;
-
-                            // Populate the {{ field }} and {{ value }} variables of the matcher template.
-                            String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
-                            Matcher matcher = model.matchers().get(matcherName);
-                            valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
-                        }
-                        if (valueClauses.size() == 0)
-                            continue;
-
-                        // Combine each value clause into a single "should" clause.
-                        String valuesClause = String.join(",", valueClauses);
-                        if (valueClauses.size() > 1)
-                            valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
-                        indexFieldClauses.add(valuesClause);
-                    }
-                    if (indexFieldClauses.size() == 0)
-                        continue;
-
-                    // Combine each matcher clause into a single "should" clause.
-                    String indexFieldsClause = String.join(",", indexFieldClauses);
-                    if (indexFieldClauses.size() > 1)
-                        indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
-                    attributeClauses.add(indexFieldsClause);
-                }
-
-                // Combine each attribute clause into a single "should" clause.
+                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeExcludeAttributes);
                 int size = attributeClauses.size();
                 if (size > 1)
                     queryMustNotClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
@@ -515,52 +515,9 @@ public class Job {
             if (!queryMustNotClauses.isEmpty())
                 queryClauses.add("\"must_not\":[" + String.join(",", queryMustNotClauses) + "]");
 
-            // Apply "scope.include.attributes"
+            // Create "scope.include.attributes" clauses. Combine them into a single "should" clause.
             if (!this.scopeIncludeAttributes.isEmpty()) {
-                List<String> attributeClauses = new ArrayList<>();
-                for (String attributeName : this.scopeIncludeAttributes.keySet()) {
-
-                    // Construct a "should" clause for each index field mapped to this attribute.
-                    List<String> indexFieldClauses = new ArrayList<>();
-                    for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
-
-                        // Can we use this index field?
-                        if (!indexFieldHasMatcher(model, indexName, indexFieldName))
-                            continue;
-
-                        // Construct a clause for each input value for this attribute.
-                        List<String> valueClauses = new ArrayList<>();
-                        for (Object value : this.scopeIncludeAttributes.get(attributeName)) {
-
-                            // Skip value if it's blank.
-                            if (value == null || value.equals(""))
-                                continue;
-
-                            // Populate the {{ field }} and {{ value }} variables of the matcher template.
-                            String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
-                            Matcher matcher = model.matchers().get(matcherName);
-                            valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
-                        }
-                        if (valueClauses.size() == 0)
-                            continue;
-
-                        // Combine each value clause into a single "should" clause.
-                        String valuesClause = String.join(",", valueClauses);
-                        if (valueClauses.size() > 1)
-                            valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
-                        indexFieldClauses.add(valuesClause);
-                    }
-                    if (indexFieldClauses.size() == 0)
-                        continue;
-
-                    // Combine each matcher clause into a single "should" clause.
-                    String indexFieldsClause = String.join(",", indexFieldClauses);
-                    if (indexFieldClauses.size() > 1)
-                        indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
-                    attributeClauses.add(indexFieldsClause);
-                }
-
-                // Combine each attribute clause into a single "should" clause.
+                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeIncludeAttributes);
                 int size = attributeClauses.size();
                 if (size > 1)
                     queryFilterClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
