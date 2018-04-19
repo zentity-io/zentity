@@ -53,6 +53,8 @@ public class Job {
     private int maxHops = DEFAULT_MAX_HOPS;
     private boolean pretty = DEFAULT_PRETTY;
     private boolean profile = DEFAULT_PROFILE;
+    private Map<String, Set<Object>> scopeExcludeAttributes = new HashMap<>();
+    private Map<String, Set<Object>> scopeIncludeAttributes = new HashMap<>();
 
     // Job state
     private NodeClient client;
@@ -368,6 +370,22 @@ public class Job {
 
     public void profile(Boolean profile) {
         this.profile = profile;
+    }
+
+    public Map<String, Set<Object>> scopeExcludeAttributes() {
+        return this.scopeExcludeAttributes;
+    }
+
+    public void scopeExcludeAttributes(Map<String, Set<Object>> scopeExcludeAttributes) {
+        this.scopeExcludeAttributes = scopeExcludeAttributes;
+    }
+
+    public Map<String, Set<Object>> scopeIncludeAttributes() {
+        return this.scopeIncludeAttributes;
+    }
+
+    public void scopeIncludeAttributes(Map<String, Set<Object>> scopeIncludeAttributes) {
+        this.scopeIncludeAttributes = scopeIncludeAttributes;
     }
 
     private String jsonStringEscape(String value) {

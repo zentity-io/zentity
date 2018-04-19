@@ -83,109 +83,273 @@ public class ResolutionAction extends BaseRestHandler {
     }
 
     /**
-     * Parse and validate the "scope.indices" field of the request body or URL.
+     * Parse and validate the "scope.*.attributes" field of the request body or URL.
      *
-     * @param requestBody The request body.
-     * @return Names of indices to filter from the "scope.indices" object of the entity model.
+     * @param scopeType       "exclude" or "include".
+     * @param model           The entity model.
+     * @param scopeAttributes The "attributes" object of "scope.exclude" or "scope.include".
+     * @return Names and values of attributes to include in the entity model.
      * @throws BadRequestException
+     * @throws ValidationException
      */
-    public static Set<String> parseScopeIndices(JsonNode requestBody) throws BadRequestException {
-        Set<String> indicesScopeSet = new HashSet<>();
-        if (!requestBody.has("scope") || requestBody.get("scope").isNull())
-            return indicesScopeSet;
-        if (!requestBody.get("scope").isObject())
-            throw new BadRequestException("The 'scope' field of the request body must be an object.");
-        if (!requestBody.get("scope").has("indices"))
-            return indicesScopeSet;
-        if (requestBody.get("scope").get("indices").isTextual()) {
-            String index = requestBody.get("scope").get("indices").asText();
-            indicesScopeSet.add(index);
-        } else if (requestBody.get("scope").get("indices").isArray()) {
-            for (JsonNode indexNode : requestBody.get("scope").get("indices")) {
-                if (!indexNode.isTextual())
-                    throw new BadRequestException("'scope.indices' must be a string or an array of strings.");
-                String index = indexNode.asText();
-                if (index == null || index.equals(""))
-                    throw new BadRequestException("'scope.indices' must be have non-empty strings.");
-                indicesScopeSet.add(index);
+    public static Map<String, Set<Object>> parseScopeAttributes(String scopeType, Model model, JsonNode scopeAttributes) throws BadRequestException, ValidationException {
+        Map<String, Set<Object>> attributes = new HashMap<>();
+        if (scopeAttributes.isNull())
+            return attributes;
+        if (!scopeAttributes.isObject())
+            throw new BadRequestException("'scope." + scopeType + ".attributes' must be an object.");
+        Iterator<Map.Entry<String, JsonNode>> attributeNodes = scopeAttributes.fields();
+        while (attributeNodes.hasNext()) {
+            Map.Entry<String, JsonNode> attribute = attributeNodes.next();
+            String attributeName = attribute.getKey();
+            JsonNode attributeNode = attribute.getValue();
+            if (!attributeNode.isArray()) {
+                // Validate that the attribute exists in the entity model.
+                if (!model.attributes().containsKey(attributeName))
+                    throw new BadRequestException("'scope." + scopeType + ".attributes." + attributeName + "' is not defined in the entity model.");
+                String attributeType = model.attributes().get(attributeName).type();
+                try {
+                    Attribute.validateType(attributeType, attributeNode);
+                } catch (ValidationException e) {
+                    throw new ValidationException("'scope." + scopeType + ".attributes." + attributeName + "' must be a " + attributeType + " data type.");
+                }
+                Object attributeValue = Attribute.convertType(attributeType, attributeNode);
+                if (!attributes.containsKey(attributeName))
+                    attributes.put(attributeName, new HashSet<>());
+                attributes.get(attributeName).add(attributeValue);
+            } else {
+                for (JsonNode node : attributeNode) {
+                    // Validate that the attribute exists in the entity model.
+                    if (!model.attributes().containsKey(attributeName))
+                        throw new BadRequestException("'scope." + scopeType + ".attributes." + attributeName + "' is not defined in the entity model.");
+                    String attributeType = model.attributes().get(attributeName).type();
+                    try {
+                        Attribute.validateType(attributeType, node);
+                    } catch (ValidationException e) {
+                        throw new ValidationException("'scope." + scopeType + ".attributes." + attributeName + "' must be a " + attributeType + " data type.");
+                    }
+                    Object attributeValue = Attribute.convertType(attributeType, node);
+                    if (!attributes.containsKey(attributeName))
+                        attributes.put(attributeName, new HashSet<>());
+                    attributes.get(attributeName).add(attributeValue);
+                }
             }
-        } else {
-            throw new BadRequestException("'scope.indices' must be a string or an array of strings.");
         }
-        return indicesScopeSet;
+        return attributes;
     }
 
     /**
-     * Filter indices based on what the client wants to use.
+     * Parse and validate the "scope.exclude.attributes" field of the request body or URL.
      *
-     * @param model        The entity model.
-     * @param scopeIndices Names of indices to filter from the "indices" object.
-     * @return Filtered "indices" object.
+     * @param model           The entity model.
+     * @param scopeAttributes The "attributes" object of "scope.exclude".
+     * @return Names and values of attributes to exclude in the entity model.
+     * @throws BadRequestException
+     * @throws ValidationException
+     */
+    public static Map<String, Set<Object>> parseScopeExcludeAttributes(Model model, JsonNode scopeAttributes) throws BadRequestException, ValidationException {
+        return parseScopeAttributes("exclude", model, scopeAttributes);
+    }
+
+    /**
+     * Parse and validate the "scope.include.attributes" field of the request body or URL.
+     *
+     * @param model           The entity model.
+     * @param scopeAttributes The "attributes" object of "scope.include".
+     * @return Names and values of attributes to include in the entity model.
+     * @throws BadRequestException
+     * @throws ValidationException
+     */
+    public static Map<String, Set<Object>> parseScopeIncludeAttributes(Model model, JsonNode scopeAttributes) throws BadRequestException, ValidationException {
+        return parseScopeAttributes("include", model, scopeAttributes);
+    }
+
+    /**
+     * Parse and validate the "scope.*.indices" field of the request body or URL.
+     *
+     * @param scopeType    "include" or "exclude".
+     * @param scopeIndices The "indices" object of "scope.exclude" or "scope.include".
+     * @return Names of indices to include in the entity model.
      * @throws BadRequestException
      */
-    public static Model filterIndices(Model model, Set<String> scopeIndices) throws BadRequestException {
-        if (!scopeIndices.isEmpty()) {
-            for (String index : scopeIndices) {
+    public static Set<String> parseScopeIndices(String scopeType, JsonNode scopeIndices) throws BadRequestException {
+        Set<String> indices = new HashSet<>();
+        if (scopeIndices.isNull())
+            return indices;
+        if (scopeIndices.isTextual()) {
+            if (scopeIndices.asText().equals(""))
+                throw new BadRequestException("'scope." + scopeType + ".indices' must not have non-empty strings.");
+            String index = scopeIndices.asText();
+            indices.add(index);
+        } else if (scopeIndices.isArray()) {
+            for (JsonNode indexNode : scopeIndices) {
+                if (!indexNode.isTextual())
+                    throw new BadRequestException("'scope." + scopeType + ".indices' must be a string or an array of strings.");
+                String index = indexNode.asText();
+                if (index == null || index.equals(""))
+                    throw new BadRequestException("'scope." + scopeType + ".indices' must not have non-empty strings.");
+                indices.add(index);
+            }
+        } else {
+            throw new BadRequestException("'scope." + scopeType + ".indices' must be a string or an array of strings.");
+        }
+        return indices;
+    }
+
+    /**
+     * Parse and validate the "scope.exclude.indices" field of the request body or URL.
+     *
+     * @param scopeIndices The "indices" object of "scope.exclude".
+     * @return Names of indices to exclude from the entity model.
+     * @throws BadRequestException
+     */
+    public static Set<String> parseScopeExcludeIndices(JsonNode scopeIndices) throws BadRequestException {
+        return parseScopeIndices("exclude", scopeIndices);
+    }
+
+    /**
+     * Parse and validate the "scope.include.indices" field of the request body or URL.
+     *
+     * @param scopeIndices The "indices" object of "scope.include".
+     * @return Names of indices to include in the entity model.
+     * @throws BadRequestException
+     */
+    public static Set<String> parseScopeIncludeIndices(JsonNode scopeIndices) throws BadRequestException {
+        return parseScopeIndices("include", scopeIndices);
+    }
+
+    /**
+     * Exclude indices from an entity model, while retaining all the others.
+     *
+     * @param model   The entity model.
+     * @param indices Names of indices from "scope.exclude.indices" to exclude in the entity model.
+     * @return Updated entity model.
+     */
+    public static Model excludeIndices(Model model, Set<String> indices) throws BadRequestException {
+        if (!indices.isEmpty()) {
+            for (String index : indices) {
                 if (index == null || index.equals(""))
                     continue;
                 if (!model.indices().containsKey(index))
-                    throw new BadRequestException("'" + index + "' is not in the 'indices' field.");
+                    throw new BadRequestException("'" + index + "' is not in the 'indices' field of the entity model.");
+                model.indices().remove(index);
             }
-            model.indices().keySet().retainAll(scopeIndices);
         }
         return model;
     }
 
     /**
-     * Parse and validate the "scope.resolvers" field of the request body or URL.
+     * Include indices in an entity model, while excluding all the others.
      *
-     * @param requestBody The request body.
-     * @return Names of resolvers to filter from the "scope.resolvers" object of the entity model.
+     * @param model   The entity model.
+     * @param indices Names of indices from "scope.include.indices" to include in the entity model.
+     * @return Updated entity model.
      * @throws BadRequestException
      */
-    public static Set<String> parseScopeResolvers(JsonNode requestBody) throws BadRequestException {
-        Set<String> resolversScopeSet = new HashSet<>();
-        if (!requestBody.has("scope") || requestBody.get("scope").isNull())
-            return resolversScopeSet;
-        if (!requestBody.get("scope").isObject())
-            throw new BadRequestException("The 'scope' field of the request body must be an object.");
-        if (!requestBody.get("scope").has("resolvers"))
-            return resolversScopeSet;
-        if (requestBody.get("scope").get("resolvers").isTextual()) {
-            String resolver = requestBody.get("scope").get("resolvers").asText();
-            resolversScopeSet.add(resolver);
-        } else if (requestBody.get("scope").get("resolvers").isArray()) {
-            for (JsonNode resolverNode : requestBody.get("scope").get("resolvers")) {
-                if (!resolverNode.isTextual())
-                    throw new BadRequestException("'scope.resolvers' must be a string or an array of strings.");
-                String resolver = resolverNode.asText();
-                if (resolver == null || resolver.equals(""))
-                    throw new BadRequestException("'scope.resolvers' must have non-empty strings.");
-                resolversScopeSet.add(resolver);
+    public static Model includeIndices(Model model, Set<String> indices) throws BadRequestException {
+        if (!indices.isEmpty()) {
+            for (String index : indices) {
+                if (index == null || index.equals(""))
+                    continue;
+                if (!model.indices().containsKey(index))
+                    throw new BadRequestException("'" + index + "' is not in the 'indices' field of the entity model.");
             }
-        } else {
-            throw new BadRequestException("'scope.resolvers' must be a string or an array of strings.");
+            model.indices().keySet().retainAll(indices);
         }
-        return resolversScopeSet;
+        return model;
     }
 
     /**
-     * Filter resolvers based on what the client wants to use.
+     * Parse and validate the "scope.*.resolvers" field of the request body or URL.
      *
-     * @param model          The entity model.
-     * @param scopeResolvers Names of resolvers to filter from the "resolvers" object.
-     * @return Filtered "resolvers" object.
+     * @param scopeType      "include" or "exclude".
+     * @param scopeResolvers The "resolvers" object of "scope.exclude" or "scope.include".
+     * @return Names of resolvers to exclude from the entity model.
      * @throws BadRequestException
      */
-    public static Model filterResolvers(Model model, Set<String> scopeResolvers) throws BadRequestException {
-        if (!scopeResolvers.isEmpty()) {
-            for (String resolver : scopeResolvers) {
+    public static Set<String> parseScopeResolvers(String scopeType, JsonNode scopeResolvers) throws BadRequestException {
+        Set<String> resolvers = new HashSet<>();
+        if (scopeResolvers.isNull())
+            return resolvers;
+        if (scopeResolvers.isTextual()) {
+            if (scopeResolvers.asText().equals(""))
+                throw new BadRequestException("'scope." + scopeType + ".resolvers' must not have non-empty strings.");
+            String resolver = scopeResolvers.asText();
+            resolvers.add(resolver);
+        } else if (scopeResolvers.isArray()) {
+            for (JsonNode resolverNode : scopeResolvers) {
+                if (!resolverNode.isTextual())
+                    throw new BadRequestException("'scope." + scopeType + ".resolvers' must be a string or an array of strings.");
+                String resolver = resolverNode.asText();
+                if (resolver == null || resolver.equals(""))
+                    throw new BadRequestException("'scope." + scopeType + ".resolvers' must not have non-empty strings.");
+                resolvers.add(resolver);
+            }
+        } else {
+            throw new BadRequestException("'scope." + scopeType + ".resolvers' must be a string or an array of strings.");
+        }
+        return resolvers;
+    }
+
+    /**
+     * Parse and validate the "scope.exclude.resolvers" field of the request body or URL.
+     *
+     * @param scopeResolvers The "resolvers" object of "scope.exclude".
+     * @return Names of resolvers to exclude from the entity model.
+     * @throws BadRequestException
+     */
+    public static Set<String> parseScopeExcludeResolvers(JsonNode scopeResolvers) throws BadRequestException {
+        return parseScopeResolvers("exclude", scopeResolvers);
+    }
+
+    /**
+     * Parse and validate the "scope.include.resolvers" field of the request body or URL.
+     *
+     * @param scopeResolvers The "resolvers" object of "scope.include".
+     * @return Names of resolvers to include in the entity model.
+     * @throws BadRequestException
+     */
+    public static Set<String> parseScopeIncludeResolvers(JsonNode scopeResolvers) throws BadRequestException {
+        return parseScopeResolvers("include", scopeResolvers);
+    }
+
+    /**
+     * Exclude resolvers from an entity model, while retaining all the others.
+     *
+     * @param model     The entity model.
+     * @param resolvers Names of resolvers from "scope.exclude.resolvers" to exclude in the entity model.
+     * @return Updated entity model.
+     */
+    public static Model excludeResolvers(Model model, Set<String> resolvers) throws BadRequestException {
+        if (!resolvers.isEmpty()) {
+            for (String resolver : resolvers) {
                 if (resolver == null || resolver.equals(""))
                     continue;
                 if (!model.resolvers().containsKey(resolver))
-                    throw new BadRequestException("'" + resolver + "' is not in the 'resolvers' field.");
+                    throw new BadRequestException("'" + resolver + "' is not in the 'resolvers' field of the entity model.");
+                model.resolvers().remove(resolver);
             }
-            model.resolvers().keySet().retainAll(scopeResolvers);
+        }
+        return model;
+    }
+
+    /**
+     * Include resolvers in an entity model, while excluding all the others.
+     *
+     * @param model     The entity model.
+     * @param resolvers Names of resolvers from "scope.include.resolvers" to include in the entity model.
+     * @return Updated entity model.
+     * @throws BadRequestException
+     */
+    public static Model includeResolvers(Model model, Set<String> resolvers) throws BadRequestException {
+        if (!resolvers.isEmpty()) {
+            for (String resolver : resolvers) {
+                if (resolver == null || resolver.equals(""))
+                    continue;
+                if (!model.resolvers().containsKey(resolver))
+                    throw new BadRequestException("'" + resolver + "' is not in the 'resolvers' field of the entity model.");
+            }
+            model.resolvers().keySet().retainAll(resolvers);
         }
         return model;
     }
@@ -193,12 +357,12 @@ public class ResolutionAction extends BaseRestHandler {
     /**
      * Parse and validate the "attributes" field of the request body.
      *
-     * @param requestBody The request body.
      * @param model       The entity model.
+     * @param requestBody The request body.
      * @return The parsed "attributes" field from the request body.
      * @throws BadRequestException
      */
-    public static Map<String, Set<Object>> parseAttributes(JsonNode requestBody, Model model) throws BadRequestException, ValidationException {
+    public static Map<String, Set<Object>> parseAttributes(Model model, JsonNode requestBody) throws BadRequestException, ValidationException {
         if (!requestBody.has("attributes"))
             throw new BadRequestException("The 'attributes' field is missing from the request body.");
         if (requestBody.get("attributes").size() == 0)
@@ -239,6 +403,85 @@ public class ResolutionAction extends BaseRestHandler {
             }
         }
         return attributesObj;
+    }
+
+    /**
+     * Parse and validate the "scope.exclude" field of the request body.
+     *
+     * @param scopeExclude The "scope.exclude" object of the request body.
+     * @throws BadRequestException
+     * @throws ValidationException
+     */
+    public static void parseScopeExclude(JsonNode scopeExclude) throws BadRequestException, ValidationException {
+        if (!scopeExclude.isNull() && !scopeExclude.isObject())
+            throw new BadRequestException("'scope.exclude' must be an object.");
+        Iterator<Map.Entry<String, JsonNode>> fields = scopeExclude.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            String fieldName = field.getKey();
+            switch (fieldName) {
+                case "attributes":
+                    break;
+                case "indices":
+                    break;
+                case "resolvers":
+                    break;
+                default:
+                    throw new ValidationException("'scope.exclude." + fieldName + "' is not a recognized field.");
+            }
+        }
+    }
+
+    /**
+     * Parse and validate the "scope.include" field of the request body.
+     *
+     * @param scopeInclude The "scope.include" object of the request body.
+     * @throws BadRequestException
+     * @throws ValidationException
+     */
+    public static void parseScopeInclude(JsonNode scopeInclude) throws BadRequestException, ValidationException {
+        if (!scopeInclude.isNull() && !scopeInclude.isObject())
+            throw new BadRequestException("'scope.include' must be an object.");
+        Iterator<Map.Entry<String, JsonNode>> fields = scopeInclude.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            String fieldName = field.getKey();
+            switch (fieldName) {
+                case "attributes":
+                    break;
+                case "indices":
+                    break;
+                case "resolvers":
+                    break;
+                default:
+                    throw new ValidationException("'scope.include." + fieldName + "' is not a recognized field.");
+            }
+        }
+    }
+
+    /**
+     * Parse and validate the "scope" field of the request body.
+     *
+     * @param scope The "scope" object of the request body.
+     * @throws BadRequestException
+     * @throws ValidationException
+     */
+    public static void parseScope(JsonNode scope) throws BadRequestException, ValidationException {
+        if (!scope.isNull() && !scope.isObject())
+            throw new BadRequestException("'scope' must be an object.");
+        Iterator<Map.Entry<String, JsonNode>> fields = scope.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            String fieldName = field.getKey();
+            switch (fieldName) {
+                case "exclude":
+                    break;
+                case "include":
+                    break;
+                default:
+                    throw new ValidationException("'scope." + fieldName + "' is not a recognized field.");
+            }
+        }
     }
 
     @Override
@@ -293,7 +536,7 @@ public class ResolutionAction extends BaseRestHandler {
                     model = parseEntityModel(entityType, client);
 
                 // Parse and validate the input attributes.
-                Map<String, Set<Object>> inputAttributesObj = parseAttributes(requestBody, model);
+                Map<String, Set<Object>> inputAttributesObj = parseAttributes(model, requestBody);
                 job.inputAttributes(inputAttributesObj);
 
                 // Validate the "scope" field of the request body.
@@ -301,27 +544,63 @@ public class ResolutionAction extends BaseRestHandler {
                     if (!requestBody.get("scope").isNull() && !requestBody.get("scope").isObject())
                         throw new BadRequestException("The 'scope' field of the request body must be an object.");
 
-                // Parse and validate the "scope.resolvers" field of the request body.
+                // Parse and validate the "scope" field of the request body.
                 if (requestBody.has("scope")) {
-                    if (requestBody.get("scope").has("resolvers")) {
-                        // Parse and validate the "scope.resolvers" field of the request body.
-                        Set<String> scopeResolvers = parseScopeResolvers(requestBody);
-                        // Intersect the "resolvers" field of the entity model with the "scope.resolvers" field.
-                        model = filterResolvers(model, scopeResolvers);
+                    parseScope(requestBody.get("scope"));
+
+                    // Parse and validate the "scope.include" field of the request body.
+                    if (requestBody.get("scope").has("include")) {
+                        parseScopeInclude(requestBody.get("scope").get("include"));
+
+                        // Parse and validate the "scope.include.attributes" field of the request body.
+                        if (requestBody.get("scope").get("include").has("attributes")) {
+                            Map<String, Set<Object>> scopeIncludeAttributes = parseScopeIncludeAttributes(model, requestBody.get("scope").get("include").get("attributes"));
+                            job.scopeIncludeAttributes(scopeIncludeAttributes);
+                        }
+
+                        // Parse and validate the "scope.include.resolvers" field of the request body.
+                        if (requestBody.get("scope").get("include").has("resolvers")) {
+                            Set<String> scopeIncludeResolvers = parseScopeIncludeResolvers(requestBody.get("scope").get("include").get("resolvers"));
+                            // Remove any resolvers entity model that do not appear in "scope.include.resolvers".
+                            model = includeResolvers(model, scopeIncludeResolvers);
+                        }
+
+                        // Parse and validate the "scope.include.resolvers" field of the request body.
+                        if (requestBody.get("scope").get("include").has("indices")) {
+                            Set<String> scopeIncludeIndices = parseScopeIncludeIndices(requestBody.get("scope").get("include").get("indices"));
+                            // Remove any indices entity model that do not appear in "scope.include.indices".
+                            model = includeIndices(model, scopeIncludeIndices);
+                        }
+                    }
+
+                    // Parse and validate the "scope.exclude" field of the request body.
+                    if (requestBody.get("scope").has("exclude")) {
+                        parseScopeExclude(requestBody.get("scope").get("exclude"));
+
+                        // Parse and validate the "scope.exclude.attributes" field of the request body.
+                        if (requestBody.get("scope").get("exclude").has("attributes")) {
+                            Map<String, Set<Object>> scopeExcludeAttributes = parseScopeExcludeAttributes(model, requestBody.get("scope").get("exclude").get("attributes"));
+                            job.scopeExcludeAttributes(scopeExcludeAttributes);
+                        }
+
+                        // Parse and validate the "scope.exclude.resolvers" field of the request body.
+                        if (requestBody.get("scope").get("exclude").has("resolvers")) {
+                            Set<String> scopeExcludeResolvers = parseScopeExcludeResolvers(requestBody.get("scope").get("exclude").get("resolvers"));
+                            // Intersect the "resolvers" field of the entity model with "scope.exclude.resolvers".
+                            model = excludeResolvers(model, scopeExcludeResolvers);
+                        }
+
+                        // Parse and validate the "scope.exclude.resolvers" field of the request body.
+                        if (requestBody.get("scope").get("exclude").has("indices")) {
+                            Set<String> scopeExcludeIndices = parseScopeExcludeIndices(requestBody.get("scope").get("exclude").get("indices"));
+                            // Intersect the "resolvers" field of the entity model with "scope.exclude.indices".
+                            model = excludeIndices(model, scopeExcludeIndices);
+                        }
+
                     }
                 }
                 if (model.resolvers().isEmpty())
                     throw new BadRequestException("No resolvers have been provided for the entity resolution job.");
-
-                // Parse and validate the "scope.indices" field of the request body.
-                if (requestBody.has("scope")) {
-                    if (requestBody.get("scope").has("indices")) {
-                        // Parse and validate the "scope.indices" field of the request body.
-                        Set<String> scopeIndices = parseScopeIndices(requestBody);
-                        // Intersect the "indices" field of the entity model with the "scope.indices" field.
-                        model = filterIndices(model, scopeIndices);
-                    }
-                }
                 if (model.indices().isEmpty())
                     throw new BadRequestException("No indices have been provided for the entity resolution job.");
 

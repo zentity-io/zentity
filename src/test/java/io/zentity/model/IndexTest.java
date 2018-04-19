@@ -1,6 +1,5 @@
 package io.zentity.model;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 public class IndexTest {
@@ -12,7 +11,6 @@ public class IndexTest {
     @Test
     public void testValid() throws Exception {
         new Index("index_name", VALID_OBJECT);
-        Assert.assertTrue(true);
     }
 
     @Test(expected = ValidationException.class)

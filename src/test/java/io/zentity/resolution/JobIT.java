@@ -20,8 +20,10 @@ public class JobIT extends AbstractITCase {
             "    \"attribute_a\": \"a_00\"\n" +
             "  },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
-            "    \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
@@ -30,98 +32,126 @@ public class JobIT extends AbstractITCase {
             "    \"attribute_d\": \"d_00\"\n" +
             "  },\n" +
             "  \"scope\": {\n" +
-            "    \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_boolean\": true },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_boolean\": false },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_double\": 3.141592653589793 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_double\": -3.141592653589793 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_float\": 1.0 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_float\": -1.0 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_integer\": 1 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_integer\": -1 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_long\": 922337203685477 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_long\": -922337203685477 },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_string\": \"a\" },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_string\": \"b\" },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_OBJECT = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_object\": \"a\" },\n" +
             "  \"scope\": {\n" +
-            "    \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_object\" ]\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_object\" ]\n" +
+            "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
