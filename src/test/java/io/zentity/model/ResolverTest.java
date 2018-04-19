@@ -1,6 +1,5 @@
 package io.zentity.model;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 public class ResolverTest {
@@ -13,7 +12,6 @@ public class ResolverTest {
     public void testValid() throws Exception {
         new Resolver("resolver_name", VALID_OBJECT);
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\",\"attribute_b\"]}");
-        Assert.assertTrue(true);
     }
 
     @Test(expected = ValidationException.class)

@@ -1,6 +1,5 @@
 package io.zentity.model;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 public class IndexFieldTest {
@@ -12,7 +11,6 @@ public class IndexFieldTest {
     @Test
     public void testValid() throws Exception {
         new IndexField("index_name", "index_field_name", VALID_OBJECT);
-        Assert.assertTrue(true);
     }
 
     @Test(expected = ValidationException.class)

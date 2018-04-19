@@ -1,6 +1,5 @@
 package io.zentity.model;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 public class MatcherTest {
@@ -13,7 +12,6 @@ public class MatcherTest {
     public void testValid() throws Exception {
         new Matcher("matcher_name", VALID_OBJECT);
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}}}");
-        Assert.assertTrue(true);
     }
 
     @Test(expected = ValidationException.class)
@@ -71,7 +69,6 @@ public class MatcherTest {
     public void testValidTypeValue() throws Exception {
         for (String value : Matcher.VALID_TYPES)
             new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":\"" + value + "\"}");
-        Assert.assertTrue(true);
     }
 
     @Test(expected = ValidationException.class)

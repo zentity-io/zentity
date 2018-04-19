@@ -18,7 +18,6 @@ public class AttributeTest {
     public void testValid() throws Exception {
         new Attribute("attribute_name", VALID_OBJECT);
         new Attribute("attribute_name", "{}");
-        Assert.assertTrue(true);
     }
 
     @Test(expected = ValidationException.class)
@@ -39,7 +38,6 @@ public class AttributeTest {
     public void testValidTypeValue() throws Exception {
         for (String value : Attribute.VALID_TYPES)
             new Attribute("attribute_name", "{\"type\":\"" + value + "\"}");
-        Assert.assertTrue(true);
     }
 
     @Test(expected = ValidationException.class)
@@ -165,19 +163,16 @@ public class AttributeTest {
     @Test
     public void testValidValidateTypeBooleanNullable() throws Exception {
         Attribute.validateTypeBoolean(jsonValue("{\"value\":null}"));
-        Assert.assertTrue(true);
     }
 
     @Test
     public void testValidValidateTypeNumberNullable() throws Exception {
         Attribute.validateTypeNumber(jsonValue("{\"value\":null}"));
-        Assert.assertTrue(true);
     }
 
     @Test
     public void testValidValidateTypeStringNullable() throws Exception {
         Attribute.validateTypeString(jsonValue("{\"value\":null}"));
-        Assert.assertTrue(true);
     }
 
     ////  Input Data Type Conversion  //////////////////////////////////////////////////////////////////////////////////
