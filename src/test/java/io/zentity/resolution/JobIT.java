@@ -155,6 +155,50 @@ public class JobIT extends AbstractITCase {
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
+    private final StringEntity TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_a\": \"a_00\"\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"exclude\": {\n" +
+            "      \"attributes\": { \"attribute_a\":[ \"a_11\" ], \"attribute_c\": \"c_03\" }\n" +
+            "    },\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_d\": \"d_00\"\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": 3.141592653589793 },\n" +
+            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\", \".zentity_test_index_d\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_d\": \"d_00\"\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"exclude\": {\n" +
+            "      \"attributes\": { \"attribute_c\": [ \"c_00\", \"c_01\" ] }\n" +
+            "    },\n" +
+            "    \"include\": {\n" +
+            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": 3.141592653589793 },\n" +
+            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\", \".zentity_test_index_d\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
     private byte[] readFile(String filename) throws IOException {
         InputStream stream = this.getClass().getResourceAsStream("/" + filename);
         return IOUtils.toByteArray(stream);
@@ -374,6 +418,82 @@ public class JobIT extends AbstractITCase {
             assertEquals(j1.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j1));
 
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobScopeExcludeAttributes() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES);
+            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 16);
+
+            Set<String> docsExpected = new HashSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("b0,0");
+            docsExpected.add("a2,1");
+            docsExpected.add("b2,1");
+            docsExpected.add("c0,1");
+            docsExpected.add("c1,1");
+            docsExpected.add("c2,1");
+            docsExpected.add("a3,2");
+            docsExpected.add("a4,2");
+            docsExpected.add("a5,2");
+            docsExpected.add("b3,2");
+            docsExpected.add("b4,2");
+            docsExpected.add("b5,2");
+            docsExpected.add("c3,2");
+            docsExpected.add("c4,2");
+            docsExpected.add("c5,2");
+
+            assertEquals(docsExpected, getActual(json));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobScopeIncludeAttributes() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES);
+            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 8);
+
+            Set<String> docsExpected = new HashSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("a2,0");
+            docsExpected.add("b0,0");
+            docsExpected.add("b2,0");
+            docsExpected.add("c0,0");
+            docsExpected.add("c2,0");
+            docsExpected.add("d0,0");
+            docsExpected.add("d2,0");
+
+            assertEquals(docsExpected, getActual(json));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobScopeExcludeAndIncludeAttributes() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES);
+            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 4);
+
+            Set<String> docsExpected = new HashSet<>();
+            docsExpected.add("a2,0");
+            docsExpected.add("b2,0");
+            docsExpected.add("c2,0");
+            docsExpected.add("d2,0");
+
+            assertEquals(docsExpected, getActual(json));
         } finally {
             destroyTestResources();
         }

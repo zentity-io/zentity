@@ -151,9 +151,12 @@ public class Job {
      * @param indexName     The name of the index to reference in the entity model.
      * @param attributeSet  The names and values of the input attributes.
      * @param attributeName The name of the attribute to reference in the attributeSet.
+     * @param combiner      Combine clauses with "should" or "filter".
      * @return
      */
-    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet, String attributeName) {
+    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet, String attributeName, String combiner) throws ValidationException {
+        if (!combiner.equals("should") && !combiner.equals("filter"))
+            throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> indexFieldClauses = new ArrayList<>();
         for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
 
@@ -177,10 +180,10 @@ public class Job {
             if (valueClauses.size() == 0)
                 continue;
 
-            // Combine each value clause into a single "should" clause.
+            // Combine each value clause into a single "should" or "filter" clause.
             String valuesClause = String.join(",", valueClauses);
             if (valueClauses.size() > 1)
-                valuesClause = "{\"bool\":{\"should\":[" + valuesClause + "]}}";
+                valuesClause = "{\"bool\":{\"" + combiner + "\":[" + valuesClause + "]}}";
             indexFieldClauses.add(valuesClause);
         }
         return indexFieldClauses;
@@ -194,21 +197,24 @@ public class Job {
      * @param model        The entity model.
      * @param indexName    The name of the index to reference in the entity model.
      * @param attributeSet The names and values of the input attributes.
+     * @param combiner     Combine clauses with "should" or "filter".
      * @return
      */
-    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet) {
+    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet, String combiner) throws ValidationException {
+        if (!combiner.equals("should") && !combiner.equals("filter"))
+            throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : attributeSet.keySet()) {
 
-            // Construct a "should" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName);
+            // Construct a "should" or "filter" clause for each index field mapped to this attribute.
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName, combiner);
             if (indexFieldClauses.size() == 0)
                 continue;
 
-            // Combine each matcher clause into a single "should" clause.
+            // Combine each matcher clause into a single "should" or "filter" clause.
             String indexFieldsClause = String.join(",", indexFieldClauses);
             if (indexFieldClauses.size() > 1)
-                indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
+                indexFieldsClause = "{\"bool\":{\"" + combiner + "\":[" + indexFieldsClause + "]}}";
             attributeClauses.add(indexFieldsClause);
         }
         return attributeClauses;
@@ -223,14 +229,14 @@ public class Job {
      * @param attributeSet        The names and values for the input attributes.
      * @return A "bool" clause for all applicable resolvers.
      */
-    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Set<Object>> attributeSet) {
+    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Set<Object>> attributeSet) throws ValidationException {
 
         // Construct a "filter" clause for each attribute at this level of the filter tree.
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : resolversFilterTree.keySet()) {
 
             // Construct a "should" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName);
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName, "should");
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -503,7 +509,7 @@ public class Job {
 
             // Create "scope.exclude.attributes" clauses. Combine them into a single "should" clause.
             if (!this.scopeExcludeAttributes.isEmpty()) {
-                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeExcludeAttributes);
+                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeExcludeAttributes, "should");
                 int size = attributeClauses.size();
                 if (size > 1)
                     queryMustNotClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
@@ -515,12 +521,12 @@ public class Job {
             if (!queryMustNotClauses.isEmpty())
                 queryClauses.add("\"must_not\":[" + String.join(",", queryMustNotClauses) + "]");
 
-            // Create "scope.include.attributes" clauses. Combine them into a single "should" clause.
+            // Create "scope.include.attributes" clauses. Combine them into a single "filter" clause.
             if (!this.scopeIncludeAttributes.isEmpty()) {
-                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeIncludeAttributes);
+                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeIncludeAttributes, "filter");
                 int size = attributeClauses.size();
                 if (size > 1)
-                    queryFilterClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
+                    queryFilterClauses.add("{\"bool\":{\"filter\":[" + String.join(",", attributeClauses) + "]}}");
                 else if (size == 1)
                     queryFilterClauses.add(attributeClauses.get(0));
             }
