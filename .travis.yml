@@ -3,6 +3,7 @@ jdk:
   - oraclejdk8
 env:
   matrix:
+    - ELASTICSEARCH_VERSION=6.2.4
     - ELASTICSEARCH_VERSION=6.2.3
     - ELASTICSEARCH_VERSION=6.2.2
     - ELASTICSEARCH_VERSION=6.2.1
