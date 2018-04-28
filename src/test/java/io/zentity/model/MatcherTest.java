@@ -4,7 +4,7 @@ import org.junit.Test;
 
 public class MatcherTest {
 
-    public final static String VALID_OBJECT = "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":\"value\"}";
+    public final static String VALID_OBJECT = "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}}}";
 
     ////  "matchers"  //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -61,49 +61,6 @@ public class MatcherTest {
     @Test(expected = ValidationException.class)
     public void testInvalidClauseTypeString() throws Exception {
         new Matcher("matcher_name", "{\"clause\":\"foobar\"}");
-    }
-
-    ////  "resolvers".RESOLVER_NAME."attributes".ATTRIBUTE_NAME  ///////////////////////////////////////////////////////
-
-    @Test
-    public void testValidTypeValue() throws Exception {
-        for (String value : Matcher.VALID_TYPES)
-            new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":\"" + value + "\"}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeValue() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":\"foobar\"}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeTypeArray() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":[]}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeTypeBoolean() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":true}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeTypeFloat() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":1.0}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeTypeInteger() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":1}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeTypeNull() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":null}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeTypeObject() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"type\":{}}");
     }
 
 }

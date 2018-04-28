@@ -2,13 +2,14 @@ package io.zentity.resolution;
 
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.zentity.model.Attribute;
+import io.zentity.common.Json;
 import io.zentity.model.Matcher;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
+import io.zentity.resolution.input.Attribute;
+import io.zentity.resolution.input.Input;
+import io.zentity.resolution.input.value.Value;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -22,7 +23,13 @@ import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -37,14 +44,10 @@ public class Job {
     public static final int DEFAULT_MAX_HOPS = 100;
     public static final boolean DEFAULT_PRETTY = false;
     public static final boolean DEFAULT_PROFILE = false;
-    private static final Pattern ATTRIBUTE_FIELD = Pattern.compile("\\{\\{\\s*(field)\\s*}}");
-    private static final Pattern ATTRIBUTE_VALUE = Pattern.compile("\\{\\{\\s*(value)\\s*}}");
-    private final ObjectMapper mapper = new ObjectMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     private final JsonStringEncoder encoder = new JsonStringEncoder();
 
     // Job configuration
-    private Model model;
-    private Map<String, Set<Object>> inputAttributes = new HashMap<>();
+    private Input input;
     private boolean includeAttributes = DEFAULT_INCLUDE_ATTRIBUTES;
     private boolean includeHits = DEFAULT_INCLUDE_QUERIES;
     private boolean includeQueries = DEFAULT_INCLUDE_QUERIES;
@@ -53,12 +56,11 @@ public class Job {
     private int maxHops = DEFAULT_MAX_HOPS;
     private boolean pretty = DEFAULT_PRETTY;
     private boolean profile = DEFAULT_PROFILE;
-    private Map<String, Set<Object>> scopeExcludeAttributes = new HashMap<>();
-    private Map<String, Set<Object>> scopeIncludeAttributes = new HashMap<>();
 
     // Job state
+    private Map<String, Attribute> attributes = new TreeMap<>();
     private NodeClient client;
-    private Map<String, Set<String>> docIds = new HashMap<>();
+    private Map<String, Set<String>> docIds = new TreeMap<>();
     private List<String> hits = new ArrayList<>();
     private int hop = 0;
     private List<String> queries = new ArrayList<>();
@@ -89,23 +91,23 @@ public class Job {
      * Determine if we can construct a query for a given resolver on a given index with a given input.
      * Each attribute of the resolver must be mapped to a field of the index and have a matcher defined for it.
      *
-     * @param model           The entity model.
-     * @param indexName       The name of the index to reference in the entity model.
-     * @param resolverName    The name of the resolver to reference in the entity model.
-     * @param inputAttributes The values for the input attributes.
+     * @param model        The entity model.
+     * @param indexName    The name of the index to reference in the entity model.
+     * @param resolverName The name of the resolver to reference in the entity model.
+     * @param attributes   The values for the input attributes.
      * @return Boolean decision.
      */
-    public static boolean canQuery(Model model, String indexName, String resolverName, Map<String, Set<Object>> inputAttributes) {
+    public static boolean canQuery(Model model, String indexName, String resolverName, Map<String, Attribute> attributes) {
 
         // Each attribute of the resolver must pass these conditions:
         for (String attributeName : model.resolvers().get(resolverName).attributes()) {
 
             // The input must have the attribute.
-            if (!inputAttributes.containsKey(attributeName))
+            if (!attributes.containsKey(attributeName))
                 return false;
 
             // The input must have at least one value for the attribute.
-            if (inputAttributes.get(attributeName).isEmpty())
+            if (attributes.get(attributeName).values().isEmpty())
                 return false;
 
             // The index must have at least one index field mapped to the attribute.
@@ -129,17 +131,38 @@ public class Job {
     }
 
     /**
-     * Given a clause from the "matchers" field of an entity model, replace the {{ field }} and {{ value }} variables.
+     * Given a clause from the "matchers" field of an entity model, replace the {{ field }} and {{ value }} variables
+     * and arbitrary parameters. If a parameter exists, the value
      *
      * @param matcher        The matcher object.
      * @param indexFieldName The name of the index field to populate in the clause.
      * @param value          The value to populate in the clause.
+     * @param attribute      The attribute object.
      * @return A "bool" clause that references the desired field and value.
      */
-    public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value) {
+    public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, Attribute attribute) throws ValidationException {
         String matcherClause = matcher.clause();
-        matcherClause = ATTRIBUTE_FIELD.matcher(matcherClause).replaceAll(indexFieldName);
-        matcherClause = ATTRIBUTE_VALUE.matcher(matcherClause).replaceAll(value);
+        for (String variable : matcher.variables().keySet()) {
+            Pattern pattern = matcher.variables().get(variable);
+            switch (variable) {
+                case "field":
+                    matcherClause = pattern.matcher(matcherClause).replaceAll(indexFieldName);
+                    break;
+                case "value":
+                    matcherClause = pattern.matcher(matcherClause).replaceAll(value);
+                    break;
+                default:
+                    String paramValue;
+                    if (attribute.params().containsKey(variable))
+                        paramValue = attribute.params().get(variable);
+                    else if (matcher.params().containsKey(variable))
+                        paramValue = matcher.params().get(variable);
+                    else
+                        throw new ValidationException("'matchers." + matcher.name() + "' was given no value for '{{ " + variable + " }}'");
+                    matcherClause = pattern.matcher(matcherClause).replaceAll(paramValue);
+                    break;
+            }
+        }
         return matcherClause;
     }
 
@@ -149,12 +172,12 @@ public class Job {
      *
      * @param model         The entity model.
      * @param indexName     The name of the index to reference in the entity model.
-     * @param attributeSet  The names and values of the input attributes.
+     * @param attributes    The names and values of the input attributes.
      * @param attributeName The name of the attribute to reference in the attributeSet.
      * @param combiner      Combine clauses with "should" or "filter".
      * @return
      */
-    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet, String attributeName, String combiner) throws ValidationException {
+    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Attribute> attributes, String attributeName, String combiner) throws ValidationException {
         if (!combiner.equals("should") && !combiner.equals("filter"))
             throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> indexFieldClauses = new ArrayList<>();
@@ -166,16 +189,17 @@ public class Job {
 
             // Construct a clause for each input value for this attribute.
             List<String> valueClauses = new ArrayList<>();
-            for (Object value : attributeSet.get(attributeName)) {
+            Attribute attribute = attributes.get(attributeName);
+            for (Value value : attribute.values()) {
 
                 // Skip value if it's blank.
-                if (value == null || value.equals(""))
+                if (value.serialized() == null || value.serialized().equals(""))
                     continue;
 
                 // Populate the {{ field }} and {{ value }} variables of the matcher template.
                 String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
                 Matcher matcher = model.matchers().get(matcherName);
-                valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.toString()));
+                valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.serialized(), attribute));
             }
             if (valueClauses.size() == 0)
                 continue;
@@ -194,20 +218,20 @@ public class Job {
      * for each attribute name in the set of attributes, find all index field names that are mapped to the attribute
      * name and populate their matcher clauses.
      *
-     * @param model        The entity model.
-     * @param indexName    The name of the index to reference in the entity model.
-     * @param attributeSet The names and values of the input attributes.
-     * @param combiner     Combine clauses with "should" or "filter".
+     * @param model      The entity model.
+     * @param indexName  The name of the index to reference in the entity model.
+     * @param attributes The names and values of the input attributes.
+     * @param combiner   Combine clauses with "should" or "filter".
      * @return
      */
-    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Set<Object>> attributeSet, String combiner) throws ValidationException {
+    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Attribute> attributes, String combiner) throws ValidationException {
         if (!combiner.equals("should") && !combiner.equals("filter"))
             throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> attributeClauses = new ArrayList<>();
-        for (String attributeName : attributeSet.keySet()) {
+        for (String attributeName : attributes.keySet()) {
 
             // Construct a "should" or "filter" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName, combiner);
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, combiner);
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -226,17 +250,17 @@ public class Job {
      * @param model               The entity model.
      * @param indexName           The name of the index to reference in the entity model.
      * @param resolversFilterTree The filter tree for the resolvers to be queried.
-     * @param attributeSet        The names and values for the input attributes.
+     * @param attributes          The names and values for the input attributes.
      * @return A "bool" clause for all applicable resolvers.
      */
-    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Set<Object>> attributeSet) throws ValidationException {
+    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Attribute> attributes) throws ValidationException {
 
         // Construct a "filter" clause for each attribute at this level of the filter tree.
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : resolversFilterTree.keySet()) {
 
             // Construct a "should" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributeSet, attributeName, "should");
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, "should");
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -246,7 +270,7 @@ public class Job {
                 indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
 
             // Populate any child filters.
-            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributeSet);
+            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributes);
             if (!filter.equals("{}"))
                 attributeClauses.add("{\"bool\":{\"filter\":[" + indexFieldsClause + "," + filter + "]}}");
             else
@@ -297,7 +321,7 @@ public class Job {
         List<List<String>> resolversSorted = new ArrayList<>();
         for (String resolverName : resolvers) {
             List<String> resolverSorted = new ArrayList<>();
-            Map<Integer, TreeSet<String>> attributeGroups = new HashMap<>();
+            Map<Integer, TreeSet<String>> attributeGroups = new TreeMap<>();
             for (String attributeName : model.resolvers().get(resolverName).attributes()) {
                 int count = counts.get(attributeName);
                 if (!attributeGroups.containsKey(count))
@@ -323,7 +347,7 @@ public class Job {
      * @return For each attribute, the number of resolvers it appears in.
      */
     public static Map<String, Integer> countAttributesAcrossResolvers(Model model, List<String> resolvers) {
-        Map<String, Integer> counts = new HashMap<>();
+        Map<String, Integer> counts = new TreeMap<>();
         for (String resolverName : resolvers)
             for (String attributeName : model.resolvers().get(resolverName).attributes())
                 counts.put(attributeName, counts.getOrDefault(attributeName, 0) + 1);
@@ -334,19 +358,12 @@ public class Job {
      * Resets the variables that hold the state of the job, in case the same Job object is reused.
      */
     private void resetState() {
-        this.docIds = new HashMap<>();
+        this.attributes = new TreeMap<>(this.input().attributes());
+        this.docIds = new TreeMap<>();
         this.hits = new ArrayList<>();
         this.hop = 0;
         this.queries = new ArrayList<>();
         this.ran = false;
-    }
-
-    public Map<String, Set<Object>> getInputAttributes() {
-        return this.inputAttributes;
-    }
-
-    public void inputAttributes(Map<String, Set<Object>> inputAttributes) {
-        this.inputAttributes = inputAttributes;
     }
 
     public boolean includeAttributes() {
@@ -381,14 +398,6 @@ public class Job {
         this.includeSource = includeSource;
     }
 
-    public Model model() {
-        return this.model;
-    }
-
-    public void model(Model model) {
-        this.model = model;
-    }
-
     public int maxHops() {
         return this.maxHops;
     }
@@ -421,20 +430,12 @@ public class Job {
         this.profile = profile;
     }
 
-    public Map<String, Set<Object>> scopeExcludeAttributes() {
-        return this.scopeExcludeAttributes;
+    public Input input() {
+        return this.input;
     }
 
-    public void scopeExcludeAttributes(Map<String, Set<Object>> scopeExcludeAttributes) {
-        this.scopeExcludeAttributes = scopeExcludeAttributes;
-    }
-
-    public Map<String, Set<Object>> scopeIncludeAttributes() {
-        return this.scopeIncludeAttributes;
-    }
-
-    public void scopeIncludeAttributes(Map<String, Set<Object>> scopeIncludeAttributes) {
-        this.scopeIncludeAttributes = scopeIncludeAttributes;
+    public void input(Input input) {
+        this.input = input;
     }
 
     private String jsonStringEscape(String value) {
@@ -477,20 +478,20 @@ public class Job {
     private void traverse() throws IOException, ValidationException {
 
         // Prepare to collect attributes from the results of these queries as the inputs to subsequent queries.
-        Map<String, Set<Object>> nextInputAttributes = new HashMap<>();
+        Map<String, Attribute> nextInputAttributes = new TreeMap<>();
         Boolean newHits = false;
 
         // Construct a query for each index that maps to a resolver.
-        for (String indexName : this.model.indices().keySet()) {
+        for (String indexName : this.input.model().indices().keySet()) {
 
             // Track _ids for this index.
             if (!this.docIds.containsKey(indexName))
-                this.docIds.put(indexName, new HashSet<>());
+                this.docIds.put(indexName, new TreeSet<>());
 
             // Determine which resolvers can be queried for this index.
             List<String> resolvers = new ArrayList<>();
-            for (String resolverName : this.model.resolvers().keySet())
-                if (canQuery(this.model, indexName, resolverName, this.inputAttributes))
+            for (String resolverName : this.input.model().resolvers().keySet())
+                if (canQuery(this.input.model(), indexName, resolverName, this.attributes))
                     resolvers.add(resolverName);
             if (resolvers.size() == 0)
                 continue;
@@ -508,8 +509,8 @@ public class Job {
                 queryMustNotClauses.add("{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}");
 
             // Create "scope.exclude.attributes" clauses. Combine them into a single "should" clause.
-            if (!this.scopeExcludeAttributes.isEmpty()) {
-                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeExcludeAttributes, "should");
+            if (!this.input.scope().exclude().attributes().isEmpty()) {
+                List<String> attributeClauses = makeAttributeClauses(this.input.model(), indexName, this.input.scope().exclude().attributes(), "should");
                 int size = attributeClauses.size();
                 if (size > 1)
                     queryMustNotClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
@@ -522,8 +523,8 @@ public class Job {
                 queryClauses.add("\"must_not\":[" + String.join(",", queryMustNotClauses) + "]");
 
             // Create "scope.include.attributes" clauses. Combine them into a single "filter" clause.
-            if (!this.scopeIncludeAttributes.isEmpty()) {
-                List<String> attributeClauses = makeAttributeClauses(this.model, indexName, this.scopeIncludeAttributes, "filter");
+            if (!this.input.scope().include().attributes().isEmpty()) {
+                List<String> attributeClauses = makeAttributeClauses(this.input.model(), indexName, this.input.scope().include().attributes(), "filter");
                 int size = attributeClauses.size();
                 if (size > 1)
                     queryFilterClauses.add("{\"bool\":{\"filter\":[" + String.join(",", attributeClauses) + "]}}");
@@ -532,10 +533,10 @@ public class Job {
             }
 
             // Construct the resolvers clause.
-            Map<String, Integer> counts = countAttributesAcrossResolvers(this.model, resolvers);
-            List<List<String>> resolversSorted = sortResolverAttributes(this.model, resolvers, counts);
+            Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), resolvers);
+            List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolvers, counts);
             TreeMap<String, TreeMap> resolversFilterTree = makeResolversFilterTree(resolversSorted);
-            String resolversClause = populateResolversFilterTree(this.model, indexName, resolversFilterTree, this.inputAttributes);
+            String resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes);
             queryFilterClauses.add(resolversClause);
 
             // Construct the top-level "filter" clause.
@@ -561,7 +562,7 @@ public class Job {
 
             // Read response from Elasticsearch.
             String responseBody = response.toString();
-            JsonNode responseData = this.mapper.readTree(responseBody);
+            JsonNode responseData = Json.ORDERED_MAPPER.readTree(responseBody);
 
             // Log queries.
             if (this.includeQueries || this.profile) {
@@ -572,8 +573,8 @@ public class Job {
                     if (responseDataCopyObjHits.has("hits"))
                         responseDataCopyObjHits.remove("hits");
                 }
-                String resolversListLogged = this.mapper.writeValueAsString(resolvers);
-                String resolversFilterTreeLogged = this.mapper.writeValueAsString(resolversFilterTree);
+                String resolversListLogged = Json.ORDERED_MAPPER.writeValueAsString(resolvers);
+                String resolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(resolversFilterTree);
                 String resolversLogged = "{\"list\":" + resolversListLogged + ",\"tree\":" + resolversFilterTreeLogged + "}";
                 String searchLogged = "{\"request\":" + query + ",\"response\":" + responseDataCopyObj + "}";
                 String logged = "{\"_hop\":" + this.hop + ",\"_index\":\"" + indexName + "\",\"resolvers\":" + resolversLogged + ",\"search\":" + searchLogged + "}";
@@ -596,26 +597,26 @@ public class Job {
                 // Gather attributes from the doc. Store them in the "_attributes" field of the doc,
                 // and include them in the attributes for subsequent queries.
                 TreeMap<String, JsonNode> docAttributes = new TreeMap<>();
-                for (String indexFieldName : this.model.indices().get(indexName).fields().keySet()) {
-                    String attributeName = this.model.indices().get(indexName).fields().get(indexFieldName).attribute();
-                    if (this.model.attributes().get(attributeName) == null)
+                for (String indexFieldName : this.input.model().indices().get(indexName).fields().keySet()) {
+                    String attributeName = this.input.model().indices().get(indexName).fields().get(indexFieldName).attribute();
+                    if (this.input.model().attributes().get(attributeName) == null)
                         continue;
-                    String attributeType = this.model.attributes().get(attributeName).type();
+                    String attributeType = this.input.model().attributes().get(attributeName).type();
                     if (!nextInputAttributes.containsKey(attributeName))
-                        nextInputAttributes.put(attributeName, new HashSet<>());
+                        nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
                     // The index field name might not refer to the _source property.
                     // If it's not in the _source, remove the last part of the index field name from the dot notation.
                     // Index field names can reference multi-fields, which are not returned in the _source.
-                    String path = this.model.indices().get(indexName).fields().get(indexFieldName).path();
-                    String pathParent = this.model.indices().get(indexName).fields().get(indexFieldName).pathParent();
+                    String path = this.input.model().indices().get(indexName).fields().get(indexFieldName).path();
+                    String pathParent = this.input.model().indices().get(indexName).fields().get(indexFieldName).pathParent();
                     JsonNode valueNode = doc.get("_source").at(path);
                     if (valueNode.isMissingNode())
                         valueNode = doc.get("_source").at(pathParent);
                     if (valueNode.isMissingNode())
                         continue;
                     docAttributes.put(attributeName, valueNode);
-                    Object value = Attribute.convertType(attributeType, valueNode);
-                    nextInputAttributes.get(attributeName).add(value);
+                    Value value = Value.create(attributeType, valueNode);
+                    nextInputAttributes.get(attributeName).values().add(value);
                 }
 
                 // Modify doc metadata.
@@ -652,11 +653,13 @@ public class Job {
 
         // Update input attributes for the next queries.
         for (String attributeName : nextInputAttributes.keySet()) {
-            if (!this.inputAttributes.containsKey(attributeName))
-                this.inputAttributes.put(attributeName, new HashSet<>());
-            for (Object value : nextInputAttributes.get(attributeName)) {
-                if (!this.inputAttributes.get(attributeName).contains(value)) {
-                    this.inputAttributes.get(attributeName).add(value);
+            if (!this.attributes.containsKey(attributeName)) {
+                String attributeType = this.input.model().attributes().get(attributeName).type();
+                this.attributes.put(attributeName, new Attribute(attributeName, attributeType));
+            }
+            for (Value value : nextInputAttributes.get(attributeName).values()) {
+                if (!this.attributes.get(attributeName).values().contains(value)) {
+                    this.attributes.get(attributeName).values().add(value);
                     newHits = true;
                 }
             }
@@ -683,6 +686,8 @@ public class Job {
             // Reset the state of the job if reusing this Job object.
             if (this.ran)
                 this.resetState();
+            else
+                this.attributes = new TreeMap<>(this.input.attributes());
 
             // Start timer and begin job
             long startTime = System.nanoTime();
@@ -698,7 +703,7 @@ public class Job {
                 responseParts.add("\"queries\":[" + queries + "]");
             String response = "{" + String.join(",", responseParts) + "}";
             if (this.pretty)
-                response = this.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mapper.readTree(response));
+                response = Json.ORDERED_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(Json.ORDERED_MAPPER.readTree(response));
             return response;
 
         } finally {

@@ -1,6 +1,7 @@
 package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.zentity.common.Json;
 import io.zentity.resolution.AbstractITCase;
 import org.elasticsearch.client.Response;
 
@@ -11,7 +12,7 @@ public class ZentityPluginIT extends AbstractITCase {
 
     public void testPluginIsLoaded() throws Exception {
         Response response = client.performRequest("GET", "_nodes/plugins");
-        JsonNode json = mapper.readTree(response.getEntity().getContent());
+        JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
         Iterator<Map.Entry<String, JsonNode>> nodes = json.get("nodes").fields();
         while (nodes.hasNext()) {
             Map.Entry<String, JsonNode> entry = nodes.next();

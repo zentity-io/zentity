@@ -87,8 +87,7 @@
         "match": {
           "{{ field }}": "{{ value }}"
         }
-      },
-      "type": "value"
+      }
     },
     "matcher_b": {
       "clause": {

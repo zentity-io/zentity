@@ -1,22 +1,26 @@
 package io.zentity.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.common.Json;
+import io.zentity.common.Patterns;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Index {
 
-    public static final Set<String> REQUIRED_FIELDS = new HashSet<>(
+    public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
             Arrays.asList("fields")
     );
-    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String name;
     private Map<String, IndexField> fields;
-    private Map<String, Map<String, IndexField>> attributeIndexFieldsMap = new HashMap<>();
+    private Map<String, Map<String, IndexField>> attributeIndexFieldsMap = new TreeMap<>();
 
     public Index(String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -44,7 +48,7 @@ public class Index {
 
     public void fields(JsonNode value) throws ValidationException {
         validateFields(value);
-        Map<String, IndexField> fields = new HashMap<>();
+        Map<String, IndexField> fields = new TreeMap<>();
         Iterator<Map.Entry<String, JsonNode>> children = value.fields();
         while (children.hasNext()) {
             Map.Entry<String, JsonNode> child = children.next();
@@ -58,7 +62,7 @@ public class Index {
     }
 
     private void validateName(String value) throws ValidationException {
-        if (REGEX_EMPTY.matcher(value).matches())
+        if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'indices' has an index with an empty name.");
     }
 
@@ -90,11 +94,11 @@ public class Index {
      * during a resolution job.
      */
     private void rebuildAttributeIndexFieldsMap() {
-        this.attributeIndexFieldsMap = new HashMap<>();
+        this.attributeIndexFieldsMap = new TreeMap<>();
         for (String indexFieldName : this.fields().keySet()) {
             String attributeName = this.fields().get(indexFieldName).attribute();
             if (!this.attributeIndexFieldsMap.containsKey(attributeName))
-                this.attributeIndexFieldsMap.put(attributeName, new HashMap<>());
+                this.attributeIndexFieldsMap.put(attributeName, new TreeMap<>());
             if (!this.attributeIndexFieldsMap.get(attributeName).containsKey(indexFieldName))
                 this.attributeIndexFieldsMap.get(attributeName).put(indexFieldName, this.fields.get(indexFieldName));
         }
@@ -140,7 +144,7 @@ public class Index {
     }
 
     public void deserialize(String json) throws ValidationException, IOException {
-        deserialize(new ObjectMapper().readTree(json));
+        deserialize(Json.MAPPER.readTree(json));
     }
 
 }

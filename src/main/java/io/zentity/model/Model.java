@@ -2,19 +2,19 @@ package io.zentity.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.common.Json;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class Model {
 
-    private Map<String, Attribute> attributes = new HashMap<>();
-    private Map<String, Index> indices = new HashMap<>();
-    private Map<String, Matcher> matchers = new HashMap<>();
-    private Map<String, Resolver> resolvers = new HashMap<>();
+    private Map<String, Attribute> attributes = new TreeMap<>();
+    private Map<String, Index> indices = new TreeMap<>();
+    private Map<String, Matcher> matchers = new TreeMap<>();
+    private Map<String, Resolver> resolvers = new TreeMap<>();
 
     public Model(JsonNode json) throws ValidationException, JsonProcessingException {
         this.deserialize(json);
@@ -114,7 +114,7 @@ public class Model {
     }
 
     public void deserialize(String json) throws ValidationException, IOException {
-        deserialize(new ObjectMapper().readTree(json));
+        deserialize(Json.MAPPER.readTree(json));
     }
 
 }

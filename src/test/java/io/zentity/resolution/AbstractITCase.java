@@ -1,7 +1,7 @@
 package io.zentity.resolution;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.common.Json;
 import org.apache.http.HttpHost;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Response;
@@ -20,7 +20,6 @@ import static org.junit.Assume.assumeThat;
 public abstract class AbstractITCase extends ESTestCase {
     protected static final Logger logger = ESLoggerFactory.getLogger("it");
     protected final static int HTTP_TEST_PORT = 9400;
-    protected static final ObjectMapper mapper = new ObjectMapper();
     protected static RestClient client;
 
     @BeforeClass
@@ -28,7 +27,7 @@ public abstract class AbstractITCase extends ESTestCase {
         client = RestClient.builder(new HttpHost("localhost", HTTP_TEST_PORT)).build();
         try {
             Response response = client.performRequest("GET", "/");
-            JsonNode json = mapper.readTree(response.getEntity().getContent());
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertTrue(json.get("tagline").textValue().equals("You Know, for Search"));
             logger.info("Integration tests ready to start... Cluster is running.");
         } catch (IOException e) {
