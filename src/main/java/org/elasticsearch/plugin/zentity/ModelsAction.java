@@ -20,10 +20,17 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.BytesRestResponse;
+import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.RestStatus;
 
 import static org.elasticsearch.rest.RestRequest.Method;
-import static org.elasticsearch.rest.RestRequest.Method.*;
+import static org.elasticsearch.rest.RestRequest.Method.DELETE;
+import static org.elasticsearch.rest.RestRequest.Method.GET;
+import static org.elasticsearch.rest.RestRequest.Method.POST;
+import static org.elasticsearch.rest.RestRequest.Method.PUT;
 
 public class ModelsAction extends BaseRestHandler {
 
@@ -188,7 +195,7 @@ public class ModelsAction extends BaseRestHandler {
 
                     // Parse the request body.
                     if (requestBody == null || requestBody.equals(""))
-                        throw new BadRequestException("Request body is missing.");
+                        throw new ValidationException("Request body is missing.");
 
                     // Parse and validate the entity model.
                     new Model(requestBody);
@@ -216,7 +223,7 @@ public class ModelsAction extends BaseRestHandler {
                 } else if (method == POST && !entityType.equals("")) {
                     // POST _zentity/models/{entity_type}
                     if (requestBody.equals(""))
-                        throw new BadRequestException("Request body cannot be empty when indexing an entity model.");
+                        throw new ValidationException("Request body cannot be empty when indexing an entity model.");
                     IndexResponse response = indexEntityModel(entityType, requestBody, client);
                     XContentBuilder content = XContentFactory.jsonBuilder();
                     if (pretty)
@@ -227,7 +234,7 @@ public class ModelsAction extends BaseRestHandler {
                 } else if (method == PUT && !entityType.equals("")) {
                     // PUT _zentity/models/{entity_type}
                     if (requestBody.equals(""))
-                        throw new BadRequestException("Request body cannot be empty when updating an entity model.");
+                        throw new ValidationException("Request body cannot be empty when updating an entity model.");
                     IndexResponse response = updateEntityModel(entityType, requestBody, client);
                     XContentBuilder content = XContentFactory.jsonBuilder();
                     if (pretty)
@@ -248,7 +255,7 @@ public class ModelsAction extends BaseRestHandler {
                     throw new NotImplementedException("Method and endpoint not implemented.");
                 }
 
-            } catch (BadRequestException | ValidationException e) {
+            } catch (ValidationException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
             } catch (NotImplementedException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_IMPLEMENTED, e));

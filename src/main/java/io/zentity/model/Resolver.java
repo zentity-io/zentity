@@ -1,21 +1,24 @@
 package io.zentity.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.common.Json;
+import io.zentity.common.Patterns;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class Resolver {
 
-    public static final Set<String> REQUIRED_FIELDS = new HashSet<>(
+    public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
             Arrays.asList("attributes")
     );
-    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String name;
-    private Set<String> attributes = new HashSet<>();
+    private Set<String> attributes = new TreeSet<>();
 
     public Resolver(String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -39,14 +42,14 @@ public class Resolver {
 
     public void attributes(JsonNode value) throws ValidationException {
         validateAttributes(value);
-        Set<String> attributes = new HashSet<>();
+        Set<String> attributes = new TreeSet<>();
         for (JsonNode attribute : value)
             attributes.add(attribute.textValue());
         this.attributes = attributes;
     }
 
     private void validateName(String value) throws ValidationException {
-        if (REGEX_EMPTY.matcher(value).matches())
+        if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'resolvers' has a resolver with an empty name.");
     }
 
@@ -59,7 +62,7 @@ public class Resolver {
             if (!attribute.isTextual())
                 throw new ValidationException("'resolvers." + this.name + ".attributes' must be an array of strings.");
             String attributeName = attribute.textValue();
-            if (attributeName == null || REGEX_EMPTY.matcher(attributeName).matches())
+            if (attributeName == null || Patterns.EMPTY_STRING.matcher(attributeName).matches())
                 throw new ValidationException("'resolvers." + this.name + ".attributes' must be an array of non-empty strings.");
         }
     }
@@ -111,7 +114,7 @@ public class Resolver {
     }
 
     public void deserialize(String json) throws ValidationException, IOException {
-        deserialize(new ObjectMapper().readTree(json));
+        deserialize(Json.MAPPER.readTree(json));
     }
 
 }

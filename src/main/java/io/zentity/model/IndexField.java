@@ -1,19 +1,21 @@
 package io.zentity.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.common.Json;
+import io.zentity.common.Patterns;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class IndexField {
 
-    public static final Set<String> REQUIRED_FIELDS = new HashSet<>(
+    public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
             Arrays.asList("attribute")
     );
-    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
-    private static final Pattern REGEX_PERIOD = Pattern.compile("\\.");
 
     private final String index;
     private final String name;
@@ -73,28 +75,28 @@ public class IndexField {
     }
 
     private void nameToPaths(String name) {
-        String[] parts = REGEX_PERIOD.split(name);
+        String[] parts = Patterns.PERIOD.split(name);
         this.path = "/" + String.join("/", parts);
         if (parts.length > 1)
             this.pathParent = "/" + String.join("/", Arrays.copyOf(parts, parts.length - 1));
     }
 
     private void validateName(String value) throws ValidationException {
-        if (REGEX_EMPTY.matcher(value).matches())
+        if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'indices." + this.index + "' has a field with an empty name.");
     }
 
     private void validateAttribute(JsonNode value) throws ValidationException {
         if (!value.isTextual())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".attribute' must be a string.");
-        if (REGEX_EMPTY.matcher(value.textValue()).matches())
+        if (Patterns.EMPTY_STRING.matcher(value.textValue()).matches())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".attribute' must not be empty.");
     }
 
     private void validateMatcher(JsonNode value) throws ValidationException {
         if (!value.isTextual())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".matcher' must be a string.");
-        if (REGEX_EMPTY.matcher(value.textValue()).matches())
+        if (Patterns.EMPTY_STRING.matcher(value.textValue()).matches())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".matcher' must not be empty.");
     }
 
@@ -146,7 +148,7 @@ public class IndexField {
     }
 
     public void deserialize(String json) throws ValidationException, IOException {
-        deserialize(new ObjectMapper().readTree(json));
+        deserialize(Json.MAPPER.readTree(json));
     }
 
 }

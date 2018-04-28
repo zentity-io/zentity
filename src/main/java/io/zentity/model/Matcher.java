@@ -2,26 +2,28 @@ package io.zentity.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.common.Json;
+import io.zentity.common.Patterns;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 public class Matcher {
 
-    public static final Set<String> REQUIRED_FIELDS = new HashSet<>(
+    public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
             Arrays.asList("clause")
     );
-    public static final Set<String> VALID_TYPES = new HashSet<>(
-            Arrays.asList("value")
-    );
-    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final String name;
     private String clause;
-    private String type = "value";
+    private Map<String, String> params = new TreeMap<>();
+    private Map<String, Pattern> variables = new TreeMap<>();
 
     public Matcher(String name, JsonNode json) throws ValidationException, JsonProcessingException {
         validateName(name);
@@ -35,6 +37,24 @@ public class Matcher {
         this.deserialize(json);
     }
 
+    /**
+     * Extract the names of the variables expressed in a clause as {{ variable }}.
+     * These will be used when populating the matcher clause to prevent redundant regular expression replacements.
+     *
+     * @param clause Clause serialized as a string.
+     * @return
+     */
+    public static Map<String, Pattern> parseVariables(String clause) {
+        java.util.regex.Matcher m = Patterns.VARIABLE.matcher(clause);
+        Map<String, Pattern> variables = new TreeMap<>();
+        while (m.find()) {
+            String variable = m.group(1);
+            Pattern pattern = Pattern.compile("\\{\\{\\s*(" + Pattern.quote(variable) + ")\\s*}}");
+            variables.put(variable, pattern);
+        }
+        return variables;
+    }
+
     public String name() {
         return this.name;
     }
@@ -43,22 +63,22 @@ public class Matcher {
         return this.clause;
     }
 
+    public Map<String, String> params() {
+        return this.params;
+    }
+
+    public Map<String, Pattern> variables() {
+        return this.variables;
+    }
+
     public void clause(JsonNode value) throws ValidationException, JsonProcessingException {
         validateClause(value);
-        this.clause = mapper.writeValueAsString(value);
-    }
-
-    public String type() {
-        return this.type;
-    }
-
-    public void type(JsonNode value) throws ValidationException {
-        validateType(value);
-        this.type = value.textValue();
+        this.clause = Json.MAPPER.writeValueAsString(value);
+        this.variables = parseVariables(this.clause);
     }
 
     private void validateName(String value) throws ValidationException {
-        if (REGEX_EMPTY.matcher(value).matches())
+        if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'matchers' field has a matcher with an empty name.");
     }
 
@@ -67,15 +87,6 @@ public class Matcher {
             throw new ValidationException("'matchers." + this.name + ".clause' must be an object.");
         if (value.size() == 0)
             throw new ValidationException("'matchers." + this.name + ".clause' is empty.");
-    }
-
-    private void validateType(JsonNode value) throws ValidationException {
-        if (!value.isTextual())
-            throw new ValidationException("'matchers." + this.name + ".type' must be a string.");
-        if (REGEX_EMPTY.matcher(value.textValue()).matches())
-            throw new ValidationException("'attributes." + this.name + ".type'' must not be empty.");
-        if (!VALID_TYPES.contains(value.textValue()))
-            throw new ValidationException("'matchers." + this.name + ".type' has an unrecognized data type '" + value.textValue() + "'.");
     }
 
     private void validateObject(JsonNode object) throws ValidationException {
@@ -90,8 +101,7 @@ public class Matcher {
      * Expected structure of the json variable:
      * <pre>
      * {
-     *   "clause": MATCHER_CLAUSE,
-     *   "type": MATCHER_TYPE
+     *   "clause": MATCHER_CLAUSE
      * }
      * </pre>
      *
@@ -116,8 +126,31 @@ public class Matcher {
                 case "clause":
                     this.clause(value);
                     break;
-                case "type":
-                    this.type(value);
+                case "params":
+                    // Set any params that were specified in the input, with the values serialized as strings.
+                    if (value.isNull())
+                        break;
+                    if (!value.isObject())
+                        throw new ValidationException("'matchers." + this.name + ".params' must be an object.");
+                    Iterator<Map.Entry<String, JsonNode>> paramsNode = value.fields();
+                    while (paramsNode.hasNext()) {
+                        Map.Entry<String, JsonNode> paramNode = paramsNode.next();
+                        String paramField = "params." + paramNode.getKey();
+                        JsonNode paramValue = paramNode.getValue();
+                        if (paramValue.isObject() || paramValue.isArray())
+                            this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));
+                        else if (paramValue.isNull())
+                            this.params().put(paramField, "null");
+                        else
+                            this.params().put(paramField, paramValue.asText());
+                    }
+
+                    if (value.isObject() || value.isArray())
+                        this.params().put("params." + name, Json.MAPPER.writeValueAsString(value));
+                    else if (value.isNull())
+                        this.params().put("params." + name, "null");
+                    else
+                        this.params().put("params." + name, value.asText());
                     break;
                 default:
                     throw new ValidationException("'matchers." + this.name + "." + name + "' is not a recognized field.");
@@ -126,7 +159,7 @@ public class Matcher {
     }
 
     public void deserialize(String json) throws ValidationException, IOException {
-        deserialize(new ObjectMapper().readTree(json));
+        deserialize(Json.MAPPER.readTree(json));
     }
 
 }

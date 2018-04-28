@@ -18,14 +18,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.function.Supplier;
 
-class BadRequestException extends Exception {
-    BadRequestException(String message) {
-        super(message);
-    }
-}
-
 class NotFoundException extends Exception {
-    NotFoundException(String message) {
+    public NotFoundException(String message) {
         super(message);
     }
 }

@@ -1,23 +1,29 @@
 package io.zentity.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zentity.common.Json;
+import io.zentity.common.Patterns;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Attribute {
 
-    public static final Set<String> VALID_TYPES = new HashSet<>(
+    public static final Set<String> VALID_TYPES = new TreeSet<>(
             Arrays.asList("string", "number", "boolean")
     );
-    private static final Pattern REGEX_EMPTY = Pattern.compile("^\\s*$");
 
     private final String name;
+    private Map<String, String> params = new TreeMap<>();
     private String type = "string";
 
-    public Attribute(String name, JsonNode json) throws ValidationException {
+    public Attribute(String name, JsonNode json) throws ValidationException, JsonProcessingException {
         validateName(name);
         this.name = name;
         this.deserialize(json);
@@ -29,87 +35,12 @@ public class Attribute {
         this.deserialize(json);
     }
 
-    public static Boolean convertTypeBoolean(JsonNode value) {
-        if (value.isNull())
-            return null;
-        return value.booleanValue();
-    }
-
-    public static Number convertTypeNumber(JsonNode value) {
-        if (value.isNull())
-            return null;
-        else if (value.isIntegralNumber())
-            return value.bigIntegerValue();
-        else if (value.isFloatingPointNumber())
-            return value.doubleValue();
-        else
-            return value.numberValue();
-    }
-
-    public static String convertTypeString(JsonNode value) {
-        if (value.isNull())
-            return null;
-        return value.textValue();
-    }
-
-    public static Object convertType(String targetType, JsonNode value) throws ValidationException {
-        switch (targetType) {
-            case "boolean":
-                return convertTypeBoolean(value);
-            case "number":
-                return convertTypeNumber(value);
-            case "string":
-                return convertTypeString(value);
-            default:
-                throw new ValidationException("'" + targetType + " is not a recognized attribute data type.");
-        }
-    }
-
-    public static boolean isTypeBoolean(JsonNode value) {
-        return value.isBoolean();
-    }
-
-    public static boolean isTypeNumber(JsonNode value) {
-        return value.isNumber();
-    }
-
-    public static boolean isTypeString(JsonNode value) {
-        return value.isTextual();
-    }
-
-    public static void validateTypeBoolean(JsonNode value) throws ValidationException {
-        if (!isTypeBoolean(value) && !value.isNull())
-            throw new ValidationException("Expected 'boolean' attribute data type.");
-    }
-
-    public static void validateTypeNumber(JsonNode value) throws ValidationException {
-        if (!isTypeNumber(value) && !value.isNull())
-            throw new ValidationException("Expected 'number' attribute data type.");
-    }
-
-    public static void validateTypeString(JsonNode value) throws ValidationException {
-        if (!isTypeString(value) && !value.isNull())
-            throw new ValidationException("Expected 'string' attribute data type.");
-    }
-
-    public static void validateType(String expectedType, JsonNode value) throws ValidationException {
-        switch (expectedType) {
-            case "boolean":
-                validateTypeBoolean(value);
-                break;
-            case "number":
-                validateTypeNumber(value);
-                break;
-            case "string":
-                validateTypeString(value);
-                break;
-            default:
-                throw new ValidationException("'" + expectedType + " is not a recognized attribute data type.");
-        }
-    }
-
     public String name() {
         return this.name;
+    }
+
+    public Map<String, String> params() {
+        return this.params;
     }
 
     public String type() {
@@ -122,19 +53,45 @@ public class Attribute {
     }
 
     private void validateName(String value) throws ValidationException {
-        if (REGEX_EMPTY.matcher(value).matches())
+        if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'attributes' has an attribute with empty name.");
     }
 
+    /**
+     * Validate the value of "attributes".ATTRIBUTE_NAME."type".
+     * Must be a non-empty string containing a recognized type.
+     *
+     * @param value The value of "attributes".ATTRIBUTE_NAME."type".
+     * @throws ValidationException
+     */
     private void validateType(JsonNode value) throws ValidationException {
         if (!value.isTextual())
             throw new ValidationException("'attributes." + this.name + ".type' must be a string.");
-        if (REGEX_EMPTY.matcher(value.textValue()).matches())
+        if (Patterns.EMPTY_STRING.matcher(value.textValue()).matches())
             throw new ValidationException("'attributes." + this.name + ".type'' must not be empty.");
         if (!VALID_TYPES.contains(value.textValue()))
-            throw new ValidationException("'attributes." + this.name + ".type' has an unrecognized data type '" + value.textValue() + "'.");
+            throw new ValidationException("'attributes." + this.name + ".type' has an unrecognized type '" + value.textValue() + "'.");
     }
 
+    /**
+     * Validate the value of "attributes".ATTRIBUTE_NAME."params".
+     * Must be an object.
+     *
+     * @param value The value of "attributes".ATTRIBUTE_NAME."params".
+     * @throws ValidationException
+     */
+    private void validateParams(JsonNode value) throws ValidationException {
+        if (!value.isObject())
+            throw new ValidationException("'attributes." + this.name + ".params' must be an object.");
+    }
+
+    /**
+     * Validate the value of "attributes".ATTRIBUTE_NAME.
+     * Must be an object.
+     *
+     * @param object The value of "attributes".ATTRIBUTE_NAME.
+     * @throws ValidationException
+     */
     private void validateObject(JsonNode object) throws ValidationException {
         if (!object.isObject())
             throw new ValidationException("'attributes." + this.name + "' must be an object.");
@@ -151,8 +108,9 @@ public class Attribute {
      *
      * @param json Attribute object of an entity model.
      * @throws ValidationException
+     * @throws JsonProcessingException
      */
-    public void deserialize(JsonNode json) throws ValidationException {
+    public void deserialize(JsonNode json) throws ValidationException, JsonProcessingException {
         validateObject(json);
 
         // Validate and hold the state of fields.
@@ -165,6 +123,23 @@ public class Attribute {
                 case "type":
                     this.type(value);
                     break;
+                case "params":
+                    // Set any params that were specified in the input, with the values serialized as strings.
+                    if (!value.isObject())
+                        throw new ValidationException("'attributes." + this.name + ".params' must be an object.");
+                    Iterator<Map.Entry<String, JsonNode>> paramsNode = value.fields();
+                    while (paramsNode.hasNext()) {
+                        Map.Entry<String, JsonNode> paramNode = paramsNode.next();
+                        String paramField = "params." + paramNode.getKey();
+                        JsonNode paramValue = paramNode.getValue();
+                        if (paramValue.isObject() || paramValue.isArray())
+                            this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));
+                        else if (paramValue.isNull())
+                            this.params().put(paramField, "null");
+                        else
+                            this.params().put(paramField, paramValue.asText());
+                    }
+                    break;
                 default:
                     throw new ValidationException("'attributes." + this.name + "." + name + "' is not a recognized field.");
             }
@@ -172,7 +147,7 @@ public class Attribute {
     }
 
     public void deserialize(String json) throws ValidationException, IOException {
-        deserialize(new ObjectMapper().readTree(json));
+        deserialize(Json.MAPPER.readTree(json));
     }
 
 }
