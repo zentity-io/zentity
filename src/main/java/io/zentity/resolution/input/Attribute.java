@@ -33,8 +33,8 @@ public class Attribute {
     public Attribute(String name, String type, String json) throws ValidationException, IOException {
         validateName(name);
         validateType(type);
-        this.name = type;
-        this.type = name;
+        this.name = name;
+        this.type = type;
         this.deserialize(json);
     }
 

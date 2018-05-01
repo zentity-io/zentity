@@ -1,7 +1,9 @@
 package io.zentity.resolution;
 
+import io.zentity.model.Matcher;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
+import io.zentity.resolution.input.Attribute;
 import io.zentity.resolution.input.Input;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,6 +45,200 @@ public class JobTest {
         String resolversClause = Job.populateResolversFilterTree(model, "index", resolversFilterTree, input.attributes());
         String expected = "{\"bool\":{\"should\":[{\"match\":{\"id\":\"1234567890\",\"fuzziness\":\"auto\"}},{\"bool\":{\"filter\":[{\"bool\":{\"should\":[{\"term\":{\"name\":\"Alice Jones\"}},{\"term\":{\"name\":\"Alice Jones-Smith\"}}]}},{\"bool\":{\"should\":[{\"match\":{\"phone\":\"555-123-4567\",\"fuzziness\":\"2\"}},{\"bool\":{\"filter\":[{\"term\":{\"street\":\"123 Main St\"}},{\"bool\":{\"should\":[{\"bool\":{\"filter\":[{\"term\":{\"city\":\"Beverly Hills\"}},{\"bool\":{\"filter\":{\"term\":{\"state\":\"CA\"}}}}]}},{\"term\":{\"zip\":\"90210\"}}]}}]}}]}}]}}]}}";
         Assert.assertEquals(resolversClause, expected);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClause() throws Exception {
+        String attributeJson = "{\n" +
+                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
+                "}";
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": \"{{ value }}\"\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        String expected = "{\"match\":{\"field_phone\":\"555-123-4567\"}}";
+        Assert.assertEquals(matcherClause, expected);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables,
+     * but don't include {{ field }} and expect an exception to be raised.
+     *
+     * @throws Exception
+     */
+    @Test(expected = ValidationException.class)
+    public void testPopulateMatcherClauseFieldMissing() throws Exception {
+        String attributeJson = "{\n" +
+                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
+                "}";
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"foo\": {\n" +
+                "        \"query\": \"{{ value }}\",\n" +
+                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "      }\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables,
+     * but don't include {{ value }} and expect an exception to be raised.
+     *
+     * @throws Exception
+     */
+    @Test(expected = ValidationException.class)
+    public void testPopulateMatcherClauseValueMissing() throws Exception {
+        String attributeJson = "{\n" +
+                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
+                "}";
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": {\n" +
+                "        \"query\": \"foo\",\n" +
+                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "      }\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * where the params are specified in the input attribute.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseParamsFromInputAttribute() throws Exception {
+        String attributeJson = "{\n" +
+                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ],\n" +
+                "  \"params\": { \"fuzziness\": 2 }\n" +
+                "}";
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": {\n" +
+                "        \"query\": \"{{ value }}\",\n" +
+                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "      }\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
+        Assert.assertEquals(matcherClause, expected);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * where the params are specified in the input attribute and overrides the params of a matcher.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseParamsFromInputAttributeOverridesMatcher() throws Exception {
+        String attributeJson = "{\n" +
+                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ],\n" +
+                "  \"params\": { \"fuzziness\": 1 }\n" +
+                "}";
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": {\n" +
+                "        \"query\": \"{{ value }}\",\n" +
+                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "      }\n" +
+                "    }" +
+                "  },\n" +
+                "  \"params\": {\n" +
+                "    \"fuzziness\": 2\n" +
+                "  }\n" +
+                "}";
+        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}";
+        Assert.assertEquals(matcherClause, expected);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * where the params are specified in the matcher.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseParamsFromMatcher() throws Exception {
+        String attributeJson = "{\n" +
+                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
+                "}";
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": {\n" +
+                "        \"query\": \"{{ value }}\",\n" +
+                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "      }\n" +
+                "    }" +
+                "  },\n" +
+                "  \"params\": {\n" +
+                "    \"fuzziness\": 2\n" +
+                "  }\n" +
+                "}";
+        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
+        Assert.assertEquals(matcherClause, expected);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * but don't pass any values to the params and expect an exception to be raised.
+     *
+     * @throws Exception
+     */
+    @Test(expected = ValidationException.class)
+    public void testPopulateMatcherClauseParamsMissing() throws Exception {
+        String attributeJson = "{\n" +
+                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
+                "}";
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": {\n" +
+                "        \"query\": \"{{ value }}\",\n" +
+                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "      }\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
     }
 
     /**
