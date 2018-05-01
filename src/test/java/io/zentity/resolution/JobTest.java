@@ -1,6 +1,7 @@
 package io.zentity.resolution;
 
 import io.zentity.model.Model;
+import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.Input;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,6 +43,516 @@ public class JobTest {
         String resolversClause = Job.populateResolversFilterTree(model, "index", resolversFilterTree, input.attributes());
         String expected = "{\"bool\":{\"should\":[{\"match\":{\"id\":\"1234567890\",\"fuzziness\":\"auto\"}},{\"bool\":{\"filter\":[{\"bool\":{\"should\":[{\"term\":{\"name\":\"Alice Jones\"}},{\"term\":{\"name\":\"Alice Jones-Smith\"}}]}},{\"bool\":{\"should\":[{\"match\":{\"phone\":\"555-123-4567\",\"fuzziness\":\"2\"}},{\"bool\":{\"filter\":[{\"term\":{\"street\":\"123 Main St\"}},{\"bool\":{\"should\":[{\"bool\":{\"filter\":[{\"term\":{\"city\":\"Beverly Hills\"}},{\"bool\":{\"filter\":{\"term\":{\"state\":\"CA\"}}}}]}},{\"term\":{\"zip\":\"90210\"}}]}}]}}]}}]}}]}}";
         Assert.assertEquals(resolversClause, expected);
+    }
+
+    /**
+     * Make the "script_fields" clause for a "date" type attribute where the "format" param is specified only in the
+     * input attribute.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMakeScriptFieldsClauseTypeDateFormatInputAttributeOnly() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\"}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"format\": \"yyyy-MM-dd\",\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        String scriptFieldsClause = Job.makeScriptFieldsClause(input, "index");
+        String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"doc[params.field].value.toString(params.format)\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd\"}}}}";
+        Assert.assertEquals(scriptFieldsClause, expected);
+    }
+
+    /**
+     * Make the "script_fields" clause for a "date" type attribute where the "format" param is specified only in the
+     * matcher.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMakeScriptFieldsClauseTypeDateFormatMatcherOnly() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\"}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd\"" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"format\": \"yyyy-MM-dd\",\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        String scriptFieldsClause = Job.makeScriptFieldsClause(input, "index");
+        String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"doc[params.field].value.toString(params.format)\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd\"}}}}";
+        Assert.assertEquals(scriptFieldsClause, expected);
+    }
+
+    /**
+     * Make the "script_fields" clause for a "date" type attribute where the "format" param is specified only in the
+     * model attribute.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMakeScriptFieldsClauseTypeDateFormatModelAttributeOnly() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\",\"params\":{\"format\":\"yyyy-MM-dd\"}}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        String scriptFieldsClause = Job.makeScriptFieldsClause(input, "index");
+        String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"doc[params.field].value.toString(params.format)\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd\"}}}}";
+        Assert.assertEquals(scriptFieldsClause, expected);
+    }
+
+    /**
+     * Make the "script_fields" clause for a "date" type attribute where the "format" param is specified both in the
+     * model attribute and the matcher. The param of the model attribute should override the param of the matcher.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMakeScriptFieldsClauseTypeDateFormatModelAttributeOverridesMatcher() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\",\"params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd\"" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        String scriptFieldsClause = Job.makeScriptFieldsClause(input, "index");
+        String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"doc[params.field].value.toString(params.format)\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}}";
+        Assert.assertEquals(scriptFieldsClause, expected);
+    }
+
+    /**
+     * Make the "script_fields" clause for a "date" type attribute where the "format" param is specified both in the
+     * input attribute and the model attribute. The param of the input attribute should override the param of the
+     * model attribute.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMakeScriptFieldsClauseTypeDateFormatInputAttributeOverridesModelAttribute() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\",\"params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd\"" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSS\",\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        String scriptFieldsClause = Job.makeScriptFieldsClause(input, "index");
+        String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"doc[params.field].value.toString(params.format)\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss.SSS\"}}}}";
+        Assert.assertEquals(scriptFieldsClause, expected);
+    }
+
+    /**
+     * Make the "script_fields" clause for a "date" type attribute where the "format" param is specified both in the
+     * input attribute and the model attribute, but the value of the input attribute param is null. The param of the
+     * input attribute should not override the non-null param of the model attribute.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMakeScriptFieldsClauseTypeDateFormatNullNotOverrides() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\",\"params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd\"" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"format\": null,\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        String scriptFieldsClause = Job.makeScriptFieldsClause(input, "index");
+        String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"doc[params.field].value.toString(params.format)\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}}";
+        Assert.assertEquals(scriptFieldsClause, expected);
+    }
+
+    /**
+     * The "script_fields" clause for a "date" type attribute must throw an exception if the "format" param is missing
+     * from the matcher, the model attribute, and the input attribute.
+     *
+     * @throws Exception
+     */
+    @Test(expected = ValidationException.class)
+    public void testMakeScriptFieldsClauseTypeDateFormatMissing() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\"}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        Job.makeScriptFieldsClause(input, "index");
+    }
+
+    /**
+     * The "script_fields" clause for a "date" type attribute must throw an exception if the only "format" param is null.
+     *
+     * @throws Exception
+     */
+    @Test(expected = ValidationException.class)
+    public void testMakeScriptFieldsClauseTypeDateFormatNull() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_ip\":{},\"attribute_timestamp\":{\"type\":\"date\"}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_ip\",\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_ip\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"term\": {\n" +
+                "        \"{{ field }}\": \"{{ value }}\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_ip\": {\n" +
+                "        \"attribute\": \"attribute_ip\", \"matcher\":\"matcher_ip\"\n" +
+                "      },\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_ip\": {\n" +
+                "      \"values\": [\"192.168.0.1\"]\n" +
+                "    },\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"format\": null,\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        Job.makeScriptFieldsClause(input, "index");
     }
 
 }
