@@ -9,6 +9,9 @@
     "attribute_type_boolean": {
       "type": "boolean"
     },
+    "attribute_type_date": {
+      "type": "date"
+    },
     "attribute_type_double": {
       "type": "number"
     },
@@ -48,6 +51,25 @@
     "resolver_type_boolean": {
       "attributes": [
         "attribute_type_boolean"
+      ]
+    },
+    "resolver_type_date_a": {
+      "attributes": [
+        "attribute_a",
+        "attribute_type_date"
+      ]
+    },
+    "resolver_type_date_b": {
+      "attributes": [
+        "attribute_b",
+        "attribute_c",
+        "attribute_type_date"
+      ]
+    },
+    "resolver_type_date_c": {
+      "attributes": [
+        "attribute_d",
+        "attribute_type_date"
       ]
     },
     "resolver_type_double": {
@@ -95,6 +117,21 @@
           "{{ field }}": "{{ value }}"
         }
       }
+    },
+    "matcher_c": {
+      "clause": {
+        "range": {
+          "{{ field }}": {
+            "gte": "{{ value }}||-{{ params.window }}",
+            "lte": "{{ value }}||+{{ params.window }}",
+            "format": "{{ params.format }}"
+          }
+        }
+      },
+      "params" :{
+        "format": "yyyy-MM-dd'T'HH:mm:ss.0000",
+        "window": "2s"
+      }
     }
   },
   "indices": {
@@ -135,6 +172,10 @@
         "type_boolean": {
           "attribute": "attribute_type_boolean",
           "matcher": "matcher_b"
+        },
+        "type_date": {
+          "attribute": "attribute_type_date",
+          "matcher": "matcher_c"
         },
         "type_double": {
           "attribute": "attribute_type_double",
@@ -200,6 +241,10 @@
           "attribute": "attribute_type_boolean",
           "matcher": "matcher_b"
         },
+        "type_date": {
+          "attribute": "attribute_type_date",
+          "matcher": "matcher_c"
+        },
         "type_double": {
           "attribute": "attribute_type_double",
           "matcher": "matcher_b"
@@ -264,6 +309,10 @@
           "attribute": "attribute_type_boolean",
           "matcher": "matcher_b"
         },
+        "type_date": {
+          "attribute": "attribute_type_date",
+          "matcher": "matcher_c"
+        },
         "type_double": {
           "attribute": "attribute_type_double",
           "matcher": "matcher_b"
@@ -327,6 +376,10 @@
         "type_boolean": {
           "attribute": "attribute_type_boolean",
           "matcher": "matcher_b"
+        },
+        "type_date": {
+          "attribute": "attribute_type_date",
+          "matcher": "matcher_c"
         },
         "type_double": {
           "attribute": "attribute_type_double",

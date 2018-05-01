@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.zentity.common.Json;
+import io.zentity.common.Patterns;
+import io.zentity.model.Index;
 import io.zentity.model.Matcher;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
@@ -68,6 +70,61 @@ public class Job {
 
     public Job(NodeClient client) {
         this.client = client;
+    }
+
+    public static String makeScriptFieldsClause(Input input, String indexName) throws ValidationException {
+        List<String> scriptFieldClauses = new ArrayList<>();
+
+        // Find any index fields that need to be included in the "script_fields" clause.
+        // Currently this includes any index field that is associated with a "date" attribute,
+        // which requires the "_source" value to be reformatted to a normalized format.
+        Index index = input.model().indices().get(indexName);
+        for (String attributeName : index.attributeIndexFieldsMap().keySet()) {
+            switch (input.model().attributes().get(attributeName).type()) {
+                case "date":
+
+                    // Required params
+                    String format;
+
+                    // Make a "script" clause for each index field associated with this attribute.
+                    for (String indexFieldName : index.attributeIndexFieldsMap().get(attributeName).keySet()) {
+                        // Check if the required params are defined in the input attribute.
+                        if (input.attributes().containsKey(attributeName) && input.attributes().get(attributeName).params().containsKey("format") && !input.attributes().get(attributeName).params().get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(input.attributes().get(attributeName).params().get("format")).matches()) {
+                            format = input.attributes().get(attributeName).params().get("format");
+                        } else {
+                            // Otherwise check if the required params are defined in the model attribute.
+                            Map<String, String> params = input.model().attributes().get(attributeName).params();
+                            if (params.containsKey("format") && !params.get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
+                                format = params.get("format");
+                            } else {
+                                // Otherwise check if the required params are defined in the matcher associated with the index field.
+                                String matcherName = index.attributeIndexFieldsMap().get(attributeName).get(indexFieldName).matcher();
+                                params = input.model().matchers().get(matcherName).params();
+                                if (params.containsKey("format") && !params.get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
+                                    format = params.get("format");
+                                } else {
+                                    // If we've gotten this far, that means that the required params for this attribute type
+                                    // haven't been specified in any valid places.
+                                    throw new ValidationException("'attributes." + attributeName + "' is a 'date' which required a 'format' to be specified in the params.");
+                                }
+                            }
+                        }
+
+                        // Make the "script" clause
+                        String scriptSource = "doc[params.field].value.toString(params.format)";
+                        String scriptParams = "\"field\":\"" + indexFieldName + "\",\"format\":\"" + format + "\"";
+                        String scriptFieldClause = "\"" + indexFieldName + "\":{\"script\":{\"lang\":\"painless\",\"source\":\"" + scriptSource + "\",\"params\":{" + scriptParams + "}}}";
+                        scriptFieldClauses.add(scriptFieldClause);
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        if (scriptFieldClauses.isEmpty())
+            return null;
+        return "\"script_fields\":{" + String.join(",", scriptFieldClauses) + "}";
     }
 
     /**
@@ -152,14 +209,18 @@ public class Job {
                     matcherClause = pattern.matcher(matcherClause).replaceAll(value);
                     break;
                 default:
-                    String paramValue;
-                    if (attribute.params().containsKey(variable))
-                        paramValue = attribute.params().get(variable);
-                    else if (matcher.params().containsKey(variable))
-                        paramValue = matcher.params().get(variable);
-                    else
-                        throw new ValidationException("'matchers." + matcher.name() + "' was given no value for '{{ " + variable + " }}'");
-                    matcherClause = pattern.matcher(matcherClause).replaceAll(paramValue);
+                    java.util.regex.Matcher m = Patterns.VARIABLE_PARAMS.matcher(variable);
+                    if (m.find()) {
+                        String var = m.group(1);
+                        String paramValue;
+                        if (attribute.params().containsKey(var))
+                            paramValue = attribute.params().get(var);
+                        else if (matcher.params().containsKey(var))
+                            paramValue = matcher.params().get(var);
+                        else
+                            throw new ValidationException("'matchers." + matcher.name() + "' was given no value for '{{ " + variable + " }}'");
+                        matcherClause = pattern.matcher(matcherClause).replaceAll(paramValue);
+                    }
                     break;
             }
         }
@@ -502,6 +563,8 @@ public class Job {
             List<String> queryClauses = new ArrayList<>();
             List<String> queryMustNotClauses = new ArrayList<>();
             List<String> queryFilterClauses = new ArrayList<>();
+            List<String> topLevelClauses = new ArrayList<>();
+            topLevelClauses.add("\"_source\":true");
 
             // Exclude docs by _id
             Set<String> ids = this.docIds.get(indexName);
@@ -549,13 +612,24 @@ public class Job {
 
             // Construct the "query" clause.
             if (!queryClauses.isEmpty())
-                queryClause = "{\"bool\":{" + String.join(",", queryClauses) + "}}";
+                queryClause = "\"query\":{\"bool\":{" + String.join(",", queryClauses) + "}}";
+            topLevelClauses.add(queryClause);
+
+            // Construct the "script_fields" clause.
+            String scriptFieldsClause = makeScriptFieldsClause(this.input, indexName);
+            if (scriptFieldsClause != null)
+                topLevelClauses.add(scriptFieldsClause);
+
+            // Construct the "size" clause.
+            topLevelClauses.add("\"size\":" + this.maxDocsPerQuery);
+
+            // Construct the "profile" clause.
+            if (this.profile)
+                topLevelClauses.add("\"profile\":true");
 
             // Construct the final query.
-            if (this.profile)
-                query = "{\"query\":" + queryClause + ",\"size\": " + this.maxDocsPerQuery + ",\"profile\":true}";
-            else
-                query = "{\"query\":" + queryClause + ",\"size\": " + this.maxDocsPerQuery + "}";
+            query = "{" + String.join(",", topLevelClauses) + "}";
+            System.out.println(query);
 
             // Submit query to Elasticsearch.
             SearchResponse response = this.search(indexName, query);
@@ -604,25 +678,50 @@ public class Job {
                     String attributeType = this.input.model().attributes().get(attributeName).type();
                     if (!nextInputAttributes.containsKey(attributeName))
                         nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
-                    // The index field name might not refer to the _source property.
-                    // If it's not in the _source, remove the last part of the index field name from the dot notation.
-                    // Index field names can reference multi-fields, which are not returned in the _source.
-                    String path = this.input.model().indices().get(indexName).fields().get(indexFieldName).path();
-                    String pathParent = this.input.model().indices().get(indexName).fields().get(indexFieldName).pathParent();
-                    JsonNode valueNode = doc.get("_source").at(path);
-                    if (valueNode.isMissingNode())
-                        valueNode = doc.get("_source").at(pathParent);
-                    if (valueNode.isMissingNode())
-                        continue;
-                    docAttributes.put(attributeName, valueNode);
-                    Value value = Value.create(attributeType, valueNode);
-                    nextInputAttributes.get(attributeName).values().add(value);
+
+                    // Get the attribute value from the doc.
+                    if (doc.has("fields") && doc.get("fields").has(indexFieldName)) {
+
+                        // Get the attribute value from the "fields" field if it exists there.
+                        // This would include 'date' attribute types, for example.
+                        JsonNode valueNode = doc.get("fields").get(indexFieldName);
+                        if (valueNode.size() > 1) {
+                            docAttributes.put(attributeName, valueNode); // Return multiple values (as an array) in "_attributes"
+                            for (JsonNode vNode : valueNode) {
+                                Value value = Value.create(attributeType, vNode);
+                                nextInputAttributes.get(attributeName).values().add(value);
+                            }
+                        } else {
+                            JsonNode vNode = valueNode.get(0); // Return single value (not as an array) in "_attributes"
+                            docAttributes.put(attributeName, vNode);
+                            Value value = Value.create(attributeType, vNode);
+                            nextInputAttributes.get(attributeName).values().add(value);
+                        }
+
+                    } else {
+
+                        // Get the attribute value from the "_source" field.
+                        // The index field name might not refer to the _source property.
+                        // If it's not in the _source, remove the last part of the index field name from the dot notation.
+                        // Index field names can reference multi-fields, which are not returned in the _source.
+                        String path = this.input.model().indices().get(indexName).fields().get(indexFieldName).path();
+                        String pathParent = this.input.model().indices().get(indexName).fields().get(indexFieldName).pathParent();
+                        JsonNode valueNode = doc.get("_source").at(path);
+                        if (valueNode.isMissingNode())
+                            valueNode = doc.get("_source").at(pathParent);
+                        if (valueNode.isMissingNode())
+                            continue;
+                        docAttributes.put(attributeName, valueNode);
+                        Value value = Value.create(attributeType, valueNode);
+                        nextInputAttributes.get(attributeName).values().add(value);
+                    }
                 }
 
                 // Modify doc metadata.
                 if (this.includeHits) {
                     ObjectNode docObjNode = (ObjectNode) doc;
                     docObjNode.remove("_score");
+                    docObjNode.remove("fields");
                     docObjNode.put("_hop", this.hop);
                     if (this.includeAttributes) {
                         ObjectNode docAttributesObjNode = docObjNode.putObject("_attributes");

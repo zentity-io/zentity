@@ -7,6 +7,6 @@ public class Patterns {
     public static final Pattern EMPTY_STRING = Pattern.compile("^\\s*$");
     public static final Pattern PERIOD = Pattern.compile("\\.");
     public static final Pattern VARIABLE = Pattern.compile("\\{\\{\\s*([^\\s{}]+)\\s*}}");
-    public static final Pattern VARIABLE_PARAM = Pattern.compile("\\{\\{\\s*param\\.([^\\s{}]+)\\s*}}");
+    public static final Pattern VARIABLE_PARAMS = Pattern.compile("^params\\.(.+)");
 
 }

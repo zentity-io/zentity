@@ -74,6 +74,10 @@
         "type_boolean": {
           "type": "boolean"
         },
+        "type_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd'T'HH:mm:ss.SSS"
+        },
         "type_double": {
           "type": "double"
         },

@@ -135,7 +135,7 @@ public class Matcher {
                     Iterator<Map.Entry<String, JsonNode>> paramsNode = value.fields();
                     while (paramsNode.hasNext()) {
                         Map.Entry<String, JsonNode> paramNode = paramsNode.next();
-                        String paramField = "params." + paramNode.getKey();
+                        String paramField = paramNode.getKey();
                         JsonNode paramValue = paramNode.getValue();
                         if (paramValue.isObject() || paramValue.isArray())
                             this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));
@@ -146,11 +146,11 @@ public class Matcher {
                     }
 
                     if (value.isObject() || value.isArray())
-                        this.params().put("params." + name, Json.MAPPER.writeValueAsString(value));
+                        this.params().put(name, Json.MAPPER.writeValueAsString(value));
                     else if (value.isNull())
-                        this.params().put("params." + name, "null");
+                        this.params().put(name, "null");
                     else
-                        this.params().put("params." + name, value.asText());
+                        this.params().put(name, value.asText());
                     break;
                 default:
                     throw new ValidationException("'matchers." + this.name + "." + name + "' is not a recognized field.");

@@ -5,6 +5,8 @@ import io.zentity.model.ValidationException;
 
 public class NumberValue extends Value {
 
+    public final String type = "number";
+
     public NumberValue(JsonNode value) throws ValidationException {
         super(value);
     }
@@ -27,7 +29,7 @@ public class NumberValue extends Value {
     }
 
     /**
-     * Validate the "number" value.
+     * Validate the value.
      *
      * @param value Attribute value.
      * @throws ValidationException
@@ -35,6 +37,6 @@ public class NumberValue extends Value {
     @Override
     public void validate(JsonNode value) throws ValidationException {
         if (!value.isNumber() && !value.isNull())
-            throw new ValidationException("Expected 'number' attribute data type.");
+            throw new ValidationException("Expected '" + this.type + "' attribute data type.");
     }
 }

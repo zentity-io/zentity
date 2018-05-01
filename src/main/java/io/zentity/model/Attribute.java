@@ -16,7 +16,7 @@ import java.util.TreeSet;
 public class Attribute {
 
     public static final Set<String> VALID_TYPES = new TreeSet<>(
-            Arrays.asList("string", "number", "boolean")
+            Arrays.asList("boolean", "date", "number", "string")
     );
 
     private final String name;
@@ -130,7 +130,7 @@ public class Attribute {
                     Iterator<Map.Entry<String, JsonNode>> paramsNode = value.fields();
                     while (paramsNode.hasNext()) {
                         Map.Entry<String, JsonNode> paramNode = paramsNode.next();
-                        String paramField = "params." + paramNode.getKey();
+                        String paramField = paramNode.getKey();
                         JsonNode paramValue = paramNode.getValue();
                         if (paramValue.isObject() || paramValue.isArray())
                             this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));

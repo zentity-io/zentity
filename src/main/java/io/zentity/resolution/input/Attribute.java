@@ -167,7 +167,7 @@ public class Attribute {
         // Set any params that were specified in the input, with the values serialized as strings.
         while (paramsNode.hasNext()) {
             Map.Entry<String, JsonNode> paramNode = paramsNode.next();
-            String paramField = "params." + paramNode.getKey();
+            String paramField = paramNode.getKey();
             JsonNode paramValue = paramNode.getValue();
             if (paramValue.isObject() || paramValue.isArray())
                 this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));
