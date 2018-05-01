@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
+import io.zentity.model.Index;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.scope.Scope;
@@ -13,6 +14,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Input {
 
@@ -267,6 +269,48 @@ public class Input {
                 // Intersect the "resolvers" field of the entity model with "scope.exclude.resolvers".
                 if (!this.scope.exclude().resolvers().isEmpty())
                     this.model = excludeResolvers(this.model, this.scope.exclude().resolvers());
+            }
+        }
+
+        // Validate that the attribute associated with each index field has any and all required params.
+        // For example, 'date' attributes require the 'format' field to be specified in the matcher params,
+        // the model attribute params, or the input attribute params so that the dates can be queried and returned
+        // in a normalized fashion. Currently this only applies to 'date' attribute types.
+        Set<String> paramsValidated = new TreeSet<>();
+        for (String indexName : this.model.indices().keySet()) {
+            Index index = this.model.indices().get(indexName);
+            for (String attributeName : index.attributeIndexFieldsMap().keySet()) {
+                if (paramsValidated.contains(attributeName))
+                    continue;
+                if (!this.model.attributes().containsKey(attributeName))
+                    continue;
+                switch (this.model.attributes().get(attributeName).type()) {
+                    case "date":
+                        // Check if the required params are defined in the input attribute.
+                        Map<String, String> params = new TreeMap<>();
+                        if (this.attributes.containsKey(attributeName))
+                            params = this.attributes.get(attributeName).params();
+                        if (!params.containsKey("format") || params.get("format").equals("null") || Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
+                            // Otherwise check if the required params are defined in the model attribute.
+                            params = this.model.attributes().get(attributeName).params();
+                            if (!params.containsKey("format") || params.get("format").equals("null") || Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
+                                // Otherwise check if the required params are defined in the matcher associated with the index field.
+                                for (String indexFieldName : index.attributeIndexFieldsMap().get(attributeName).keySet()) {
+                                    String matcherName = index.attributeIndexFieldsMap().get(attributeName).get(indexFieldName).matcher();
+                                    params = this.model.matchers().get(matcherName).params();
+                                    if (!params.containsKey("format") || params.get("format").equals("null") || Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
+                                        // If we've gotten this far, that means that the required params for this attribute type
+                                        // haven't been specified in any valid places.
+                                        throw new ValidationException("'attributes." + attributeName + "' is a 'date' which required a 'format' to be specified in the params.");
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                paramsValidated.add(attributeName);
             }
         }
     }

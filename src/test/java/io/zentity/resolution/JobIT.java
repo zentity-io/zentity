@@ -51,6 +51,21 @@ public class JobIT extends AbstractITCase {
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
+    private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_DATE = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_d\": { \"values\": [ \"d_00\" ] },\n" +
+            "    \"attribute_type_date\": {\n" +
+            "      \"values\": [ \"2000-01-01 00:00:00\" ],\n" +
+            "      \"params\": { \"format\": \"yyyy-MM-dd HH:mm:ss\", \"window\": \"1s\" }\n" +
+            "    }\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"resolvers\": [ \"resolver_type_date_a\", \"resolver_type_date_b\", \"resolver_type_date_c\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
     private final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE = new StringEntity("{\n" +
             "  \"attributes\": { \"attribute_type_boolean\": [ false ] },\n" +
             "  \"scope\": {\n" +
@@ -399,6 +414,35 @@ public class JobIT extends AbstractITCase {
             assertEquals(j12.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j12));
 
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobDataTypesDate() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_DATE);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 13);
+
+            Set<String> docsExpected = new TreeSet<>();
+            docsExpected.add("a1,0");
+            docsExpected.add("a2,0");
+            docsExpected.add("b0,0");
+            docsExpected.add("c0,0");
+            docsExpected.add("d0,0");
+            docsExpected.add("d1,0");
+            docsExpected.add("a3,1");
+            docsExpected.add("b3,1");
+            docsExpected.add("c1,1");
+            docsExpected.add("d2,1");
+            docsExpected.add("b1,2");
+            docsExpected.add("c3,2");
+            docsExpected.add("d3,2");
+
+            assertEquals(docsExpected, getActual(json));
         } finally {
             destroyTestResources();
         }

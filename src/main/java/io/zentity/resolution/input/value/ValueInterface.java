@@ -18,6 +18,13 @@ public interface ValueInterface extends Comparable<Value> {
     String serialize(JsonNode value);
 
     /**
+     * Return the attribute type.
+     *
+     * @return
+     */
+    Object type();
+
+    /**
      * Return the attribute value.
      *
      * @return

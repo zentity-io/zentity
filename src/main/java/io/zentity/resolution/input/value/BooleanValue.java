@@ -5,6 +5,8 @@ import io.zentity.model.ValidationException;
 
 public class BooleanValue extends Value {
 
+    public final String type = "boolean";
+
     public BooleanValue(JsonNode value) throws ValidationException {
         super(value);
     }
@@ -22,7 +24,7 @@ public class BooleanValue extends Value {
     }
 
     /**
-     * Validate the "boolean" value.
+     * Validate the value.
      *
      * @param value Attribute value.
      * @throws ValidationException
@@ -30,7 +32,7 @@ public class BooleanValue extends Value {
     @Override
     public void validate(JsonNode value) throws ValidationException {
         if (!value.isBoolean() && !value.isNull())
-            throw new ValidationException("Expected 'boolean' attribute data type.");
+            throw new ValidationException("Expected '" + this.type + "' attribute data type.");
     }
 
 }

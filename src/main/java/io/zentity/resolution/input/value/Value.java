@@ -5,6 +5,7 @@ import io.zentity.model.ValidationException;
 
 public abstract class Value implements ValueInterface {
 
+    protected final String type = "value";
     protected final JsonNode value;
     protected final String serialized;
 
@@ -31,6 +32,8 @@ public abstract class Value implements ValueInterface {
         switch (attributeType) {
             case "boolean":
                 return new BooleanValue(value);
+            case "date":
+                return new DateValue(value);
             case "number":
                 return new NumberValue(value);
             case "string":
@@ -45,6 +48,11 @@ public abstract class Value implements ValueInterface {
 
     @Override
     public abstract void validate(JsonNode value) throws ValidationException;
+
+    @Override
+    public Object type() {
+        return this.type;
+    }
 
     @Override
     public Object value() {
