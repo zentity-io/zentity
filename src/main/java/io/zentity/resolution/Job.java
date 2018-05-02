@@ -629,7 +629,6 @@ public class Job {
 
             // Construct the final query.
             query = "{" + String.join(",", topLevelClauses) + "}";
-            System.out.println(query);
 
             // Submit query to Elasticsearch.
             SearchResponse response = this.search(indexName, query);
