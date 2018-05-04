@@ -4,7 +4,6 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -97,11 +96,11 @@ public class SetupAction extends BaseRestHandler {
             try {
                 if (method == POST) {
 
-                    CreateIndexResponse response = createIndex(client, numberOfShards, numberOfReplicas);
+                    createIndex(client, numberOfShards, numberOfReplicas);
                     XContentBuilder content = XContentFactory.jsonBuilder();
                     if (pretty)
                         content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    content.startObject().field("acknowledged", true).endObject();
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else {
