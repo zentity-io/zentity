@@ -4,6 +4,7 @@ import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.Job;
 import io.zentity.resolution.input.Input;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -55,10 +56,15 @@ public class ResolutionAction extends BaseRestHandler {
 
                 // Parse and validate the job input.
                 Input input;
-                if (entityType == null || entityType.equals(""))
+                if (entityType == null || entityType.equals("")) {
                     input = new Input(body, entityType);
-                else
-                    input = new Input(body, new Model(ModelsAction.getEntityModel(entityType, client).getSourceAsString()));
+                } else {
+                    GetResponse getResponse = ModelsAction.getEntityModel(entityType, client);
+                    if (!getResponse.isExists())
+                        throw new NotFoundException("Entity type '" + entityType + "' not found.");
+                    String model = getResponse.getSourceAsString();
+                    input = new Input(body, new Model(model));
+                }
                 if (input.attributes().isEmpty())
                     throw new ValidationException("'attributes' is missing.");
                 if (input.model() == null)
@@ -82,6 +88,8 @@ public class ResolutionAction extends BaseRestHandler {
 
             } catch (ValidationException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
+            } catch (NotFoundException e) {
+                channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_FOUND, e));
             }
         };
     }
