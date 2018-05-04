@@ -2,6 +2,7 @@ package org.elasticsearch.plugin.zentity;
 
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
@@ -34,30 +35,7 @@ import static org.elasticsearch.rest.RestRequest.Method.PUT;
 
 public class ModelsAction extends BaseRestHandler {
 
-    public static final String INDEX = ".zentity-models";
-    public static final String INDEX_MAPPING = "{\n" +
-            "  \"doc\": {\n" +
-            "    \"dynamic\": \"strict\",\n" +
-            "    \"properties\": {\n" +
-            "      \"attributes\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      },\n" +
-            "      \"resolvers\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      },\n" +
-            "      \"matchers\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      },\n" +
-            "      \"indices\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      }\n" +
-            "    }\n" +
-            "  }\n" +
-            "}";
+    public static final String INDEX_NAME = ".zentity-models";
 
     @Inject
     public ModelsAction(Settings settings, RestController controller) {
@@ -69,26 +47,21 @@ public class ModelsAction extends BaseRestHandler {
         controller.registerHandler(DELETE, "_zentity/models/{entity_type}", this);
     }
 
-    public static void createIndex(NodeClient client) {
-        client.admin().indices().prepareCreate(INDEX)
-                .setSettings(Settings.builder()
-                        .put("index.number_of_shards", 1)
-                        .put("index.number_of_replicas", 1)
-                )
-                .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
-                .get();
-    }
-
     /**
      * Check if the .zentity-models index exists, and if it doesn't, then create it.
      *
      * @param client The client that will communicate with Elasticsearch.
+     * @throws ForbiddenException
      */
-    public static void ensureIndex(NodeClient client) {
-        IndicesExistsRequestBuilder request = client.admin().indices().prepareExists(INDEX);
-        IndicesExistsResponse response = request.get();
-        if (!response.isExists())
-            createIndex(client);
+    public static void ensureIndex(NodeClient client) throws ForbiddenException {
+        try {
+            IndicesExistsRequestBuilder request = client.admin().indices().prepareExists(INDEX_NAME);
+            IndicesExistsResponse response = request.get();
+            if (!response.isExists())
+                SetupAction.createIndex(client);
+        } catch (ElasticsearchSecurityException se) {
+            throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
+        }
     }
 
     /**
@@ -96,14 +69,19 @@ public class ModelsAction extends BaseRestHandler {
      *
      * @param client The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
+     * @throws ForbiddenException
      */
-    public static SearchResponse getEntityModels(NodeClient client) {
-        SearchRequestBuilder request = client.prepareSearch(INDEX);
+    public static SearchResponse getEntityModels(NodeClient client) throws ForbiddenException {
+        SearchRequestBuilder request = client.prepareSearch(INDEX_NAME);
         request.setSize(10000);
         try {
             return request.get();
         } catch (IndexNotFoundException e) {
-            createIndex(client);
+            try {
+                SetupAction.createIndex(client);
+            } catch (ElasticsearchSecurityException se) {
+                throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
+            }
             return request.get();
         }
     }
@@ -114,13 +92,18 @@ public class ModelsAction extends BaseRestHandler {
      * @param entityType The entity type.
      * @param client     The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
+     * @throws ForbiddenException
      */
-    public static GetResponse getEntityModel(String entityType, NodeClient client) {
-        GetRequestBuilder request = client.prepareGet(INDEX, "doc", entityType);
+    public static GetResponse getEntityModel(String entityType, NodeClient client) throws ForbiddenException {
+        GetRequestBuilder request = client.prepareGet(INDEX_NAME, "doc", entityType);
         try {
             return request.get();
         } catch (IndexNotFoundException e) {
-            createIndex(client);
+            try {
+                SetupAction.createIndex(client);
+            } catch (ElasticsearchSecurityException se) {
+                throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
+            }
             return request.get();
         }
     }
@@ -132,10 +115,11 @@ public class ModelsAction extends BaseRestHandler {
      * @param requestBody The request body.
      * @param client      The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
+     * @throws ForbiddenException
      */
-    public static IndexResponse indexEntityModel(String entityType, String requestBody, NodeClient client) {
+    public static IndexResponse indexEntityModel(String entityType, String requestBody, NodeClient client) throws ForbiddenException {
         ensureIndex(client);
-        IndexRequestBuilder request = client.prepareIndex(INDEX, "doc", entityType);
+        IndexRequestBuilder request = client.prepareIndex(INDEX_NAME, "doc", entityType);
         request.setSource(requestBody, XContentType.JSON).setCreate(true).setRefreshPolicy("wait_for");
         return request.get();
     }
@@ -147,10 +131,11 @@ public class ModelsAction extends BaseRestHandler {
      * @param requestBody The request body.
      * @param client      The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
+     * @throws ForbiddenException
      */
-    public static IndexResponse updateEntityModel(String entityType, String requestBody, NodeClient client) {
+    public static IndexResponse updateEntityModel(String entityType, String requestBody, NodeClient client) throws ForbiddenException {
         ensureIndex(client);
-        IndexRequestBuilder request = client.prepareIndex(INDEX, "doc", entityType);
+        IndexRequestBuilder request = client.prepareIndex(INDEX_NAME, "doc", entityType);
         request.setSource(requestBody, XContentType.JSON).setCreate(false).setRefreshPolicy("wait_for");
         return request.get();
     }
@@ -161,14 +146,19 @@ public class ModelsAction extends BaseRestHandler {
      * @param entityType The entity type.
      * @param client     The client that will communicate with Elasticsearch.
      * @return The response from Elasticsearch.
+     * @throws ForbiddenException
      */
-    private static DeleteResponse deleteEntityModel(String entityType, NodeClient client) {
-        DeleteRequestBuilder request = client.prepareDelete(INDEX, "doc", entityType);
+    private static DeleteResponse deleteEntityModel(String entityType, NodeClient client) throws ForbiddenException {
+        DeleteRequestBuilder request = client.prepareDelete(INDEX_NAME, "doc", entityType);
         request.setRefreshPolicy("wait_for");
         try {
             return request.get();
         } catch (IndexNotFoundException e) {
-            createIndex(client);
+            try {
+                SetupAction.createIndex(client);
+            } catch (ElasticsearchSecurityException se) {
+                throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
+            }
             return request.get();
         }
     }
@@ -257,6 +247,8 @@ public class ModelsAction extends BaseRestHandler {
 
             } catch (ValidationException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
+            } catch (ForbiddenException e) {
+                channel.sendResponse(new BytesRestResponse(channel, RestStatus.FORBIDDEN, e));
             } catch (NotImplementedException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_IMPLEMENTED, e));
             }

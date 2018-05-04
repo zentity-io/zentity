@@ -1,5 +1,6 @@
 package org.elasticsearch.plugin.zentity;
 
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -26,6 +27,12 @@ class NotFoundException extends Exception {
 
 class NotImplementedException extends Exception {
     NotImplementedException(String message) {
+        super(message);
+    }
+}
+
+class ForbiddenException extends ElasticsearchSecurityException {
+    public ForbiddenException(String message) {
         super(message);
     }
 }
@@ -66,6 +73,7 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
             new HomeAction(settings, restController);
             new ModelsAction(settings, restController);
             new ResolutionAction(settings, restController);
+            new SetupAction(settings, restController);
         }};
         return handlers;
     }
