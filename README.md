@@ -18,14 +18,14 @@ zentity aims to be:
 
 ## Documentation
 
-Documentation is hosted at [https://zentity.io/#/docs](https://zentity.io/#/docs)
+Documentation is hosted at [https://zentity.io/docs](https://zentity.io/docs)
 
 
 ## Quick start
 
 Once you have installed Elasticsearch, you can install zentity from a remote URL or a local file.
 
-1. Browse the **[releases](https://zentity.io/#/releases)**.
+1. Browse the [releases](https://zentity.io/releases).
 2. Find a release that matches your version of Elasticsearch. Copy the name of the .zip file.
 3. Install the plugin using the `elasticsearch-plugin` script that comes with Elasticsearch.
 
@@ -33,13 +33,13 @@ Example:
 
 `elasticsearch-plugin install https://zentity.io/releases/zentity-0.5.0-beta.2-elasticsearch-6.2.4.zip`
 
-Read the [installation](https://zentity.io/#/docs/installation) docs for more details.
+Read the [installation](https://zentity.io/docs/installation) docs for more details.
 
 
 ### Next steps
 
-Read the **[documentation](https://zentity.io/#/docs/basic-usage)** to learn about [entity models](https://zentity.io/#/docs/entity-models),
-how to [manage entity models](https://zentity.io/#/docs/rest-apis/models-api), and how to [resolve entities](https://zentity.io/#/docs/rest-apis/resolution-api).
+Read the [documentation](https://zentity.io/docs/basic-usage) to learn about [entity models](https://zentity.io/docs/entity-models),
+how to [manage entity models](https://zentity.io/docs/rest-apis/models-api), and how to [resolve entities](https://zentity.io/docs/rest-apis/resolution-api).
 
 how to create and manage
 entity models and how to resolve entities.
