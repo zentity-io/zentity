@@ -1,6 +1,5 @@
 package io.zentity.resolution;
 
-import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.zentity.common.Json;
@@ -46,7 +45,6 @@ public class Job {
     public static final int DEFAULT_MAX_HOPS = 100;
     public static final boolean DEFAULT_PRETTY = false;
     public static final boolean DEFAULT_PROFILE = false;
-    private final JsonStringEncoder encoder = new JsonStringEncoder();
 
     // Job configuration
     private Input input;
@@ -499,18 +497,6 @@ public class Job {
         this.input = input;
     }
 
-    private String jsonStringEscape(String value) {
-        return new String(encoder.quoteAsString(value));
-    }
-
-    private String jsonStringQuote(String value) {
-        return "\"" + value + "\"";
-    }
-
-    private String jsonStringFormat(String value) {
-        return jsonStringQuote(jsonStringEscape(value));
-    }
-
     /**
      * Submit a search query to Elasticsearch.
      *
@@ -549,12 +535,14 @@ public class Job {
             if (!this.docIds.containsKey(indexName))
                 this.docIds.put(indexName, new TreeSet<>());
 
+            boolean filterIds = this.hop == 0 && this.input().ids().containsKey(indexName) && !this.input().ids().get(indexName).isEmpty();
+
             // Determine which resolvers can be queried for this index.
             List<String> resolvers = new ArrayList<>();
             for (String resolverName : this.input.model().resolvers().keySet())
                 if (canQuery(this.input.model(), indexName, resolverName, this.attributes))
                     resolvers.add(resolverName);
-            if (resolvers.size() == 0)
+            if (resolvers.size() == 0 && !filterIds)
                 continue;
 
             // Construct query for this index.
@@ -563,13 +551,14 @@ public class Job {
             List<String> queryClauses = new ArrayList<>();
             List<String> queryMustNotClauses = new ArrayList<>();
             List<String> queryFilterClauses = new ArrayList<>();
+            List<String> queryResolverClauses = new ArrayList<>();
             List<String> topLevelClauses = new ArrayList<>();
             topLevelClauses.add("\"_source\":true");
 
             // Exclude docs by _id
-            Set<String> ids = this.docIds.get(indexName);
-            if (!ids.isEmpty())
-                queryMustNotClauses.add("{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}");
+            Set<String> docIds = this.docIds.get(indexName);
+            if (!docIds.isEmpty())
+                queryMustNotClauses.add("{\"ids\":{\"values\":[" + String.join(",", docIds) + "]}}");
 
             // Create "scope.exclude.attributes" clauses. Combine them into a single "should" clause.
             if (!this.input.scope().exclude().attributes().isEmpty()) {
@@ -585,7 +574,7 @@ public class Job {
             if (!queryMustNotClauses.isEmpty())
                 queryClauses.add("\"must_not\":[" + String.join(",", queryMustNotClauses) + "]");
 
-            // Create "scope.include.attributes" clauses. Combine them into a single "filter" clause.
+            // Construct "scope.include.attributes" clauses. Combine them into a single "filter" clause.
             if (!this.input.scope().include().attributes().isEmpty()) {
                 List<String> attributeClauses = makeAttributeClauses(this.input.model(), indexName, this.input.scope().include().attributes(), "filter");
                 int size = attributeClauses.size();
@@ -595,12 +584,30 @@ public class Job {
                     queryFilterClauses.add(attributeClauses.get(0));
             }
 
+            // Construct the "ids" clause if this is the first hop and if any ids are specified for this index.
+            String idsClause = "{}";
+            if (filterIds) {
+                Set<String> ids = this.input().ids().get(indexName);
+                idsClause = "{\"bool\":{\"filter\":[{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}]}}";
+            }
+
             // Construct the resolvers clause.
-            Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), resolvers);
-            List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolvers, counts);
-            TreeMap<String, TreeMap> resolversFilterTree = makeResolversFilterTree(resolversSorted);
-            String resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes);
-            queryFilterClauses.add(resolversClause);
+            String resolversClause = "{}";
+            TreeMap<String, TreeMap> resolversFilterTree = new TreeMap<>();
+            if (!this.attributes.isEmpty()) {
+                Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), resolvers);
+                List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolvers, counts);
+                resolversFilterTree = makeResolversFilterTree(resolversSorted);
+                resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes);
+            }
+
+            // Combine the ids clause and resolvers clause in a "should" clause if necessary.
+            if (!idsClause.equals("{}") && !resolversClause.equals("{}"))
+                queryFilterClauses.add("{\"bool\":{\"should\":[" + idsClause + "," + resolversClause + "]}}");
+            else if (!idsClause.equals("{}"))
+                queryFilterClauses.add(idsClause);
+            else
+                queryFilterClauses.add(resolversClause);
 
             // Construct the top-level "filter" clause.
             if (!queryFilterClauses.isEmpty()) {
@@ -662,7 +669,7 @@ public class Job {
             for (JsonNode doc : responseData.get("hits").get("hits")) {
 
                 // Skip doc if already fetched. Otherwise mark doc as fetched and then proceed.
-                String _id = jsonStringFormat(doc.get("_id").textValue());
+                String _id = Json.quoteString(doc.get("_id").textValue());
                 if (this.docIds.get(indexName).contains(_id))
                     continue;
                 this.docIds.get(indexName).add(_id);

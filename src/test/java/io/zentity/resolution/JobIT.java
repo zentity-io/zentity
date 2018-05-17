@@ -19,9 +19,36 @@ public class JobIT extends AbstractITCase {
 
     private final Map<String, String> params = Collections.emptyMap();
 
-    private final StringEntity TEST_PAYLOAD_JOB = new StringEntity("{\n" +
+    private final StringEntity TEST_PAYLOAD_JOB_ATTRIBUTES = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_a\": [ \"a_00\" ]\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity TEST_PAYLOAD_JOB_IDS = new StringEntity("{\n" +
+            "  \"ids\": {\n" +
+            "    \".zentity_test_index_a\": [ \"a0\" ]\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity TEST_PAYLOAD_JOB_ATTRIBUTES_IDS = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_a\": [ \"a_00\" ]\n" +
+            "  },\n" +
+            "  \"ids\": {\n" +
+            "    \".zentity_test_index_a\": [ \"a6\" ]\n" +
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
@@ -265,11 +292,11 @@ public class JobIT extends AbstractITCase {
         return docsActual;
     }
 
-    public void testJob() throws Exception {
+    public void testJobAttributes() throws Exception {
         try {
             prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB);
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_ATTRIBUTES);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 6);
 
@@ -278,6 +305,74 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("b0,0");
             docsExpected.add("c0,1");
             docsExpected.add("a1,2");
+            docsExpected.add("b1,3");
+            docsExpected.add("c1,4");
+
+            assertEquals(docsExpected, getActual(json));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobIds() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_IDS);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 6);
+
+            Set<String> docsExpected = new TreeSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("b0,1");
+            docsExpected.add("c0,2");
+            docsExpected.add("a1,3");
+            docsExpected.add("b1,4");
+            docsExpected.add("c1,5");
+
+            assertEquals(docsExpected, getActual(json));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobAttributesIds() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_ATTRIBUTES_IDS);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 30);
+
+            Set<String> docsExpected = new TreeSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("a6,0");
+            docsExpected.add("b0,0");
+            docsExpected.add("a2,1");
+            docsExpected.add("a7,1");
+            docsExpected.add("a8,1");
+            docsExpected.add("a9,1");
+            docsExpected.add("b2,1");
+            docsExpected.add("b6,1");
+            docsExpected.add("b7,1");
+            docsExpected.add("b8,1");
+            docsExpected.add("b9,1");
+            docsExpected.add("c0,1");
+            docsExpected.add("c2,1");
+            docsExpected.add("c6,1");
+            docsExpected.add("c7,1");
+            docsExpected.add("c8,1");
+            docsExpected.add("c9,1");
+            docsExpected.add("a1,2");
+            docsExpected.add("a3,2");
+            docsExpected.add("a4,2");
+            docsExpected.add("a5,2");
+            docsExpected.add("b3,2");
+            docsExpected.add("b4,2");
+            docsExpected.add("b5,2");
+            docsExpected.add("c3,2");
+            docsExpected.add("c4,2");
+            docsExpected.add("c5,2");
             docsExpected.add("b1,3");
             docsExpected.add("c1,4");
 
