@@ -20,8 +20,10 @@ public class ResolutionActionTest {
     private static final String validAttributeArray = "\"attribute_array\":[\"abc\"]";
     private static final String validAttributeObject = "\"attribute_object\":{\"values\":[\"abc\"]}";
     private static final String validAttributes = "\"attributes\":{" + validAttributeArray + "," + validAttributeObject + "}";
+    private static final String validIds = "\"ids\":{\"index_name_a\":[\"a\",\"b\",\"c\"]}";
     private static final String validModel = "\"model\":" + ModelTest.VALID_OBJECT;
     private static final String validAttributesEmpty = "\"attributes\":{}";
+    private static final String validAttributesEmptyTypeNull = "\"attributes\":null";
     private static final String validAttributesTypeNull = "\"attributes\":null";
     private static final String validAttributeTypeArray = "\"attributes\":{\"attribute_name\":[\"abc\"]}";
     private static final String validAttributeTypeArrayEmpty = "\"attributes\":{\"attribute_name\":[]}";
@@ -29,6 +31,8 @@ public class ResolutionActionTest {
     private static final String validAttributeTypeBoolean = "\"attributes\":{\"attribute_type_boolean\":[true]}";
     private static final String validAttributeTypeNumber = "\"attributes\":{\"attribute_type_number\":[1.0]}";
     private static final String validAttributeTypeString = "\"attributes\":{\"attribute_type_string\":[\"abc\"]}";
+    private static final String validIdsEmpty = "\"ids\":{}";
+    private static final String validIdsEmptyTypeNull = "\"ids\":null";
 
     private static final String validScopeAttributesEmpty = "\"attributes\":{}";
     private static final String validScopeAttributesTypeNull = "\"attributes\":null";
@@ -63,6 +67,23 @@ public class ResolutionActionTest {
     private static final String invalidAttributesTypeString = "\"attributes\":\"abc\"";
     private static final String invalidAttributeNotFoundArray = "\"attributes\":{\"attribute_name_x\":[\"abc\"]}";
     private static final String invalidAttributeNotFoundObject = "\"attributes\":{\"attribute_name_x\":{\"values\":[\"abc\"]}}";
+
+    // Invalid ids
+    private static final String invalidIdsTypeArray = "\"ids\":[]";
+    private static final String invalidIdsTypeFloat = "\"ids\":1.0";
+    private static final String invalidIdsTypeInteger = "\"ids\":1";
+    private static final String invalidIdsTypeString = "\"ids\":\"abc\"";
+    private static final String invalidIdsIndexNotFound = "\"ids\":{\"index_name_x\":[\"a\",\"b\",\"c\"]}";
+    private static final String invalidIdsIndexTypeFloat = "\"ids\":1.0";
+    private static final String invalidIdsIndexTypeInteger = "\"ids\":1";
+    private static final String invalidIdsIndexTypeObject = "\"ids\":{}";
+    private static final String invalidIdsIndexTypeString = "\"ids\":\"abc\"";
+    private static final String invalidIdsIndexIdEmpty = "\"ids\":{\"index_name_a\":[\" \",\"b\",\"c\"]}";
+    private static final String invalidIdsIndexIdTypeArray = "\"ids\":{\"index_name_a\":[[],\"b\",\"c\"]}";
+    private static final String invalidIdsIndexIdTypeFloat = "\"ids\":{\"index_name_a\":[1.0,\"b\",\"c\"]}";
+    private static final String invalidIdsIndexIdTypeInteger = "\"ids\":{\"index_name_a\":[1,\"b\",\"c\"]}";
+    private static final String invalidIdsIndexIdTypeNull = "\"ids\":{\"index_name_a\":[null,\"b\",\"c\"]}";
+    private static final String invalidIdsIndexIdTypeObject = "\"ids\":{\"index_name_a\":[{},\"b\",\"c\"]}";
 
     // Invalid model
     private static final String invalidModelEmpty = "\"model\":{}";
@@ -137,6 +158,10 @@ public class ResolutionActionTest {
         return "{" + attributes + "," + validModel + "}";
     }
 
+    private static String inputIds(String ids) {
+        return "{" + ids + "," + validModel + "}";
+    }
+
     private static String inputModel(String model) {
         return "{" + validAttributes + "," + model + "}";
     }
@@ -190,17 +215,74 @@ public class ResolutionActionTest {
         parseInput(validInput, new Model(ModelTest.VALID_OBJECT));
     }
 
+    @Test
+    public void testValidInputAttributesMissing() throws Exception {
+        parseInput("{" + validIds + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test
+    public void testValidInputAttributesEmpty() throws Exception {
+        parseInput("{" + validAttributesEmpty + "," + validIds + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributesEmptyTypeNull + "," + validIds + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test
+    public void testValidInputIdsMissing() throws Exception {
+        parseInput("{" + validAttributes + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test
+    public void testValidInputIdsEmpty() throws Exception {
+        parseInput("{" + validAttributes + "," + validIdsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributes + "," + validIdsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesEmptyIdsEmpty() throws Exception {
+        parseInput("{" + validAttributesEmpty + "," + validIdsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesEmptyIdsEmptyTypeNull() throws Exception {
+        parseInput("{" + validAttributesEmpty + "," + validIdsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesEmptyTypeNullIdsEmpty() throws Exception {
+        parseInput("{" + validAttributesEmptyTypeNull + "," + validIdsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesEmptyTypeNullIdsEmptyTypeNull() throws Exception {
+        parseInput("{" + validAttributesEmptyTypeNull + "," + validIdsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesEmptyIdsMissing() throws Exception {
+        parseInput("{" + validAttributesEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesEmptyTypeNullIdsMissing() throws Exception {
+        parseInput("{" + validAttributesEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesMissingIdsEmpty() throws Exception {
+        parseInput("{" + validIdsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesMissingIdsEmptyTypeNull() throws Exception {
+        parseInput("{" + validIdsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidInputAttributesMissingIdsMissing() throws Exception {
+        parseInput("{}", new Model(ModelTest.VALID_OBJECT));
+    }
+
     ////  "attributes"  ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    @Test(expected = ValidationException.class)
-    public void testValidAttributesEmpty() throws Exception {
-        new Input(inputAttributes(validAttributesEmpty), new Model(ModelTest.VALID_OBJECT));
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testValidAttributesTypeNull() throws Exception {
-        new Input(inputAttributes(validAttributesTypeNull), new Model(ModelTest.VALID_OBJECT));
-    }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesEmpty() throws Exception {
@@ -316,6 +398,88 @@ public class ResolutionActionTest {
         new Input(input, new Model(parseRequestBody(input).get("model")));
     }
 
+    ////  "ids"  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    public void testValidIds() throws Exception {
+        new Input(inputIds(validIds), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsTypeArray() throws Exception {
+        new Input(inputIds(invalidIdsTypeArray), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsTypeFloat() throws Exception {
+        new Input(inputIds(invalidIdsTypeFloat), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsTypeInteger() throws Exception {
+        new Input(inputIds(invalidIdsTypeInteger), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsTypeString() throws Exception {
+        new Input(inputIds(invalidIdsTypeString), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexNotFound() throws Exception {
+        new Input(inputIds(invalidIdsIndexNotFound), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexTypeFloat() throws Exception {
+        new Input(inputIds(invalidIdsIndexTypeFloat), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexTypeInteger() throws Exception {
+        new Input(inputIds(invalidIdsIndexTypeInteger), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexTypeObject() throws Exception {
+        new Input(inputIds(invalidIdsIndexTypeObject), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexTypeString() throws Exception {
+        new Input(inputIds(invalidIdsIndexTypeString), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexIdEmpty() throws Exception {
+        new Input(inputIds(invalidIdsIndexIdEmpty), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexIdTypeArray() throws Exception {
+        new Input(inputIds(invalidIdsIndexIdTypeArray), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexIdTypeFloat() throws Exception {
+        new Input(inputIds(invalidIdsIndexIdTypeFloat), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexIdTypeInteger() throws Exception {
+        new Input(inputIds(invalidIdsIndexIdTypeInteger), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexIdTypeNull() throws Exception {
+        new Input(inputIds(invalidIdsIndexIdTypeNull), new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIdsIndexIdTypeObject() throws Exception {
+        new Input(inputIds(invalidIdsIndexIdTypeObject), new Model(ModelTest.VALID_OBJECT));
+    }
+
     ////  "model"  /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test(expected = ValidationException.class)
@@ -405,7 +569,7 @@ public class ResolutionActionTest {
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeTypeBoolean() throws Exception {
         new Input(inputScope(invalidScopeExcludeTypeBoolean), new Model(ModelTest.VALID_OBJECT));
-}
+    }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeTypeFloat() throws Exception {

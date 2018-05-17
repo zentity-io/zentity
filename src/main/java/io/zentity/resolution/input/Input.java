@@ -19,6 +19,7 @@ import java.util.TreeSet;
 public class Input {
 
     private Map<String, Attribute> attributes = new TreeMap<>();
+    private Map<String, Set<String>> ids = new TreeMap<>();
     private String entityType;
     private Model model;
     private Scope scope = new Scope();
@@ -128,6 +129,47 @@ public class Input {
     }
 
     /**
+     * Parse and validate the "ids" field of the request body.
+     *
+     * @param requestBody The request body.
+     * @param model       The entity model.
+     * @return The parsed "ids" field from the request body.
+     * @throws ValidationException
+     */
+    public static Map<String, Set<String>> parseIds(JsonNode requestBody, Model model) throws ValidationException {
+        Map<String, Set<String>> idsObj = new TreeMap<>();
+        if (!requestBody.has("ids") || requestBody.get("ids").size() == 0)
+            return idsObj;
+        JsonNode ids = requestBody.get("ids");
+        Iterator<Map.Entry<String, JsonNode>> indices = ids.fields();
+        while (indices.hasNext()) {
+            Map.Entry<String, JsonNode> index = indices.next();
+            String indexName = index.getKey();
+            JsonNode idsValues = index.getValue();
+
+            // Validate that the index exists in the entity model.
+            if (!model.indices().containsKey(indexName))
+                throw new ValidationException("'ids." + indexName + "' is not defined in the entity model.");
+
+            // Parse the id values.
+            idsObj.put(indexName, new TreeSet<>());
+            if (!idsValues.isNull() && !idsValues.isArray())
+                throw new ValidationException("'ids." + indexName + "' must be an array.");
+            Iterator<JsonNode> idsNode = idsValues.elements();
+            while (idsNode.hasNext()) {
+                JsonNode idNode = idsNode.next();
+                if (!idNode.isTextual())
+                    throw new ValidationException("'ids." + indexName + "' must be an array of strings.");
+                String id = idNode.asText();
+                if (Patterns.EMPTY_STRING.matcher(id).matches())
+                    throw new ValidationException("'ids." + indexName + "' must be an array of non-empty strings.");
+                idsObj.get(indexName).add(Json.quoteString(id));
+            }
+        }
+        return idsObj;
+    }
+
+    /**
      * Parse and validate the "attributes" field of the request body.
      *
      * @param requestBody The request body.
@@ -137,12 +179,10 @@ public class Input {
      * @throws JsonProcessingException
      */
     public static Map<String, Attribute> parseAttributes(JsonNode requestBody, Model model) throws ValidationException, JsonProcessingException {
-        if (!requestBody.has("attributes"))
-            throw new ValidationException("The 'attributes' field is missing from the request body.");
-        if (requestBody.get("attributes").size() == 0)
-            throw new ValidationException("The 'attributes' field of the request body must not be empty.");
-        JsonNode attributes = requestBody.get("attributes");
         Map<String, Attribute> attributesObj = new TreeMap<>();
+        if (!requestBody.has("attributes") || requestBody.get("attributes").size() == 0)
+            return attributesObj;
+        JsonNode attributes = requestBody.get("attributes");
         Iterator<String> attributeFields = attributes.fieldNames();
         while (attributeFields.hasNext()) {
             String attributeName = attributeFields.next();
@@ -219,6 +259,10 @@ public class Input {
         return this.attributes;
     }
 
+    public Map<String, Set<String>> ids() {
+        return this.ids;
+    }
+
     public Model model() {
         return this.model;
     }
@@ -242,6 +286,13 @@ public class Input {
 
         // Parse and validate the "attributes" field of the request body.
         this.attributes = parseAttributes(json, this.model);
+
+        // Parse and validate the "ids" field of the request body.
+        this.ids = parseIds(json, this.model);
+
+        // Ensure that either the "attributes" or "ids" field exists and is valid.
+        if (this.attributes().isEmpty() && this.ids.isEmpty())
+            throw new ValidationException("The 'attributes' and 'ids' fields are missing from the request body. At least one must exist.");
 
         // Parse and validate the "scope" field of the request body.
         if (json.has("scope")) {

@@ -65,10 +65,8 @@ public class ResolutionAction extends BaseRestHandler {
                     String model = getResponse.getSourceAsString();
                     input = new Input(body, new Model(model));
                 }
-                if (input.attributes().isEmpty())
-                    throw new ValidationException("'attributes' is missing.");
                 if (input.model() == null)
-                    throw new ValidationException("'model' is missing.");
+                    throw new ValidationException("An entity model was not given for this request.");
 
                 // Prepare the entity resolution job.
                 Job job = new Job(client);
