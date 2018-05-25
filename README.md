@@ -36,13 +36,10 @@ Example:
 Read the [installation](https://zentity.io/docs/installation) docs for more details.
 
 
-### Next steps
+## Next steps
 
 Read the [documentation](https://zentity.io/docs/basic-usage) to learn about [entity models](https://zentity.io/docs/entity-models),
 how to [manage entity models](https://zentity.io/docs/rest-apis/models-api), and how to [resolve entities](https://zentity.io/docs/rest-apis/resolution-api).
-
-how to create and manage
-entity models and how to resolve entities.
 
 
 ## <a name="license">License</a>
