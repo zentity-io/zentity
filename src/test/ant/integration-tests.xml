@@ -270,8 +270,9 @@
             <property name="commandline" value="@{home}/bin/elasticsearch-plugin" if:true="${compare-result}"/>
 
             <!-- install plugin -->
-            <chmod file="${commandline}" perm="ugo+rx"/>
             <echo>Installing plugin @{name}...</echo>
+            <chmod file="${commandline}" perm="ugo+rx"/>
+            <chmod file="@{home}/bin/elasticsearch-cli" perm="ugo+rx"/>
             <run-script script="${commandline}">
                 <nested>
                     <arg value="install"/>
