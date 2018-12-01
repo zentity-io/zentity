@@ -238,7 +238,7 @@
     <target name="setup-workspace" depends="stop-external-cluster">
         <sequential>
             <delete dir="${project.build.directory}/integration-tests/run"/>
-            <unzip src="${project.build.directory}/integration-tests/binaries/elasticsearch-${elasticsearch.version}.zip"
+            <unzip src="${project.build.directory}/integration-tests/binaries/elasticsearch-oss-${elasticsearch.version}.zip"
                    dest="${project.build.directory}/integration-tests/run"/>
         </sequential>
     </target>
