@@ -14,9 +14,9 @@
         <zentity.author>Dave Moore</zentity.author>
         <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
         <zentity.website>https://zentity.io</zentity.website>
-        <zentity.version>1.0.0</zentity.version>
+        <zentity.version>1.0.1</zentity.version>
         <!-- dependency versions -->
-        <elasticsearch.version>6.2.4</elasticsearch.version>
+        <elasticsearch.version>6.5.1</elasticsearch.version>
         <jackson.version>2.9.4</jackson.version>
         <jdk.version>1.8</jdk.version>
         <log4j.version>2.9.1</log4j.version>
@@ -176,7 +176,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.elasticsearch.distribution.zip</groupId>
-                                    <artifactId>elasticsearch</artifactId>
+                                    <artifactId>elasticsearch-oss</artifactId>
                                     <version>${elasticsearch.version}</version>
                                     <type>zip</type>
                                 </artifactItem>
