@@ -149,6 +149,7 @@
             <echo if:true="${compare-result}">running Elasticsearch 5.0.0 or superior</echo>
             <echo unless:true="${compare-result}">running Elasticsearch &lt; 5.0.0</echo>
 
+            <chmod file="@{home}/bin/elasticsearch" perm="ugo+rx"/>
             <run-script script="@{home}/bin/elasticsearch"
                         spawn="@{spawn}">
                 <nested>
@@ -269,6 +270,7 @@
             <property name="commandline" value="@{home}/bin/elasticsearch-plugin" if:true="${compare-result}"/>
 
             <!-- install plugin -->
+            <chmod file="${commandline}" perm="ugo+rx"/>
             <echo>Installing plugin @{name}...</echo>
             <run-script script="${commandline}">
                 <nested>
