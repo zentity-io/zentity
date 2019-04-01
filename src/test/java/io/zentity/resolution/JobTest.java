@@ -54,9 +54,6 @@ public class JobTest {
      */
     @Test
     public void testPopulateMatcherClause() throws Exception {
-        String attributeJson = "{\n" +
-                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
-                "}";
         String matcherJson = "{\n" +
                 "  \"clause\": {\n" +
                 "    \"match\": {\n" +
@@ -64,9 +61,32 @@ public class JobTest {
                 "    }" +
                 "  }\n" +
                 "}";
-        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
-        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        TreeMap<String, String> params = new TreeMap<>();
+        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+        String expected = "{\"match\":{\"field_phone\":\"555-123-4567\"}}";
+        Assert.assertEquals(matcherClause, expected);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables.
+     * Supply parameters that don't exist. Ensure they are ignored without failing the job.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseIgnoreUnusedParams() throws Exception {
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": \"{{ value }}\"\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        TreeMap<String, String> params = new TreeMap<>();
+        params.put("foo", "bar");
+        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
         String expected = "{\"match\":{\"field_phone\":\"555-123-4567\"}}";
         Assert.assertEquals(matcherClause, expected);
     }
@@ -79,9 +99,6 @@ public class JobTest {
      */
     @Test(expected = ValidationException.class)
     public void testPopulateMatcherClauseFieldMissing() throws Exception {
-        String attributeJson = "{\n" +
-                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
-                "}";
         String matcherJson = "{\n" +
                 "  \"clause\": {\n" +
                 "    \"match\": {\n" +
@@ -92,9 +109,9 @@ public class JobTest {
                 "    }" +
                 "  }\n" +
                 "}";
-        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
-        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        TreeMap<String, String> params = new TreeMap<>();
+        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
     }
 
     /**
@@ -105,9 +122,6 @@ public class JobTest {
      */
     @Test(expected = ValidationException.class)
     public void testPopulateMatcherClauseValueMissing() throws Exception {
-        String attributeJson = "{\n" +
-                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
-                "}";
         String matcherJson = "{\n" +
                 "  \"clause\": {\n" +
                 "    \"match\": {\n" +
@@ -118,9 +132,37 @@ public class JobTest {
                 "    }" +
                 "  }\n" +
                 "}";
-        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
-        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        TreeMap<String, String> params = new TreeMap<>();
+        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables.
+     * Use a matcher that defines a param but doesn't use it in the clause. Ignore it without failing the job.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseParamsUnrecognized() throws Exception {
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": {\n" +
+                "        \"query\": \"{{ value }}\",\n" +
+                "        \"fuzziness\": \"2\"\n" +
+                "      }\n" +
+                "    }" +
+                "  },\n" +
+                "  \"params\": {" +
+                "    \"foo\": \"bar\"" +
+                "  }\n" +
+                "}";
+        Matcher matcher = new Matcher("matcher_phone", matcherJson);
+        TreeMap<String, String> params = new TreeMap<>();
+        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
+        Assert.assertEquals(matcherClause, expected);
     }
 
     /**
@@ -131,25 +173,43 @@ public class JobTest {
      */
     @Test
     public void testPopulateMatcherClauseParamsFromInputAttribute() throws Exception {
-        String attributeJson = "{\n" +
-                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ],\n" +
-                "  \"params\": { \"fuzziness\": 2 }\n" +
-                "}";
-        String matcherJson = "{\n" +
-                "  \"clause\": {\n" +
-                "    \"match\": {\n" +
-                "      \"{{ field }}\": {\n" +
-                "        \"query\": \"{{ value }}\",\n" +
-                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
-                "      }\n" +
-                "    }" +
+        String attributes = "\"attributes\":{\"attribute_phone\":{}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_phone\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_phone\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"match\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"query\": \"{{ value }}\",\n" +
+                "          \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "        }\n" +
+                "      }" +
+                "    }\n" +
                 "  }\n" +
                 "}";
-        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
-        Matcher matcher = new Matcher("matcher_phone", matcherJson);
-        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
-        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
-        Assert.assertEquals(matcherClause, expected);
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_phone\": {\n" +
+                "        \"attribute\": \"attribute_phone\", \"matcher\": \"matcher_phone\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_phone\": {\n" +
+                "      \"values\": [ \"555-123-4567\" ],\n" +
+                "      \"params\": { \"fuzziness\": 1 }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}";
+        String actual = attributeClauses.get(0);
+        Assert.assertEquals(expected, actual);
     }
 
     /**
@@ -160,28 +220,46 @@ public class JobTest {
      */
     @Test
     public void testPopulateMatcherClauseParamsFromInputAttributeOverridesMatcher() throws Exception {
-        String attributeJson = "{\n" +
-                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ],\n" +
-                "  \"params\": { \"fuzziness\": 1 }\n" +
-                "}";
-        String matcherJson = "{\n" +
-                "  \"clause\": {\n" +
-                "    \"match\": {\n" +
-                "      \"{{ field }}\": {\n" +
-                "        \"query\": \"{{ value }}\",\n" +
-                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
-                "      }\n" +
-                "    }" +
-                "  },\n" +
-                "  \"params\": {\n" +
-                "    \"fuzziness\": 2\n" +
+        String attributes = "\"attributes\":{\"attribute_phone\":{}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_phone\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_phone\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"match\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"query\": \"{{ value }}\",\n" +
+                "          \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "        }\n" +
+                "      }" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"fuzziness\": 2\n" +
+                "    }\n" +
                 "  }\n" +
                 "}";
-        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
-        Matcher matcher = new Matcher("matcher_phone", matcherJson);
-        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_phone\": {\n" +
+                "        \"attribute\": \"attribute_phone\", \"matcher\": \"matcher_phone\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_phone\": {\n" +
+                "      \"values\": [ \"555-123-4567\" ],\n" +
+                "      \"params\": { \"fuzziness\": 1 }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
         String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}";
-        Assert.assertEquals(matcherClause, expected);
+        String actual = attributeClauses.get(0);
+        Assert.assertEquals(expected, actual);
     }
 
     /**
@@ -192,27 +270,223 @@ public class JobTest {
      */
     @Test
     public void testPopulateMatcherClauseParamsFromMatcher() throws Exception {
-        String attributeJson = "{\n" +
-                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
-                "}";
-        String matcherJson = "{\n" +
-                "  \"clause\": {\n" +
-                "    \"match\": {\n" +
-                "      \"{{ field }}\": {\n" +
-                "        \"query\": \"{{ value }}\",\n" +
-                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
-                "      }\n" +
-                "    }" +
-                "  },\n" +
-                "  \"params\": {\n" +
-                "    \"fuzziness\": 2\n" +
+        String attributes = "\"attributes\":{\"attribute_phone\":{}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_phone\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_phone\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"match\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"query\": \"{{ value }}\",\n" +
+                "          \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "        }\n" +
+                "      }" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"fuzziness\": 2\n" +
+                "    }\n" +
                 "  }\n" +
                 "}";
-        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
-        Matcher matcher = new Matcher("matcher_phone", matcherJson);
-        String matcherClause = Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_phone\": {\n" +
+                "        \"attribute\": \"attribute_phone\", \"matcher\": \"matcher_phone\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_phone\": {\n" +
+                "      \"values\": [ \"555-123-4567\" ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
         String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
-        Assert.assertEquals(matcherClause, expected);
+        String actual = attributeClauses.get(0);
+        Assert.assertEquals(expected, actual);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * where the params are specified in the model attribute.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseParamsFromModelAttribute() throws Exception {
+        String attributes = "\"attributes\": {" +
+                "  \"attribute_timestamp\": {" +
+                "    \"type\": \"date\",\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd'T'HH:mm:ss\",\n" +
+                "      \"window\": \"30m\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
+        String actual = attributeClauses.get(0);
+        Assert.assertEquals(expected, actual);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * where the params are specified in the model attribute and overrides the params of a matcher.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseParamsFromModelAttributeOverridesMatcher() throws Exception {
+        String attributes = "\"attributes\": {" +
+                "  \"attribute_timestamp\": {" +
+                "    \"type\": \"date\",\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd'T'HH:mm:ss\",\n" +
+                "      \"window\": \"30m\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSS\",\n" +
+                "      \"window\": \"1h\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
+        String actual = attributeClauses.get(0);
+        Assert.assertEquals(expected, actual);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * where the params are specified in the model attribute and input attribute and overrides the params of a matcher,
+     * and where the input attribute takes precedence over the model attribute.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseParamsFromInputAttributeOverridesModelAttribute() throws Exception {
+        String attributes = "\"attributes\": {" +
+                "  \"attribute_timestamp\": {" +
+                "    \"type\": \"date\",\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd'T'HH:mm:ss\",\n" +
+                "      \"window\": \"30m\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_timestamp\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_timestamp\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"range\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"gte\": \"{{ value }}||-{{ params.window }}\",\n" +
+                "          \"lte\": \"{{ value }}||+{{ params.window }}\",\n" +
+                "          \"format\": \"{{ params.format }}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    },\n" +
+                "    \"params\": {\n" +
+                "      \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSS\",\n" +
+                "      \"window\": \"1h\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_timestamp\": {\n" +
+                "        \"attribute\": \"attribute_timestamp\", \"matcher\": \"matcher_timestamp\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_timestamp\": {\n" +
+                "      \"values\": [ \"123 Main St\" ],\n" +
+                "      \"params\": {\n" +
+                "        \"format\": \"yyyy-MM-dd\",\n" +
+                "        \"window\": \"15m\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-15m\",\"lte\":\"123 Main St||+15m\",\"format\":\"yyyy-MM-dd\"}}}";
+        String actual = attributeClauses.get(0);
+        Assert.assertEquals(expected, actual);
     }
 
     /**
@@ -223,22 +497,83 @@ public class JobTest {
      */
     @Test(expected = ValidationException.class)
     public void testPopulateMatcherClauseParamsMissing() throws Exception {
-        String attributeJson = "{\n" +
-                "  \"values\": [ \"555-123-4567\", \"555-098-7654\" ]\n" +
-                "}";
-        String matcherJson = "{\n" +
-                "  \"clause\": {\n" +
-                "    \"match\": {\n" +
-                "      \"{{ field }}\": {\n" +
-                "        \"query\": \"{{ value }}\",\n" +
-                "        \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
-                "      }\n" +
-                "    }" +
+        String attributes = "\"attributes\":{\"attribute_phone\":{}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_phone\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_phone\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"match\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"query\": \"{{ value }}\",\n" +
+                "          \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "        }\n" +
+                "      }" +
+                "    }\n" +
                 "  }\n" +
                 "}";
-        Attribute attribute = new Attribute("attribute_phone", "string", attributeJson);
-        Matcher matcher = new Matcher("matcher_phone", matcherJson);
-        Job.populateMatcherClause(matcher, "field_phone", "555-123-4567", attribute);
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_phone\": {\n" +
+                "        \"attribute\": \"attribute_phone\", \"matcher\": \"matcher_phone\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_phone\": {\n" +
+                "      \"values\": [ \"555-123-4567\" ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables and any params,
+     * but don't pass any values to the required params and expect an exception to be raised.
+     *
+     * @throws Exception
+     */
+    @Test(expected = ValidationException.class)
+    public void testPopulateMatcherClauseParamsMismatched() throws Exception {
+        String attributes = "\"attributes\":{\"attribute_phone\":{}}";
+        String resolvers = "\"resolvers\":{\"a\":{\"attributes\":[\"attribute_phone\"]}}";
+        String matchers = "\"matchers\":{\n" +
+                "  \"matcher_phone\": {\n" +
+                "    \"clause\": {\n" +
+                "      \"match\": {\n" +
+                "        \"{{ field }}\": {\n" +
+                "          \"query\": \"{{ value }}\",\n" +
+                "          \"fuzziness\": \"{{ params.fuzziness }}\"\n" +
+                "        }\n" +
+                "      }" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String indices = "\"indices\": {\n" +
+                "  \"index\": {\n" +
+                "    \"fields\": {\n" +
+                "      \"field_phone\": {\n" +
+                "        \"attribute\": \"attribute_phone\", \"matcher\": \"matcher_phone\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Model model = new Model("{" + attributes + "," + resolvers + "," + matchers + "," + indices + "}");
+        String json = "{\n" +
+                "  \"attributes\": {\n" +
+                "    \"attribute_phone\": {\n" +
+                "      \"values\": [ \"555-123-4567\" ],\n" +
+                "      \"params\": { \"foo\": \"bar\" }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        Input input = new Input(json, model);
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
     }
 
     /**
