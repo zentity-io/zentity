@@ -144,13 +144,6 @@ public class Matcher {
                         else
                             this.params().put(paramField, paramValue.asText());
                     }
-
-                    if (value.isObject() || value.isArray())
-                        this.params().put(name, Json.MAPPER.writeValueAsString(value));
-                    else if (value.isNull())
-                        this.params().put(name, "null");
-                    else
-                        this.params().put(name, value.asText());
                     break;
                 default:
                     throw new ValidationException("'matchers." + this.name + "." + name + "' is not a recognized field.");

@@ -19,6 +19,12 @@ public class JobIT extends AbstractITCase {
 
     private final Map<String, String> params = Collections.emptyMap();
 
+    private final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_a\": [ \"a_00\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
     private final StringEntity TEST_PAYLOAD_JOB_ATTRIBUTES = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_a\": [ \"a_00\" ]\n" +
@@ -290,6 +296,18 @@ public class JobIT extends AbstractITCase {
             docsActual.add(_id + "," + _hop);
         }
         return docsActual;
+    }
+
+    public void testJobNoScope() throws Exception {
+        try {
+            prepareTestResources();
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_NO_SCOPE);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 40);
+        } finally {
+            destroyTestResources();
+        }
     }
 
     public void testJobAttributes() throws Exception {

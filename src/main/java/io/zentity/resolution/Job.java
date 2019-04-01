@@ -192,11 +192,11 @@ public class Job {
      *
      * @param matcher        The matcher object.
      * @param indexFieldName The name of the index field to populate in the clause.
-     * @param value          The value to populate in the clause.
-     * @param attribute      The attribute object.
+     * @param value          The value of the attribute to populate in the clause.
+     * @param params         The values of the parameters (if any) to pass to the matcher.
      * @return A "bool" clause that references the desired field and value.
      */
-    public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, Attribute attribute) throws ValidationException {
+    public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, Map<String, String> params) throws ValidationException {
         String matcherClause = matcher.clause();
         for (String variable : matcher.variables().keySet()) {
             Pattern pattern = matcher.variables().get(variable);
@@ -211,13 +211,9 @@ public class Job {
                     java.util.regex.Matcher m = Patterns.VARIABLE_PARAMS.matcher(variable);
                     if (m.find()) {
                         String var = m.group(1);
-                        String paramValue;
-                        if (attribute.params().containsKey(var))
-                            paramValue = attribute.params().get(var);
-                        else if (matcher.params().containsKey(var))
-                            paramValue = matcher.params().get(var);
-                        else
+                        if (!params.containsKey(var))
                             throw new ValidationException("'matchers." + matcher.name() + "' was given no value for '{{ " + variable + " }}'");
+                        String paramValue = params.get(var);
                         matcherClause = pattern.matcher(matcherClause).replaceAll(paramValue);
                     }
                     break;
@@ -248,18 +244,28 @@ public class Job {
                 continue;
 
             // Construct a clause for each input value for this attribute.
+            String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
+            Matcher matcher = model.matchers().get(matcherName);
             List<String> valueClauses = new ArrayList<>();
             Attribute attribute = attributes.get(attributeName);
+
+            // Determine which values to pass to the matcher parameters.
+            // Order of precedence:
+            //  - Input attribute params override model attribute params
+            //  - Model attribute params override matcher attribute params
+            Map<String, String> params = new TreeMap<>();
+            params.putAll(matcher.params());
+            params.putAll(model.attributes().get(attributeName).params());
+            params.putAll(attributes.get(attributeName).params());
+
             for (Value value : attribute.values()) {
 
                 // Skip value if it's blank.
                 if (value.serialized() == null || value.serialized().equals(""))
                     continue;
 
-                // Populate the {{ field }} and {{ value }} variables of the matcher template.
-                String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
-                Matcher matcher = model.matchers().get(matcherName);
-                valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.serialized(), attribute));
+                // Populate the {{ field }}, {{ value }}, and {{ param.* }} variables of the matcher template.
+                valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.serialized(), params));
             }
             if (valueClauses.size() == 0)
                 continue;
