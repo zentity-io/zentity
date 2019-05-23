@@ -13,6 +13,8 @@ import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import java.util.Properties;
+
 import static org.elasticsearch.rest.RestRequest.Method;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 
@@ -21,27 +23,28 @@ public class SetupAction extends BaseRestHandler {
     public static final int DEFAULT_NUMBER_OF_SHARDS = 1;
     public static final int DEFAULT_NUMBER_OF_REPLICAS = 1;
     public static final String INDEX_MAPPING = "{\n" +
-            "  \"doc\": {\n" +
-            "    \"dynamic\": \"strict\",\n" +
-            "    \"properties\": {\n" +
-            "      \"attributes\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      },\n" +
-            "      \"resolvers\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      },\n" +
-            "      \"matchers\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      },\n" +
-            "      \"indices\": {\n" +
-            "        \"type\": \"object\",\n" +
-            "        \"enabled\": false\n" +
-            "      }\n" +
+            "  \"dynamic\": \"strict\",\n" +
+            "  \"properties\": {\n" +
+            "    \"attributes\": {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"enabled\": false\n" +
+            "    },\n" +
+            "    \"resolvers\": {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"enabled\": false\n" +
+            "    },\n" +
+            "    \"matchers\": {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"enabled\": false\n" +
+            "    },\n" +
+            "    \"indices\": {\n" +
+            "      \"type\": \"object\",\n" +
+            "      \"enabled\": false\n" +
             "    }\n" +
             "  }\n" +
+            "}";
+    public static final String INDEX_MAPPING_ELASTICSEARCH_6 = "{\n" +
+            "  \"doc\": " + INDEX_MAPPING + "\n" +
             "}";
 
     @Inject
@@ -59,13 +62,25 @@ public class SetupAction extends BaseRestHandler {
      * @return
      */
     public static CreateIndexResponse createIndex(NodeClient client, int numberOfShards, int numberOfReplicas) {
-        return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+        // Elasticsearch 7.0.0+ removes mapping types
+        Properties props = ZentityPlugin.properties();
+        if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
                 .setSettings(Settings.builder()
                         .put("index.number_of_shards", numberOfShards)
                         .put("index.number_of_replicas", numberOfReplicas)
                 )
                 .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
                 .get();
+        } else {
+            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+                .setSettings(Settings.builder()
+                        .put("index.number_of_shards", numberOfShards)
+                        .put("index.number_of_replicas", numberOfReplicas)
+                )
+                .addMapping("doc", INDEX_MAPPING_ELASTICSEARCH_6, XContentType.JSON)
+                .get();
+        }
     }
 
     /**

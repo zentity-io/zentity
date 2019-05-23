@@ -139,7 +139,7 @@
       Maybe the last test run did not manage to shut down the node correctly?
       You must kill it before tests can run.">
                 <condition>
-                    <socket server="localhost" port="@{es.http.port}"></socket>
+                    <socket server="localhost" port="@{es.http.port}"/>
                 </condition>
             </fail>
             <!-- run bin/elasticsearch with args -->
@@ -237,8 +237,18 @@
     </target>
 
     <target name="setup-workspace" depends="stop-external-cluster">
+        <condition property="elasticsearchVersionGreaterThan6x">
+            <matches string="${elasticsearch.version}" pattern="^7\."/>
+        </condition>
         <sequential>
             <delete dir="${project.build.directory}/integration-tests/run"/>
+            <mkdir dir="${project.build.directory}/integration-tests/binaries"/>
+            <get src="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch.version}-windows-x86_64.zip"
+                 dest="${project.build.directory}/integration-tests/binaries/elasticsearch-oss-${elasticsearch.version}.zip"
+                 if:set="elasticsearchVersionGreaterThan6x"/>
+            <get src="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch.version}.zip"
+                 dest="${project.build.directory}/integration-tests/binaries/elasticsearch-oss-${elasticsearch.version}.zip"
+                 unless:set="elasticsearchVersionGreaterThan6x"/>
             <unzip src="${project.build.directory}/integration-tests/binaries/elasticsearch-oss-${elasticsearch.version}.zip"
                    dest="${project.build.directory}/integration-tests/run"/>
         </sequential>

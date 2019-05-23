@@ -6,18 +6,17 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
+import org.elasticsearch.plugin.zentity.ZentityPlugin;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
 public class JobIT extends AbstractITCase {
-
-    private final Map<String, String> params = Collections.emptyMap();
 
     private final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
@@ -259,33 +258,57 @@ public class JobIT extends AbstractITCase {
     private void destroyTestResources() throws IOException {
 
         // Delete indices
-        client.performRequest("DELETE", ".zentity_test_index_a");
-        client.performRequest("DELETE", ".zentity_test_index_b");
-        client.performRequest("DELETE", ".zentity_test_index_c");
-        client.performRequest("DELETE", ".zentity_test_index_d");
+        client.performRequest(new Request("DELETE", ".zentity_test_index_a"));
+        client.performRequest(new Request("DELETE", ".zentity_test_index_b"));
+        client.performRequest(new Request("DELETE", ".zentity_test_index_c"));
+        client.performRequest(new Request("DELETE", ".zentity_test_index_d"));
 
         // Delete entity model
-        client.performRequest("DELETE", "_zentity/models/zentity_test_entity_a");
+        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_a"));
     }
 
-    private void prepareTestResources() throws IOException {
+    private void prepareTestResources() throws Exception {
 
         // Load files
-        ByteArrayEntity testIndex = new ByteArrayEntity(readFile("TestIndex.json"), ContentType.APPLICATION_JSON);
-        ByteArrayEntity testData = new ByteArrayEntity(readFile("TestData.txt"), ContentType.create("application/x-ndjson"));
-        ByteArrayEntity testEntityModel = new ByteArrayEntity(readFile("TestEntityModel.json"), ContentType.APPLICATION_JSON);
+        ByteArrayEntity testIndex;
+        ByteArrayEntity testData;
+        ByteArrayEntity testEntityModel;
+        // Elasticsearch 7.0.0+ removes mapping types
+        Properties props = new Properties();
+        props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
+        if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+            testIndex = new ByteArrayEntity(readFile("TestIndex.json"), ContentType.APPLICATION_JSON);
+            testData = new ByteArrayEntity(readFile("TestData.txt"), ContentType.create("application/x-ndjson"));
+        } else {
+            testIndex = new ByteArrayEntity(readFile("TestIndexElasticsearch6.json"), ContentType.APPLICATION_JSON);
+            testData = new ByteArrayEntity(readFile("TestDataElasticsearch6.txt"), ContentType.create("application/x-ndjson"));
+        }
+        testEntityModel = new ByteArrayEntity(readFile("TestEntityModel.json"), ContentType.APPLICATION_JSON);
 
         // Create indices
-        client.performRequest("PUT", ".zentity_test_index_a", params, testIndex);
-        client.performRequest("PUT", ".zentity_test_index_b", params, testIndex);
-        client.performRequest("PUT", ".zentity_test_index_c", params, testIndex);
-        client.performRequest("PUT", ".zentity_test_index_d", params, testIndex);
+        Request putTestIndexA = new Request("PUT", ".zentity_test_index_a");
+        putTestIndexA.setEntity(testIndex);
+        client.performRequest(putTestIndexA);
+        Request putTestIndexB = new Request("PUT", ".zentity_test_index_b");
+        putTestIndexB.setEntity(testIndex);
+        client.performRequest(putTestIndexB);
+        Request putTestIndexC = new Request("PUT", ".zentity_test_index_c");
+        putTestIndexC.setEntity(testIndex);
+        client.performRequest(putTestIndexC);
+        Request putTestIndexD = new Request("PUT", ".zentity_test_index_d");
+        putTestIndexD.setEntity(testIndex);
+        client.performRequest(putTestIndexD);
 
         // Load data into indices
-        client.performRequest("POST", "_bulk?refresh", params, testData);
+        Request postBulk = new Request("POST", "_bulk");
+        postBulk.addParameter("refresh", "true");
+        postBulk.setEntity(testData);
+        client.performRequest(postBulk);
 
         // Create entity model
-        client.performRequest("POST", "_zentity/models/zentity_test_entity_a", params, testEntityModel);
+        Request postModel = new Request("POST", "_zentity/models/zentity_test_entity_a");
+        postModel.setEntity(testEntityModel);
+        client.performRequest(postModel);
     }
 
     private Set<String> getActual(JsonNode json) {
@@ -299,10 +322,12 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobNoScope() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_NO_SCOPE);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_NO_SCOPE);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 40);
         } finally {
@@ -311,10 +336,12 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobAttributes() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_ATTRIBUTES);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_ATTRIBUTES);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 6);
 
@@ -333,10 +360,12 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobIds() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_IDS);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_IDS);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 6);
 
@@ -355,10 +384,12 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobAttributesIds() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_ATTRIBUTES_IDS);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_ATTRIBUTES_IDS);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 30);
 
@@ -401,10 +432,14 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobMaxHopsAndDocs() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
-            String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_MAX_HOPS_AND_DOCS);
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.addParameter("max_hops", "2");
+            postResolution.addParameter("max_docs_per_query", "2");
+            postResolution.setEntity(TEST_PAYLOAD_JOB_MAX_HOPS_AND_DOCS);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 20);
 
@@ -437,8 +472,8 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobDataTypes() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
 
             Set<String> docsExpectedA = new TreeSet<>();
@@ -456,73 +491,97 @@ public class JobIT extends AbstractITCase {
             docsExpectedB.add("a9,0");
 
             // Boolean true
-            Response r1 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE);
+            Request q1 = new Request("POST", endpoint);
+            q1.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE);
+            Response r1 = client.performRequest(q1);
             JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
             assertEquals(j1.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j1));
 
             // Boolean false
-            Response r2 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE);
+            Request q2 = new Request("POST", endpoint);
+            q2.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE);
+            Response r2 = client.performRequest(q2);
             JsonNode j2 = Json.MAPPER.readTree(r2.getEntity().getContent());
             assertEquals(j2.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j2));
 
             // Double positive
-            Response r3 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE);
+            Request q3 = new Request("POST", endpoint);
+            q3.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE);
+            Response r3 = client.performRequest(q3);
             JsonNode j3 = Json.MAPPER.readTree(r3.getEntity().getContent());
             assertEquals(j3.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j3));
 
             // Double negative
-            Response r4 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE);
+            Request q4 = new Request("POST", endpoint);
+            q4.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE);
+            Response r4 = client.performRequest(q4);
             JsonNode j4 = Json.MAPPER.readTree(r4.getEntity().getContent());
             assertEquals(j4.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j4));
 
             // Float positive
-            Response r5 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE);
+            Request q5 = new Request("POST", endpoint);
+            q5.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE);
+            Response r5 = client.performRequest(q5);
             JsonNode j5 = Json.MAPPER.readTree(r5.getEntity().getContent());
             assertEquals(j5.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j5));
 
             // Float negative
-            Response r6 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE);
+            Request q6 = new Request("POST", endpoint);
+            q6.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE);
+            Response r6 = client.performRequest(q6);
             JsonNode j6 = Json.MAPPER.readTree(r6.getEntity().getContent());
             assertEquals(j6.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j6));
 
             // Integer positive
-            Response r7 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE);
+            Request q7 = new Request("POST", endpoint);
+            q7.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE);
+            Response r7 = client.performRequest(q7);
             JsonNode j7 = Json.MAPPER.readTree(r7.getEntity().getContent());
             assertEquals(j7.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j7));
 
             // Integer negative
-            Response r8 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE);
+            Request q8 = new Request("POST", endpoint);
+            q8.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE);
+            Response r8 = client.performRequest(q8);
             JsonNode j8 = Json.MAPPER.readTree(r8.getEntity().getContent());
             assertEquals(j8.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j8));
 
             // Long positive
-            Response r9 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE);
+            Request q9 = new Request("POST", endpoint);
+            q9.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE);
+            Response r9 = client.performRequest(q9);
             JsonNode j9 = Json.MAPPER.readTree(r9.getEntity().getContent());
             assertEquals(j9.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j9));
 
             // Long negative
-            Response r10 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE);
+            Request q10 = new Request("POST", endpoint);
+            q10.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE);
+            Response r10 = client.performRequest(q10);
             JsonNode j10 = Json.MAPPER.readTree(r10.getEntity().getContent());
             assertEquals(j10.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j10));
 
             // String A
-            Response r11 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A);
+            Request q11 = new Request("POST", endpoint);
+            q11.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A);
+            Response r11 = client.performRequest(q11);
             JsonNode j11 = Json.MAPPER.readTree(r11.getEntity().getContent());
             assertEquals(j11.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j11));
 
             // String B
-            Response r12 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B);
+            Request q12 = new Request("POST", endpoint);
+            q12.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B);
+            Response r12 = client.performRequest(q12);
             JsonNode j12 = Json.MAPPER.readTree(r12.getEntity().getContent());
             assertEquals(j12.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j12));
@@ -533,13 +592,53 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobDataTypesDate() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_DATA_TYPES_DATE);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.addParameter("max_hops", "2");
+            postResolution.addParameter("max_docs_per_query", "2");
+            postResolution.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_DATE);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
-            assertEquals(json.get("hits").get("total").asInt(), 13);
 
+            /*
+            Elasticsearch 7.0.0+ has a different behavior when querying date ranges.
+
+            To demonstrate, compare this query (below) with the test indices, data, and entity models on Elasticsearch
+            versions 6.7.1 and 7.0.0:
+
+            GET .zentity_test_index_d/_search
+            {
+              "query": {
+                "bool": {
+                  "filter": [
+                    {
+                      "range": {
+                        "type_date": {
+                          "gte": "2000-01-01 00:00:01||-2s",
+                          "lte": "2000-01-01 00:00:01||+2s",
+                          "format": "yyyy-MM-dd HH:mm:ss"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+
+            In 7.0.0 the result has a fourth hit ("_id" = "d3") where the "type_date" field is "2000-01-01T00:00:02.500",
+            which is a half second greater than the 2s window that was specified in the search.
+
+            We'll allow this behavior in the test, since this is a behavior of Elasticsearch and not zentity.
+            */
+            Properties props = new Properties();
+            props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
+            if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+                assertEquals(json.get("hits").get("total").asInt(), 15);
+            } else {
+                assertEquals(json.get("hits").get("total").asInt(), 13);
+            }
             Set<String> docsExpected = new TreeSet<>();
             docsExpected.add("a1,0");
             docsExpected.add("a2,0");
@@ -553,7 +652,13 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("d2,1");
             docsExpected.add("b1,2");
             docsExpected.add("c3,2");
-            docsExpected.add("d3,2");
+            if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+                docsExpected.add("d3,1");
+                docsExpected.add("a4,2");
+                docsExpected.add("c4,2");
+            } else {
+                docsExpected.add("d3,2");
+            }
 
             assertEquals(docsExpected, getActual(json));
         } finally {
@@ -562,8 +667,8 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobObject() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
 
             Set<String> docsExpectedA = new TreeSet<>();
@@ -574,7 +679,9 @@ public class JobIT extends AbstractITCase {
             docsExpectedA.add("a8,0");
 
             // Boolean true
-            Response r1 = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_OBJECT);
+            Request q1 = new Request("POST", endpoint);
+            q1.setEntity(TEST_PAYLOAD_JOB_OBJECT);
+            Response r1 = client.performRequest(q1);
             JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
             assertEquals(j1.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j1));
@@ -585,10 +692,12 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobScopeExcludeAttributes() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 16);
 
@@ -617,10 +726,12 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobScopeIncludeAttributes() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 8);
 
@@ -641,10 +752,12 @@ public class JobIT extends AbstractITCase {
     }
 
     public void testJobScopeExcludeAndIncludeAttributes() throws Exception {
+        prepareTestResources();
         try {
-            prepareTestResources();
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
-            Response response = client.performRequest("POST", endpoint, params, TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES);
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES);
+            Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 4);
 

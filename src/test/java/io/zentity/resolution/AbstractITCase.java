@@ -3,6 +3,7 @@ package io.zentity.resolution;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import org.apache.http.HttpHost;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.test.ESTestCase;
@@ -23,7 +24,7 @@ public abstract class AbstractITCase extends ESTestCase {
     public static void startRestClient() throws IOException {
         client = RestClient.builder(new HttpHost("localhost", HTTP_TEST_PORT)).build();
         try {
-            Response response = client.performRequest("GET", "/");
+            Response response = client.performRequest(new Request("GET", "/"));
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertTrue(json.get("tagline").textValue().equals("You Know, for Search"));
         } catch (IOException e) {

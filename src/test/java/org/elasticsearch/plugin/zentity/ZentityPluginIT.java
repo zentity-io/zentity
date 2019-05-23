@@ -3,6 +3,7 @@ package org.elasticsearch.plugin.zentity;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import io.zentity.resolution.AbstractITCase;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 
 import java.util.Iterator;
@@ -11,7 +12,7 @@ import java.util.Map;
 public class ZentityPluginIT extends AbstractITCase {
 
     public void testPluginIsLoaded() throws Exception {
-        Response response = client.performRequest("GET", "_nodes/plugins");
+        Response response = client.performRequest(new Request("GET", "_nodes/plugins"));
         JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
         Iterator<Map.Entry<String, JsonNode>> nodes = json.get("nodes").fields();
         while (nodes.hasNext()) {
