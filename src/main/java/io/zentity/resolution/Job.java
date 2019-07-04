@@ -577,7 +577,6 @@ public class Job {
             List<String> queryClauses = new ArrayList<>();
             List<String> queryMustNotClauses = new ArrayList<>();
             List<String> queryFilterClauses = new ArrayList<>();
-            List<String> queryResolverClauses = new ArrayList<>();
             List<String> topLevelClauses = new ArrayList<>();
             topLevelClauses.add("\"_source\":true");
 
@@ -619,8 +618,8 @@ public class Job {
 
             // Construct the resolvers clause.
             String resolversClause = "{}";
-            TreeMap<String, TreeMap> resolversFilterTree = new TreeMap<>();
-            TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped= new TreeMap<>();
+            TreeMap<String, TreeMap> resolversFilterTree;
+            TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped= new TreeMap<>(Collections.reverseOrder());
             if (!this.attributes.isEmpty()) {
 
                 // Group the resolvers by their priority level.
@@ -629,13 +628,14 @@ public class Job {
                 // Construct a clause for each priority level in descending order of priority.
                 List<Integer> priorities = new ArrayList<>(resolverGroups.keySet());
                 Collections.reverse(priorities);
-                for (int level = 0; level < priorities.size(); level++) {
+                int numPriorityLevels= priorities.size();
+                for (int level = 0; level < numPriorityLevels; level++) {
                     Integer priority = priorities.get(level);
                     List<String> resolversGroup = resolverGroups.get(priority);
                     Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), resolversGroup);
                     List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolversGroup, counts);
                     resolversFilterTree = makeResolversFilterTree(resolversSorted);
-                    resolversFilterTreeGrouped.put(level, resolversFilterTree);
+                    resolversFilterTreeGrouped.put(numPriorityLevels - level - 1, resolversFilterTree);
                     resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes);
 
                     // If there are multiple levels of priority, then each lower priority group of resolvers must ensure

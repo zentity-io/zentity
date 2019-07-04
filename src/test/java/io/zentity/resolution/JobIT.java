@@ -250,6 +250,18 @@ public class JobIT extends AbstractITCase {
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
+    private final StringEntity TEST_PAYLOAD_JOB_PRIORITY = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_a\": [ \"a_10\" ],\n" +
+            "    \"attribute_b\": [ \"b_10\" ]\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
     private byte[] readFile(String filename) throws IOException {
         InputStream stream = this.getClass().getResourceAsStream("/" + filename);
         return IOUtils.toByteArray(stream);
@@ -265,6 +277,7 @@ public class JobIT extends AbstractITCase {
 
         // Delete entity model
         client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_a"));
+        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_b"));
     }
 
     private void prepareTestResources() throws Exception {
@@ -272,7 +285,8 @@ public class JobIT extends AbstractITCase {
         // Load files
         ByteArrayEntity testIndex;
         ByteArrayEntity testData;
-        ByteArrayEntity testEntityModel;
+        ByteArrayEntity testEntityModelA;
+        ByteArrayEntity testEntityModelB;
         // Elasticsearch 7.0.0+ removes mapping types
         Properties props = new Properties();
         props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
@@ -283,7 +297,8 @@ public class JobIT extends AbstractITCase {
             testIndex = new ByteArrayEntity(readFile("TestIndexElasticsearch6.json"), ContentType.APPLICATION_JSON);
             testData = new ByteArrayEntity(readFile("TestDataElasticsearch6.txt"), ContentType.create("application/x-ndjson"));
         }
-        testEntityModel = new ByteArrayEntity(readFile("TestEntityModel.json"), ContentType.APPLICATION_JSON);
+        testEntityModelA = new ByteArrayEntity(readFile("TestEntityModelA.json"), ContentType.APPLICATION_JSON);
+        testEntityModelB = new ByteArrayEntity(readFile("TestEntityModelB.json"), ContentType.APPLICATION_JSON);
 
         // Create indices
         Request putTestIndexA = new Request("PUT", ".zentity_test_index_a");
@@ -305,10 +320,13 @@ public class JobIT extends AbstractITCase {
         postBulk.setEntity(testData);
         client.performRequest(postBulk);
 
-        // Create entity model
-        Request postModel = new Request("POST", "_zentity/models/zentity_test_entity_a");
-        postModel.setEntity(testEntityModel);
-        client.performRequest(postModel);
+        // Create entity models
+        Request postModelA = new Request("POST", "_zentity/models/zentity_test_entity_a");
+        postModelA.setEntity(testEntityModelA);
+        client.performRequest(postModelA);
+        Request postModelB = new Request("POST", "_zentity/models/zentity_test_entity_b");
+        postModelB.setEntity(testEntityModelB);
+        client.performRequest(postModelB);
     }
 
     private Set<String> getActual(JsonNode json) {
@@ -766,6 +784,28 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("b2,0");
             docsExpected.add("c2,0");
             docsExpected.add("d2,0");
+
+            assertEquals(docsExpected, getActual(json));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobPriority() throws Exception {
+        prepareTestResources();
+        try {
+            String endpoint = "_zentity/resolution/zentity_test_entity_b";
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_PRIORITY);
+            Response response = client.performRequest(postResolution);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 4);
+
+            Set<String> docsExpected = new TreeSet<>();
+            docsExpected.add("a2,0");
+            docsExpected.add("a3,0");
+            docsExpected.add("a4,1");
+            docsExpected.add("a5,1");
 
             assertEquals(docsExpected, getActual(json));
         } finally {
