@@ -26,6 +26,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -421,6 +422,24 @@ public class Job {
     }
 
     /**
+     * Group resolvers by their level of priority.
+     *
+     * @param model The entity model.
+     * @param resolvers The names of the resolvers to reference in the entity model.
+     * @return For each priority level, the names of the resolvers in that priority level.
+     */
+    public static TreeMap<Integer, List<String>> groupResolversByPriority(Model model, List<String> resolvers) {
+        TreeMap<Integer, List<String>> resolverGroups = new TreeMap<>();
+        for (String resolverName : resolvers) {
+            Integer priority = model.resolvers().get(resolverName).priority();
+            if (!resolverGroups.containsKey(priority))
+                resolverGroups.put(priority, new ArrayList<>());
+            resolverGroups.get(priority).add(resolverName);
+        }
+        return resolverGroups;
+    }
+
+    /**
      * Resets the variables that hold the state of the job, in case the same Job object is reused.
      */
     private void resetState() {
@@ -601,11 +620,61 @@ public class Job {
             // Construct the resolvers clause.
             String resolversClause = "{}";
             TreeMap<String, TreeMap> resolversFilterTree = new TreeMap<>();
+            TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped= new TreeMap<>();
             if (!this.attributes.isEmpty()) {
-                Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), resolvers);
-                List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolvers, counts);
-                resolversFilterTree = makeResolversFilterTree(resolversSorted);
-                resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes);
+
+                // Group the resolvers by their priority level.
+                TreeMap<Integer, List<String>> resolverGroups = groupResolversByPriority(this.input.model(), resolvers);
+
+                // Construct a clause for each priority level in descending order of priority.
+                List<Integer> priorities = new ArrayList<>(resolverGroups.keySet());
+                Collections.reverse(priorities);
+                for (int level = 0; level < priorities.size(); level++) {
+                    Integer priority = priorities.get(level);
+                    List<String> resolversGroup = resolverGroups.get(priority);
+                    Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), resolversGroup);
+                    List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolversGroup, counts);
+                    resolversFilterTree = makeResolversFilterTree(resolversSorted);
+                    resolversFilterTreeGrouped.put(level, resolversFilterTree);
+                    resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes);
+
+                    // If there are multiple levels of priority, then each lower priority group of resolvers must ensure
+                    // that every higher priority resolver either matches or does not exist.
+                    List<String> parentResolversClauses = new ArrayList<>();
+                    if (level > 0) {
+
+                        // This is a lower priority group of resolvers.
+                        // Every higher priority resolver either must match or must not exist.
+                        for (int parentLevel = 0; parentLevel < level; parentLevel++) {
+                            Integer parentPriority = priorities.get(parentLevel);
+                            List<String> parentResolversGroup = resolverGroups.get(parentPriority);
+                            List<String> parentResolverClauses = new ArrayList<>();
+                            for (String parentResolverName : parentResolversGroup) {
+
+                                // Construct a clause that checks if every attribute of the resolver does not exist.
+                                List<String> attributeExistsClauses = new ArrayList<>();
+                                for (String attributeName : this.input.model().resolvers().get(parentResolverName).attributes())
+                                    attributeExistsClauses.add("{\"exists\":{\"field\":\"" + attributeName + "\"}}");
+                                String attributesExistsClause = "{\"bool\":{\"must_not\":[" + String.join(",", attributeExistsClauses) + "]}}";
+
+                                // Construct a clause for the resolver.
+                                List<String> parentResolverGroup = new ArrayList<>(Arrays.asList(parentResolverName));
+                                Map<String, Integer> parentCounts = countAttributesAcrossResolvers(this.input.model(), parentResolverGroup);
+                                List<List<String>> parentResolverSorted = sortResolverAttributes(this.input.model(), parentResolverGroup, parentCounts);
+                                TreeMap<String, TreeMap> parentResolverFilterTree = makeResolversFilterTree(parentResolverSorted);
+                                String parentResolverClause = populateResolversFilterTree(this.input.model(), indexName, parentResolverFilterTree, this.attributes);
+
+                                // Construct a "should" clause for the above two clauses.
+                                parentResolverClauses.add("{\"bool\":{\"should\":[" + attributesExistsClause + "," + parentResolverClause + "]}}");
+                            }
+
+                            // Construct a "filter" clause for every higher priority resolver clause.
+                            parentResolversClauses.add("{\"bool\":{\"filter\":[" + String.join(",", parentResolverClauses) + "]}}");
+                        }
+                    }
+                    if (parentResolversClauses.size() > 0)
+                        resolversClause = "{\"bool\":{\"filter\":[" + resolversClause + "," + String.join(",", parentResolversClauses) + "]}}";
+                }
             }
 
             // Combine the ids clause and resolvers clause in a "should" clause if necessary.
@@ -661,7 +730,7 @@ public class Job {
                         responseDataCopyObjHits.remove("hits");
                 }
                 String resolversListLogged = Json.ORDERED_MAPPER.writeValueAsString(resolvers);
-                String resolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(resolversFilterTree);
+                String resolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(resolversFilterTreeGrouped);
                 String resolversLogged = "{\"list\":" + resolversListLogged + ",\"tree\":" + resolversFilterTreeLogged + "}";
                 String searchLogged = "{\"request\":" + query + ",\"response\":" + responseDataCopyObj + "}";
                 String logged = "{\"_hop\":" + this.hop + ",\"_index\":\"" + indexName + "\",\"resolvers\":" + resolversLogged + ",\"search\":" + searchLogged + "}";

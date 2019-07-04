@@ -19,6 +19,7 @@ public class Resolver {
 
     private final String name;
     private Set<String> attributes = new TreeSet<>();
+    private int priority = 0;
 
     public Resolver(String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -40,12 +41,19 @@ public class Resolver {
         return this.attributes;
     }
 
+    public int priority () { return this.priority; }
+
     public void attributes(JsonNode value) throws ValidationException {
         validateAttributes(value);
         Set<String> attributes = new TreeSet<>();
         for (JsonNode attribute : value)
             attributes.add(attribute.textValue());
         this.attributes = attributes;
+    }
+
+    public void priority(JsonNode value) throws ValidationException {
+        validatePriority(value);
+        this.priority = value.asInt();
     }
 
     private void validateName(String value) throws ValidationException {
@@ -67,6 +75,11 @@ public class Resolver {
         }
     }
 
+    private void validatePriority(JsonNode value) throws ValidationException {
+        if (!value.isInt())
+            throw new ValidationException("'resolvers." + this.name + ".priority' must be an integer.");
+    }
+
     private void validateObject(JsonNode object) throws ValidationException {
         if (!object.isObject())
             throw new ValidationException("'resolvers." + this.name + "' must be an object.");
@@ -82,7 +95,8 @@ public class Resolver {
      *   "attributes": [
      *      ATTRIBUTE_NAME,
      *      ...
-     *    ]
+     *    ],
+     *   "priority": INTEGER
      * }
      * </pre>
      *
@@ -106,6 +120,9 @@ public class Resolver {
             switch (name) {
                 case "attributes":
                     this.attributes(value);
+                    break;
+                case "priority":
+                    this.priority(value);
                     break;
                 default:
                     throw new ValidationException("'resolvers." + this.name + "." + name + "' is not a recognized field.");
