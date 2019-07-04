@@ -1,0 +1,92 @@
+{
+  "attributes": {
+    "attribute_a": {
+      "type": "string"
+    },
+    "attribute_b": {
+      "type": "string"
+    },
+    "attribute_c": {
+      "type": "string"
+    },
+    "attribute_d": {
+      "type": "string"
+    },
+    "attribute_x": {
+      "type": "string"
+    }
+  },
+  "resolvers": {
+    "resolver_ab": {
+      "attributes": [
+        "attribute_a", "attribute_b"
+      ],
+      "priority": -1
+    },
+    "resolver_ac": {
+      "attributes": [
+        "attribute_a", "attribute_c"
+      ],
+      "priority": -1
+    },
+    "resolver_bc": {
+      "attributes": [
+        "attribute_b", "attribute_c"
+      ],
+      "priority": 1
+    },
+    "resolver_cd": {
+      "attributes": [
+        "attribute_c", "attribute_d"
+      ],
+      "priority": -1
+    },
+    "resolver_x": {
+      "attributes": [
+        "attribute_x"
+      ]
+    }
+  },
+  "matchers": {
+    "matcher_a": {
+      "clause": {
+        "match": {
+          "{{ field }}": "{{ value }}"
+        }
+      }
+    },
+    "matcher_b": {
+      "clause": {
+        "term": {
+          "{{ field }}": "{{ value }}"
+        }
+      }
+    }
+  },
+  "indices": {
+    ".zentity_test_index_a": {
+      "fields": {
+        "field_a.clean": {
+          "attribute": "attribute_a",
+          "matcher": "matcher_a"
+        },
+        "field_b.clean": {
+          "attribute": "attribute_b",
+          "matcher": "matcher_a"
+        },
+        "field_c.clean": {
+          "attribute": "attribute_c",
+          "matcher": "matcher_a"
+        },
+        "field_d.clean": {
+          "attribute": "attribute_d",
+          "matcher": "matcher_a"
+        },
+        "object.a.b.c.keyword": {
+          "attribute": "attribute_x",
+          "matcher": "matcher_b"
+        }
+      }
+    }
+  }
+}

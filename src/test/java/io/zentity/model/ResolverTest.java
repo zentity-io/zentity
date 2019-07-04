@@ -12,6 +12,9 @@ public class ResolverTest {
     public void testValid() throws Exception {
         new Resolver("resolver_name", VALID_OBJECT);
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\",\"attribute_b\"]}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":1}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":0}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":-1}");
     }
 
     @Test(expected = ValidationException.class)
@@ -35,7 +38,7 @@ public class ResolverTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesEmpty() throws Exception {
-        new Resolver("resolver_name", "[]");
+        new Resolver("resolver_name", "{\"attributes\":[]}");
     }
 
     @Test(expected = ValidationException.class)
@@ -103,6 +106,38 @@ public class ResolverTest {
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesNameTypeObject() throws Exception {
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\",{}]}");
+    }
+
+    ////  "resolvers".RESOLVER_NAME."priority"  //////////////////////////////////////////////////////////////////////
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidPriorityTypeArray() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":[]}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidPriorityTypeBoolean() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":true}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidPriorityTypeFloat() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":1.0}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidPriorityTypeNull() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":null}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidPriorityTypeObject() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":{}}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidPriorityTypeString() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":\"1\"}");
     }
 
 }
