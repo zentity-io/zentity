@@ -1,6 +1,7 @@
 package io.zentity.resolution;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
@@ -27,6 +28,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ public class Job {
 
     // Constants
     public static final boolean DEFAULT_INCLUDE_ATTRIBUTES = true;
+    public static final boolean DEFAULT_INCLUDE_EXPLANATION = false;
     public static final boolean DEFAULT_INCLUDE_HITS = true;
     public static final boolean DEFAULT_INCLUDE_QUERIES = false;
     public static final boolean DEFAULT_INCLUDE_SOURCE = true;
@@ -51,7 +54,8 @@ public class Job {
     // Job configuration
     private Input input;
     private boolean includeAttributes = DEFAULT_INCLUDE_ATTRIBUTES;
-    private boolean includeHits = DEFAULT_INCLUDE_QUERIES;
+    private boolean includeExplanation = DEFAULT_INCLUDE_EXPLANATION;
+    private boolean includeHits = DEFAULT_INCLUDE_HITS;
     private boolean includeQueries = DEFAULT_INCLUDE_QUERIES;
     private boolean includeSource = DEFAULT_INCLUDE_SOURCE;
     private int maxDocsPerQuery = DEFAULT_MAX_DOCS_PER_QUERY;
@@ -234,7 +238,7 @@ public class Job {
      * @param combiner      Combine clauses with "should" or "filter".
      * @return
      */
-    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Attribute> attributes, String attributeName, String combiner) throws ValidationException {
+    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Attribute> attributes, String attributeName, String combiner, boolean includeExplanation) throws ValidationException {
         if (!combiner.equals("should") && !combiner.equals("filter"))
             throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> indexFieldClauses = new ArrayList<>();
@@ -266,7 +270,16 @@ public class Job {
                     continue;
 
                 // Populate the {{ field }}, {{ value }}, and {{ param.* }} variables of the matcher template.
-                valueClauses.add(populateMatcherClause(matcher, indexFieldName, value.serialized(), params));
+                String valueClause = populateMatcherClause(matcher, indexFieldName, value.serialized(), params);
+                if (includeExplanation) {
+
+                    // Name the clause to determine why any matching document matched
+                    String nameBase64 = Base64.getEncoder().encodeToString(attributeName.getBytes());
+                    String valueBase64 = Base64.getEncoder().encodeToString(value.serialized().getBytes());
+                    String _name = nameBase64 + ":" + valueBase64;
+                    valueClause = "{\"bool\":{\"_name\":\"" + _name + "\",\"filter\":" + valueClause + "}}";
+                }
+                valueClauses.add(valueClause);
             }
             if (valueClauses.size() == 0)
                 continue;
@@ -291,14 +304,14 @@ public class Job {
      * @param combiner   Combine clauses with "should" or "filter".
      * @return
      */
-    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Attribute> attributes, String combiner) throws ValidationException {
+    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Attribute> attributes, String combiner, boolean includeExplanation) throws ValidationException {
         if (!combiner.equals("should") && !combiner.equals("filter"))
             throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : attributes.keySet()) {
 
             // Construct a "should" or "filter" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, combiner);
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, combiner, includeExplanation);
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -320,14 +333,14 @@ public class Job {
      * @param attributes          The names and values for the input attributes.
      * @return A "bool" clause for all applicable resolvers.
      */
-    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Attribute> attributes) throws ValidationException {
+    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Attribute> attributes, boolean includeExplanation) throws ValidationException {
 
         // Construct a "filter" clause for each attribute at this level of the filter tree.
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : resolversFilterTree.keySet()) {
 
             // Construct a "should" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, "should");
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, "should", includeExplanation);
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -337,7 +350,7 @@ public class Job {
                 indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
 
             // Populate any child filters.
-            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributes);
+            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributes, includeExplanation);
             if (!filter.equals("{}"))
                 attributeClauses.add("{\"bool\":{\"filter\":[" + indexFieldsClause + "," + filter + "]}}");
             else
@@ -457,6 +470,14 @@ public class Job {
 
     public void includeAttributes(boolean includeAttributes) {
         this.includeAttributes = includeAttributes;
+    }
+
+    public boolean includeExplanation() {
+        return this.includeExplanation;
+    }
+
+    public void includeExplanation(boolean includeExplanation) {
+        this.includeExplanation = includeExplanation;
     }
 
     public boolean includeHits() {
@@ -587,7 +608,7 @@ public class Job {
 
             // Create "scope.exclude.attributes" clauses. Combine them into a single "should" clause.
             if (!this.input.scope().exclude().attributes().isEmpty()) {
-                List<String> attributeClauses = makeAttributeClauses(this.input.model(), indexName, this.input.scope().exclude().attributes(), "should");
+                List<String> attributeClauses = makeAttributeClauses(this.input.model(), indexName, this.input.scope().exclude().attributes(), "should", this.includeExplanation);
                 int size = attributeClauses.size();
                 if (size > 1)
                     queryMustNotClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
@@ -601,7 +622,7 @@ public class Job {
 
             // Construct "scope.include.attributes" clauses. Combine them into a single "filter" clause.
             if (!this.input.scope().include().attributes().isEmpty()) {
-                List<String> attributeClauses = makeAttributeClauses(this.input.model(), indexName, this.input.scope().include().attributes(), "filter");
+                List<String> attributeClauses = makeAttributeClauses(this.input.model(), indexName, this.input.scope().include().attributes(), "filter", this.includeExplanation);
                 int size = attributeClauses.size();
                 if (size > 1)
                     queryFilterClauses.add("{\"bool\":{\"filter\":[" + String.join(",", attributeClauses) + "]}}");
@@ -636,7 +657,7 @@ public class Job {
                     List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolversGroup, counts);
                     resolversFilterTree = makeResolversFilterTree(resolversSorted);
                     resolversFilterTreeGrouped.put(numPriorityLevels - level - 1, resolversFilterTree);
-                    resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes);
+                    resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes, this.includeExplanation);
 
                     // If there are multiple levels of priority, then each lower priority group of resolvers must ensure
                     // that every higher priority resolver either matches or does not exist.
@@ -662,7 +683,7 @@ public class Job {
                                 Map<String, Integer> parentCounts = countAttributesAcrossResolvers(this.input.model(), parentResolverGroup);
                                 List<List<String>> parentResolverSorted = sortResolverAttributes(this.input.model(), parentResolverGroup, parentCounts);
                                 TreeMap<String, TreeMap> parentResolverFilterTree = makeResolversFilterTree(parentResolverSorted);
-                                String parentResolverClause = populateResolversFilterTree(this.input.model(), indexName, parentResolverFilterTree, this.attributes);
+                                String parentResolverClause = populateResolversFilterTree(this.input.model(), indexName, parentResolverFilterTree, this.attributes, this.includeExplanation);
 
                                 // Construct a "should" clause for the above two clauses.
                                 parentResolverClauses.add("{\"bool\":{\"should\":[" + attributesExistsClause + "," + parentResolverClause + "]}}");
@@ -799,6 +820,27 @@ public class Job {
                     }
                 }
 
+                // Determine why any matching documents matched.
+                TreeMap<String, TreeSet<String>> explanationAttributes = new TreeMap<>();
+                TreeSet<String> explanationResolvers = new TreeSet<>();
+                if (this.includeExplanation && doc.has("matched_queries")) {
+                    JsonNode matchedQueriesNode = doc.get("matched_queries");
+                    if (matchedQueriesNode.size() > 0) {
+                        for (JsonNode mqNode : matchedQueriesNode) {
+                            String[] _name = mqNode.asText().split(":");
+                            String attributeName = new String(Base64.getDecoder().decode(_name[0]));
+                            String attributeValue = new String(Base64.getDecoder().decode(_name[1]));
+                            if (!explanationAttributes.containsKey(attributeName))
+                                explanationAttributes.put(attributeName, new TreeSet<>());
+                            // TODO: Pass serialized Value objects, not strings.
+                            explanationAttributes.get(attributeName).add(attributeValue);
+                        }
+                    }
+                    for (String resolverName : resolvers)
+                        if (explanationAttributes.keySet().containsAll(input.model().resolvers().get(resolverName).attributes()))
+                            explanationResolvers.add(resolverName);
+                }
+
                 // Modify doc metadata.
                 if (this.includeHits) {
                     ObjectNode docObjNode = (ObjectNode) doc;
@@ -811,6 +853,20 @@ public class Job {
                             JsonNode values = docAttributes.get(attributeName);
                             docAttributesObjNode.set(attributeName, values);
                         }
+                    }
+                    // Determine why any matching documents matched.
+                    if (this.includeExplanation && docObjNode.has("matched_queries")) {
+                        ObjectNode docExplanationObjNode = docObjNode.putObject("_explanation");
+                        ObjectNode docExpAttrsObjNode = docExplanationObjNode.putObject("attributes");
+                        for (String attributeName : explanationAttributes.keySet()) {
+                            ArrayNode docExpAttrsArrNode = docExpAttrsObjNode.putArray(attributeName);
+                            for (String attributeValue : explanationAttributes.get(attributeName))
+                                docExpAttrsArrNode.add(attributeValue);
+                        }
+                        ArrayNode docExpResArrNode = docExplanationObjNode.putArray("resolvers");
+                        for (String resolverName : explanationResolvers)
+                            docExpResArrNode.add(resolverName);
+                        docObjNode.remove("matched_queries");
                     }
                     if (!this.includeSource) {
                         docObjNode.remove("_source");

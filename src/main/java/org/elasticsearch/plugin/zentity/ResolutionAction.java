@@ -38,6 +38,7 @@ public class ResolutionAction extends BaseRestHandler {
         // Parse the request params that will be passed to the job configuration
         String entityType = restRequest.param("entity_type");
         Boolean includeAttributes = restRequest.paramAsBoolean("_attributes", Job.DEFAULT_INCLUDE_ATTRIBUTES);
+        Boolean includeExplanation = restRequest.paramAsBoolean("_explanation", Job.DEFAULT_INCLUDE_EXPLANATION);
         Boolean includeHits = restRequest.paramAsBoolean("hits", Job.DEFAULT_INCLUDE_HITS);
         Boolean includeQueries = restRequest.paramAsBoolean("queries", Job.DEFAULT_INCLUDE_QUERIES);
         Boolean includeSource = restRequest.paramAsBoolean("_source", Job.DEFAULT_INCLUDE_SOURCE);
@@ -71,6 +72,7 @@ public class ResolutionAction extends BaseRestHandler {
                 // Prepare the entity resolution job.
                 Job job = new Job(client);
                 job.includeAttributes(includeAttributes);
+                job.includeExplanation(includeExplanation);
                 job.includeHits(includeHits);
                 job.includeQueries(includeQueries);
                 job.includeSource(includeSource);

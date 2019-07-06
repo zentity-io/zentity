@@ -42,7 +42,7 @@ public class JobTest {
         Map<String, Integer> counts = Job.countAttributesAcrossResolvers(model, resolversList);
         List<List<String>> resolversSorted = Job.sortResolverAttributes(model, resolversList, counts);
         TreeMap<String, TreeMap> resolversFilterTree = Job.makeResolversFilterTree(resolversSorted);
-        String resolversClause = Job.populateResolversFilterTree(model, "index", resolversFilterTree, input.attributes());
+        String resolversClause = Job.populateResolversFilterTree(model, "index", resolversFilterTree, input.attributes(), false);
         String expected = "{\"bool\":{\"should\":[{\"match\":{\"id\":\"1234567890\",\"fuzziness\":\"auto\"}},{\"bool\":{\"filter\":[{\"bool\":{\"should\":[{\"term\":{\"name\":\"Alice Jones\"}},{\"term\":{\"name\":\"Alice Jones-Smith\"}}]}},{\"bool\":{\"should\":[{\"match\":{\"phone\":\"555-123-4567\",\"fuzziness\":\"2\"}},{\"bool\":{\"filter\":[{\"term\":{\"street\":\"123 Main St\"}},{\"bool\":{\"should\":[{\"bool\":{\"filter\":[{\"term\":{\"city\":\"Beverly Hills\"}},{\"bool\":{\"filter\":{\"term\":{\"state\":\"CA\"}}}}]}},{\"term\":{\"zip\":\"90210\"}}]}}]}}]}}]}}]}}";
         Assert.assertEquals(resolversClause, expected);
     }
@@ -206,7 +206,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
         String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
@@ -256,7 +256,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
         String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
@@ -305,7 +305,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
         String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
@@ -360,7 +360,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
         String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
@@ -419,7 +419,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
         String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
@@ -483,7 +483,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
         String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-15m\",\"lte\":\"123 Main St||+15m\",\"format\":\"yyyy-MM-dd\"}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
@@ -529,7 +529,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
     }
 
     /**
@@ -573,7 +573,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter");
+        List<String> attributeClauses = Job.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false);
     }
 
     /**
