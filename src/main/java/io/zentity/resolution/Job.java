@@ -3,6 +3,7 @@ package io.zentity.resolution;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
 import io.zentity.model.Index;
@@ -11,6 +12,7 @@ import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.Attribute;
 import io.zentity.resolution.input.Input;
+import io.zentity.resolution.input.value.StringValue;
 import io.zentity.resolution.input.value.Value;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -37,6 +39,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
+import static io.zentity.common.Patterns.COLON;
 
 public class Job {
 
@@ -274,9 +278,8 @@ public class Job {
                 if (includeExplanation) {
 
                     // Name the clause to determine why any matching document matched
-                    String nameBase64 = Base64.getEncoder().encodeToString(attributeName.getBytes());
                     String valueBase64 = Base64.getEncoder().encodeToString(value.serialized().getBytes());
-                    String _name = nameBase64 + ":" + valueBase64;
+                    String _name = attributeName + ":" + valueBase64;
                     valueClause = "{\"bool\":{\"_name\":\"" + _name + "\",\"filter\":" + valueClause + "}}";
                 }
                 valueClauses.add(valueClause);
@@ -821,18 +824,22 @@ public class Job {
                 }
 
                 // Determine why any matching documents matched.
-                TreeMap<String, TreeSet<String>> explanationAttributes = new TreeMap<>();
+                TreeMap<String, TreeSet<Value>> explanationAttributes = new TreeMap<>();
                 TreeSet<String> explanationResolvers = new TreeSet<>();
                 if (this.includeExplanation && doc.has("matched_queries")) {
                     JsonNode matchedQueriesNode = doc.get("matched_queries");
                     if (matchedQueriesNode.size() > 0) {
                         for (JsonNode mqNode : matchedQueriesNode) {
-                            String[] _name = mqNode.asText().split(":");
-                            String attributeName = new String(Base64.getDecoder().decode(_name[0]));
-                            String attributeValue = new String(Base64.getDecoder().decode(_name[1]));
+                            String[] _name = COLON.split(mqNode.asText());
+                            String attributeName = _name[0];
+                            String attributeValueSerialized = new String(Base64.getDecoder().decode(_name[1]));
                             if (!explanationAttributes.containsKey(attributeName))
                                 explanationAttributes.put(attributeName, new TreeSet<>());
-                            // TODO: Pass serialized Value objects, not strings.
+                            String attributeType = this.input.model().attributes().get(attributeName).type();
+                            if (this.attributes.get(attributeName).values().iterator().next() instanceof StringValue)
+                                attributeValueSerialized = "\"" + attributeValueSerialized + "\"";
+                            JsonNode attributeValueNode = Json.MAPPER.readTree("{\"value\":" + attributeValueSerialized + "}").get("value");
+                            Value attributeValue = Value.create(attributeType, attributeValueNode);
                             explanationAttributes.get(attributeName).add(attributeValue);
                         }
                     }
@@ -860,8 +867,8 @@ public class Job {
                         ObjectNode docExpAttrsObjNode = docExplanationObjNode.putObject("attributes");
                         for (String attributeName : explanationAttributes.keySet()) {
                             ArrayNode docExpAttrsArrNode = docExpAttrsObjNode.putArray(attributeName);
-                            for (String attributeValue : explanationAttributes.get(attributeName))
-                                docExpAttrsArrNode.add(attributeValue);
+                            for (Value attributeValue : explanationAttributes.get(attributeName))
+                                docExpAttrsArrNode.add((ValueNode) attributeValue.value());
                         }
                         ArrayNode docExpResArrNode = docExplanationObjNode.putArray("resolvers");
                         for (String resolverName : explanationResolvers)
