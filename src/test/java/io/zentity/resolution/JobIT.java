@@ -16,6 +16,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static io.zentity.common.Json.ORDERED_MAPPER;
+
 public class JobIT extends AbstractITCase {
 
     private final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
@@ -32,6 +34,17 @@ public class JobIT extends AbstractITCase {
             "    \"include\": {\n" +
             "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    private final StringEntity TEST_PAYLOAD_JOB_EXPLANATION = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_a\": [ \"a_00\" ]\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \".zentity_test_index_a\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -372,6 +385,30 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("c1,4");
 
             assertEquals(docsExpected, getActual(json));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    public void testJobExplanation() throws Exception {
+        prepareTestResources();
+        try {
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.addParameter("_attributes", "false");
+            postResolution.addParameter("_explanation", "true");
+            postResolution.addParameter("_source", "false");
+            postResolution.addParameter("max_hops", "1");
+            postResolution.addParameter("max_docs_per_query", "2");
+            postResolution.setEntity(TEST_PAYLOAD_JOB_EXPLANATION);
+            Response response = client.performRequest(postResolution);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+
+            String expected = "[{\"_index\":\".zentity_test_index_a\",\"_type\":\"_doc\",\"_id\":\"a0\",\"_hop\":0,\"_explanation\":{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"resolvers\":[\"resolver_a\"]}},{\"_index\":\".zentity_test_index_a\",\"_type\":\"_doc\",\"_id\":\"a1\",\"_hop\":1,\"_explanation\":{\"attributes\":{\"attribute_d\":[\"d_00\"],\"attribute_type_date\":[\"1999-12-31T23:59:57.0000\"]},\"resolvers\":[\"resolver_c\",\"resolver_type_date_c\"]}},{\"_index\":\".zentity_test_index_a\",\"_type\":\"_doc\",\"_id\":\"a2\",\"_hop\":1,\"_explanation\":{\"attributes\":{\"attribute_d\":[\"d_00\"],\"attribute_object\":[\"a\"],\"attribute_type_boolean\":[true],\"attribute_type_double\":[3.141592653589793],\"attribute_type_float\":[1.0],\"attribute_type_integer\":[1],\"attribute_type_long\":[922337203685477],\"attribute_type_string\":[\"a\"]},\"resolvers\":[\"resolver_c\",\"resolver_object\",\"resolver_type_boolean\",\"resolver_type_double\",\"resolver_type_float\",\"resolver_type_integer\",\"resolver_type_long\",\"resolver_type_string\"]}}]";
+            String actual = ORDERED_MAPPER.writeValueAsString(json.get("hits").get("hits"));
+
+            assertEquals(expected, actual);
+
         } finally {
             destroyTestResources();
         }
