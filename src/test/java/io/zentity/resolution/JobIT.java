@@ -16,8 +16,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static io.zentity.common.Json.ORDERED_MAPPER;
-
 public class JobIT extends AbstractITCase {
 
     private final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
@@ -40,7 +38,14 @@ public class JobIT extends AbstractITCase {
 
     private final StringEntity TEST_PAYLOAD_JOB_EXPLANATION = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_00\" ]\n" +
+            "    \"attribute_a\": [ \"a_00\" ],\n" +
+            "    \"attribute_type_date\": {" +
+            "      \"values\": [ \"1999-12-31T23:59:57.0000\" ],\n" +
+            "      \"params\": {\n" +
+            "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
+            "        \"window\" : \"1d\"\n" +
+            "      }\n" +
+            "    }\n" +
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
@@ -403,11 +408,29 @@ public class JobIT extends AbstractITCase {
             postResolution.setEntity(TEST_PAYLOAD_JOB_EXPLANATION);
             Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 3);
 
-            String expected = "[{\"_index\":\".zentity_test_index_a\",\"_type\":\"_doc\",\"_id\":\"a0\",\"_hop\":0,\"_explanation\":{\"summary\":{\"resolvers\":[\"resolver_a\"]},\"details\":[{\"attribute\":\"attribute_a\",\"attribute_value\":\"a_00\",\"index_field\":\"field_a.clean\",\"index_field_value\":\"a_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_a\",\"attribute_value\":\"a_00\",\"index_field\":\"field_a.keyword\",\"index_field_value\":\"a_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}}]}},{\"_index\":\".zentity_test_index_a\",\"_type\":\"_doc\",\"_id\":\"a1\",\"_hop\":1,\"_explanation\":{\"summary\":{\"resolvers\":[\"resolver_c\",\"resolver_type_date_c\"]},\"details\":[{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.keyword\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.clean\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"attribute_value\":\"1999-12-31T23:59:57.0000\",\"index_field\":\"type_date\",\"index_field_value\":\"1999-12-31T23:59:59.0000\",\"matcher\":\"matcher_c\",\"matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"2s\"}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.clean\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.keyword\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}}]}},{\"_index\":\".zentity_test_index_a\",\"_type\":\"_doc\",\"_id\":\"a2\",\"_hop\":1,\"_explanation\":{\"summary\":{\"resolvers\":[\"resolver_c\",\"resolver_object\",\"resolver_type_boolean\",\"resolver_type_double\",\"resolver_type_float\",\"resolver_type_integer\",\"resolver_type_long\",\"resolver_type_string\"]},\"details\":[{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.keyword\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_boolean\",\"attribute_value\":true,\"index_field\":\"type_boolean\",\"index_field_value\":true,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.clean\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_object\",\"attribute_value\":\"a\",\"index_field\":\"object.a.b.c.keyword\",\"index_field_value\":\"a\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_integer\",\"attribute_value\":1,\"index_field\":\"type_integer\",\"index_field_value\":1,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_double\",\"attribute_value\":3.141592653589793,\"index_field\":\"type_double\",\"index_field_value\":3.141592653589793,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_long\",\"attribute_value\":922337203685477,\"index_field\":\"type_long\",\"index_field_value\":922337203685477,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_string\",\"attribute_value\":\"a\",\"index_field\":\"type_string\",\"index_field_value\":\"a\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.clean\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.keyword\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_float\",\"attribute_value\":1.0,\"index_field\":\"type_float\",\"index_field_value\":1.0,\"matcher\":\"matcher_b\",\"matcher_params\":{}}]}}]";
-            String actual = ORDERED_MAPPER.writeValueAsString(json.get("hits").get("hits"));
+            Set<String> docsExpected = new TreeSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("a1,1");
+            docsExpected.add("a2,1");
+            assertEquals(docsExpected, getActual(json));
 
-            assertEquals(expected, actual);
+            for (JsonNode doc : json.get("hits").get("hits")) {
+                String expected = "";
+                switch (doc.get("_id").asText()) {
+                    case "a0":
+                        expected = "{\"summary\":{\"resolvers\":[\"resolver_a\",\"resolver_type_date_a\"]},\"details\":[{\"attribute\":\"attribute_a\",\"attribute_value\":\"a_00\",\"index_field\":\"field_a.clean\",\"index_field_value\":\"a_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_a\",\"attribute_value\":\"a_00\",\"index_field\":\"field_a.keyword\",\"index_field_value\":\"a_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"attribute_value\":\"1999-12-31T23:59:57.0000\",\"index_field\":\"type_date\",\"index_field_value\":\"1999-12-31T23:59:57.0000\",\"matcher\":\"matcher_c\",\"matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
+                        break;
+                    case "a1":
+                        expected = "{\"summary\":{\"resolvers\":[\"resolver_c\",\"resolver_type_date_c\"]},\"details\":[{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.clean\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.keyword\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"attribute_value\":\"1999-12-31T23:59:57.0000\",\"index_field\":\"type_date\",\"index_field_value\":\"1999-12-31T23:59:59.0000\",\"matcher\":\"matcher_c\",\"matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
+                        break;
+                    case "a2":
+                        expected = "{\"summary\":{\"resolvers\":[\"resolver_c\",\"resolver_object\",\"resolver_type_boolean\",\"resolver_type_date_c\",\"resolver_type_double\",\"resolver_type_float\",\"resolver_type_integer\",\"resolver_type_long\",\"resolver_type_string\"]},\"details\":[{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.clean\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_a\",\"matcher_params\":{}},{\"attribute\":\"attribute_d\",\"attribute_value\":\"d_00\",\"index_field\":\"field_d.keyword\",\"index_field_value\":\"d_00\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_object\",\"attribute_value\":\"a\",\"index_field\":\"object.a.b.c.keyword\",\"index_field_value\":\"a\",\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_boolean\",\"attribute_value\":true,\"index_field\":\"type_boolean\",\"index_field_value\":true,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"attribute_value\":\"1999-12-31T23:59:57.0000\",\"index_field\":\"type_date\",\"index_field_value\":\"2000-01-01T00:00:00.0000\",\"matcher\":\"matcher_c\",\"matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}},{\"attribute\":\"attribute_type_double\",\"attribute_value\":3.141592653589793,\"index_field\":\"type_double\",\"index_field_value\":3.141592653589793,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_float\",\"attribute_value\":1.0,\"index_field\":\"type_float\",\"index_field_value\":1.0,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_integer\",\"attribute_value\":1,\"index_field\":\"type_integer\",\"index_field_value\":1,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_long\",\"attribute_value\":922337203685477,\"index_field\":\"type_long\",\"index_field_value\":922337203685477,\"matcher\":\"matcher_b\",\"matcher_params\":{}},{\"attribute\":\"attribute_type_string\",\"attribute_value\":\"a\",\"index_field\":\"type_string\",\"index_field_value\":\"a\",\"matcher\":\"matcher_b\",\"matcher_params\":{}}]}";
+                        break;
+                }
+                assertEquals(expected, Json.MAPPER.writeValueAsString(doc.get("_explanation")));
+            }
 
         } finally {
             destroyTestResources();
