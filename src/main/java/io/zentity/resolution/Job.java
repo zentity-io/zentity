@@ -3,7 +3,6 @@ package io.zentity.resolution;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.ValueNode;
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
 import io.zentity.model.Index;
@@ -280,7 +279,7 @@ public class Job {
 
                     // Name the clause to determine why any matching document matched
                     String valueBase64 = Base64.getEncoder().encodeToString(value.serialized().getBytes());
-                    String _name = _nameIdCounter.getAndIncrement() + ":" + attributeName + ":" + indexFieldName + ":" + matcherName + ":" + valueBase64;
+                    String _name = attributeName + ":" + indexFieldName + ":" + matcherName + ":" + valueBase64 + ":" + _nameIdCounter.getAndIncrement();
                     valueClause = "{\"bool\":{\"_name\":\"" + _name + "\",\"filter\":" + valueClause + "}}";
                 }
                 valueClauses.add(valueClause);
@@ -841,24 +840,41 @@ public class Job {
                             docAttributesObjNode.set(attributeName, values);
                         }
                     }
+
                     // Determine why any matching documents matched.
                     if (this.includeExplanation && docObjNode.has("matched_queries") && docObjNode.get("matched_queries").size() > 0) {
                         ObjectNode docExpObjNode = docObjNode.putObject("_explanation");
                         ObjectNode docExpSummaryObjNode = docExpObjNode.putObject("summary");
                         ArrayNode docExpDetailsArrNode = docExpObjNode.putArray("details");
                         TreeSet<String> expAttributes = new TreeSet<>();
-                        JsonNode matchedQueriesNode = doc.get("matched_queries");
-                        for (JsonNode mqNode : matchedQueriesNode) {
+                        Set<String> matchedQueries = new TreeSet<>();
+
+                        // Remove the unique identifier from "_name" to remove duplicates.
+                        for (JsonNode mqNode : docObjNode.get("matched_queries")) {
                             String[] _name = COLON.split(mqNode.asText());
-                            String attributeName = _name[1];
-                            String indexFieldName = _name[2];
-                            String matcherName = _name[3];
-                            String attributeValueSerialized = new String(Base64.getDecoder().decode(_name[4]));
+                            _name = Arrays.copyOf(_name, _name.length - 1);
+                            matchedQueries.add(String.join(":", _name));
+                        }
+
+                        // Create tuple-like objects that describe which attribute values matched which
+                        // index field values using which matchers and matcher parameters.
+                        for (String mq : matchedQueries) {
+                            String[] _name = COLON.split(mq);
+                            String attributeName = _name[0];
+                            String indexFieldName = _name[1];
+                            String matcherName = _name[2];
+                            String attributeValueSerialized = new String(Base64.getDecoder().decode(_name[3]));
                             if (this.attributes.get(attributeName).values().iterator().next() instanceof StringValue)
                                 attributeValueSerialized = "\"" + attributeValueSerialized + "\"";
                             JsonNode attributeValueNode = Json.MAPPER.readTree("{\"attribute_value\":" + attributeValueSerialized + "}").get("attribute_value");
                             JsonNode indexFieldValueNode = docAttributes.get(attributeName);
-                            JsonNode matcherParamsNode = Json.ORDERED_MAPPER.readTree(Json.ORDERED_MAPPER.writeValueAsString(input.model().matchers().get(matcherName).params()));
+                            JsonNode matcherParamsNode;
+                            if (input.attributes().containsKey(attributeName))
+                                matcherParamsNode = Json.ORDERED_MAPPER.readTree(Json.ORDERED_MAPPER.writeValueAsString(input.attributes().get(attributeName).params()));
+                            else if (input.model().matchers().containsKey(matcherName))
+                                matcherParamsNode = Json.ORDERED_MAPPER.readTree(Json.ORDERED_MAPPER.writeValueAsString(input.model().matchers().get(matcherName).params()));
+                            else
+                                matcherParamsNode = Json.ORDERED_MAPPER.readTree("{}");
                             ObjectNode docExpDetailsObjNode = Json.ORDERED_MAPPER.createObjectNode();
                             docExpDetailsObjNode.put("attribute", attributeName);
                             docExpDetailsObjNode.put("attribute_value", attributeValueNode);
@@ -875,10 +891,11 @@ public class Job {
                                 docExpResolversArrNode.add(resolverName);
                         docObjNode.remove("matched_queries");
                     }
+
+                    // Either remove "_source" or move "_source" under "_attributes".
                     if (!this.includeSource) {
                         docObjNode.remove("_source");
                     } else {
-                        // Move _source under _attributes
                         JsonNode _sourceNode = docObjNode.get("_source");
                         docObjNode.remove("_source");
                         docObjNode.set("_source", _sourceNode);
