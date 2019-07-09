@@ -844,8 +844,8 @@ public class Job {
                     // Determine why any matching documents matched.
                     if (this.includeExplanation && docObjNode.has("matched_queries") && docObjNode.get("matched_queries").size() > 0) {
                         ObjectNode docExpObjNode = docObjNode.putObject("_explanation");
-                        ObjectNode docExpSummaryObjNode = docExpObjNode.putObject("summary");
-                        ArrayNode docExpDetailsArrNode = docExpObjNode.putArray("details");
+                        ObjectNode docExpResolversObjNode = docExpObjNode.putObject("resolvers");
+                        ArrayNode docExpMatchesArrNode = docExpObjNode.putArray("matches");
                         Set<String> expAttributes = new TreeSet<>();
                         Set<String> matchedQueries = new TreeSet<>();
 
@@ -882,12 +882,11 @@ public class Job {
                             docExpDetailsObjNode.put("input_value", attributeValueNode);
                             docExpDetailsObjNode.put("input_matcher", matcherName);
                             docExpDetailsObjNode.putPOJO("input_matcher_params", matcherParamsNode);
-                            docExpDetailsArrNode.add(docExpDetailsObjNode);
+                            docExpMatchesArrNode.add(docExpDetailsObjNode);
                             expAttributes.add(attributeName);
                         }
 
                         // Summarize matched resolvers
-                        ObjectNode docExpResolversObjNode = docExpSummaryObjNode.putObject("resolvers");
                         for (String resolverName : resolvers) {
                             if (expAttributes.containsAll(input.model().resolvers().get(resolverName).attributes())) {
                                 ObjectNode docExpResolverObjNode = docExpResolversObjNode.putObject(resolverName);
