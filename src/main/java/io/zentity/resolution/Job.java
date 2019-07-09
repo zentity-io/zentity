@@ -846,7 +846,7 @@ public class Job {
                         ObjectNode docExpObjNode = docObjNode.putObject("_explanation");
                         ObjectNode docExpSummaryObjNode = docExpObjNode.putObject("summary");
                         ArrayNode docExpDetailsArrNode = docExpObjNode.putArray("details");
-                        TreeSet<String> expAttributes = new TreeSet<>();
+                        Set<String> expAttributes = new TreeSet<>();
                         Set<String> matchedQueries = new TreeSet<>();
 
                         // Remove the unique identifier from "_name" to remove duplicates.
@@ -877,18 +877,25 @@ public class Job {
                                 matcherParamsNode = Json.ORDERED_MAPPER.readTree("{}");
                             ObjectNode docExpDetailsObjNode = Json.ORDERED_MAPPER.createObjectNode();
                             docExpDetailsObjNode.put("attribute", attributeName);
-                            docExpDetailsObjNode.put("attribute_value", attributeValueNode);
-                            docExpDetailsObjNode.put("index_field", indexFieldName);
-                            docExpDetailsObjNode.put("index_field_value", indexFieldValueNode);
-                            docExpDetailsObjNode.put("matcher", matcherName);
-                            docExpDetailsObjNode.putPOJO("matcher_params", matcherParamsNode);
+                            docExpDetailsObjNode.put("target_field", indexFieldName);
+                            docExpDetailsObjNode.put("target_value", indexFieldValueNode);
+                            docExpDetailsObjNode.put("input_value", attributeValueNode);
+                            docExpDetailsObjNode.put("input_matcher", matcherName);
+                            docExpDetailsObjNode.putPOJO("input_matcher_params", matcherParamsNode);
                             docExpDetailsArrNode.add(docExpDetailsObjNode);
                             expAttributes.add(attributeName);
                         }
-                        ArrayNode docExpResolversArrNode = docExpSummaryObjNode.putArray("resolvers");
-                        for (String resolverName : resolvers)
-                            if (expAttributes.containsAll(input.model().resolvers().get(resolverName).attributes()))
-                                docExpResolversArrNode.add(resolverName);
+
+                        // Summarize matched resolvers
+                        ObjectNode docExpResolversObjNode = docExpSummaryObjNode.putObject("resolvers");
+                        for (String resolverName : resolvers) {
+                            if (expAttributes.containsAll(input.model().resolvers().get(resolverName).attributes())) {
+                                ObjectNode docExpResolverObjNode = docExpResolversObjNode.putObject(resolverName);
+                                ArrayNode docExpResolverAttributesArrNode = docExpResolverObjNode.putArray("attributes");
+                                for (String attributeName : input.model().resolvers().get(resolverName).attributes())
+                                    docExpResolverAttributesArrNode.add(attributeName);
+                            }
+                        }
                         docObjNode.remove("matched_queries");
                     }
 
