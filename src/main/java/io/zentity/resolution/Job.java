@@ -653,9 +653,8 @@ public class Job {
                 // Group the resolvers by their priority level.
                 TreeMap<Integer, List<String>> resolverGroups = groupResolversByPriority(this.input.model(), resolvers);
 
-                // Construct a clause for each priority level in descending order of priority.
+                // Construct a clause for each priority level in ascending order of priority.
                 List<Integer> priorities = new ArrayList<>(resolverGroups.keySet());
-                Collections.reverse(priorities);
                 int numPriorityLevels= priorities.size();
                 for (int level = 0; level < numPriorityLevels; level++) {
                     Integer priority = priorities.get(level);
@@ -666,13 +665,13 @@ public class Job {
                     resolversFilterTreeGrouped.put(numPriorityLevels - level - 1, resolversFilterTree);
                     resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes, this.includeExplanation, _nameIdCounter);
 
-                    // If there are multiple levels of priority, then each lower priority group of resolvers must ensure
-                    // that every higher priority resolver either matches or does not exist.
+                    // If there are multiple levels of priority, then each higher priority group of resolvers must ensure
+                    // that every lower priority resolver either matches or does not exist.
                     List<String> parentResolversClauses = new ArrayList<>();
                     if (level > 0) {
 
-                        // This is a lower priority group of resolvers.
-                        // Every higher priority resolver either must match or must not exist.
+                        // This is a higher priority group of resolvers.
+                        // Every lower priority resolver either must match or must not exist.
                         for (int parentLevel = 0; parentLevel < level; parentLevel++) {
                             Integer parentPriority = priorities.get(parentLevel);
                             List<String> parentResolversGroup = resolverGroups.get(parentPriority);
@@ -696,7 +695,7 @@ public class Job {
                                 parentResolverClauses.add("{\"bool\":{\"should\":[" + attributesExistsClause + "," + parentResolverClause + "]}}");
                             }
 
-                            // Construct a "filter" clause for every higher priority resolver clause.
+                            // Construct a "filter" clause for every lower priority resolver clause.
                             parentResolversClauses.add("{\"bool\":{\"filter\":[" + String.join(",", parentResolverClauses) + "]}}");
                         }
                     }
