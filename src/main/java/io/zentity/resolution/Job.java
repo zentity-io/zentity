@@ -438,19 +438,19 @@ public class Job {
     }
 
     /**
-     * Group resolvers by their level of priority.
+     * Group resolvers by their level of weight.
      *
      * @param model The entity model.
      * @param resolvers The names of the resolvers to reference in the entity model.
-     * @return For each priority level, the names of the resolvers in that priority level.
+     * @return For each weight level, the names of the resolvers in that weight level.
      */
-    public static TreeMap<Integer, List<String>> groupResolversByPriority(Model model, List<String> resolvers) {
+    public static TreeMap<Integer, List<String>> groupResolversByWeight(Model model, List<String> resolvers) {
         TreeMap<Integer, List<String>> resolverGroups = new TreeMap<>();
         for (String resolverName : resolvers) {
-            Integer priority = model.resolvers().get(resolverName).priority();
-            if (!resolverGroups.containsKey(priority))
-                resolverGroups.put(priority, new ArrayList<>());
-            resolverGroups.get(priority).add(resolverName);
+            Integer weight = model.resolvers().get(resolverName).weight();
+            if (!resolverGroups.containsKey(weight))
+                resolverGroups.put(weight, new ArrayList<>());
+            resolverGroups.get(weight).add(resolverName);
         }
         return resolverGroups;
     }
@@ -650,31 +650,32 @@ public class Job {
             TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped= new TreeMap<>(Collections.reverseOrder());
             if (!this.attributes.isEmpty()) {
 
-                // Group the resolvers by their priority level.
-                TreeMap<Integer, List<String>> resolverGroups = groupResolversByPriority(this.input.model(), resolvers);
+                // Group the resolvers by their weight level.
+                TreeMap<Integer, List<String>> resolverGroups = groupResolversByWeight(this.input.model(), resolvers);
 
-                // Construct a clause for each priority level in ascending order of priority.
-                List<Integer> priorities = new ArrayList<>(resolverGroups.keySet());
-                int numPriorityLevels= priorities.size();
-                for (int level = 0; level < numPriorityLevels; level++) {
-                    Integer priority = priorities.get(level);
-                    List<String> resolversGroup = resolverGroups.get(priority);
+                // Construct a clause for each weight level in descending order of weight.
+                List<Integer> weights = new ArrayList<>(resolverGroups.keySet());
+                Collections.reverse(weights);
+                int numWeightLevels = weights.size();
+                for (int level = 0; level < numWeightLevels; level++) {
+                    Integer weight = weights.get(level);
+                    List<String> resolversGroup = resolverGroups.get(weight);
                     Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), resolversGroup);
                     List<List<String>> resolversSorted = sortResolverAttributes(this.input.model(), resolversGroup, counts);
                     resolversFilterTree = makeResolversFilterTree(resolversSorted);
-                    resolversFilterTreeGrouped.put(numPriorityLevels - level - 1, resolversFilterTree);
+                    resolversFilterTreeGrouped.put(numWeightLevels - level - 1, resolversFilterTree);
                     resolversClause = populateResolversFilterTree(this.input.model(), indexName, resolversFilterTree, this.attributes, this.includeExplanation, _nameIdCounter);
 
-                    // If there are multiple levels of priority, then each higher priority group of resolvers must ensure
-                    // that every lower priority resolver either matches or does not exist.
+                    // If there are multiple levels of weight, then each lower weight group of resolvers must ensure
+                    // that every higher weight resolver either matches or does not exist.
                     List<String> parentResolversClauses = new ArrayList<>();
                     if (level > 0) {
 
-                        // This is a higher priority group of resolvers.
-                        // Every lower priority resolver either must match or must not exist.
+                        // This is a lower weight group of resolvers.
+                        // Every higher weight resolver either must match or must not exist.
                         for (int parentLevel = 0; parentLevel < level; parentLevel++) {
-                            Integer parentPriority = priorities.get(parentLevel);
-                            List<String> parentResolversGroup = resolverGroups.get(parentPriority);
+                            Integer parentWeight = weights.get(parentLevel);
+                            List<String> parentResolversGroup = resolverGroups.get(parentWeight);
                             List<String> parentResolverClauses = new ArrayList<>();
                             for (String parentResolverName : parentResolversGroup) {
 
@@ -695,7 +696,7 @@ public class Job {
                                 parentResolverClauses.add("{\"bool\":{\"should\":[" + attributesExistsClause + "," + parentResolverClause + "]}}");
                             }
 
-                            // Construct a "filter" clause for every lower priority resolver clause.
+                            // Construct a "filter" clause for every higher weight resolver clause.
                             parentResolversClauses.add("{\"bool\":{\"filter\":[" + String.join(",", parentResolverClauses) + "]}}");
                         }
                     }

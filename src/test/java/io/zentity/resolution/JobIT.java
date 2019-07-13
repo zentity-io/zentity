@@ -268,7 +268,7 @@ public class JobIT extends AbstractITCase {
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
-    private final StringEntity TEST_PAYLOAD_JOB_PRIORITY = new StringEntity("{\n" +
+    private final StringEntity TEST_PAYLOAD_JOB_RESOLVER_WEIGHT= new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_a\": [ \"a_10\" ],\n" +
             "    \"attribute_b\": [ \"b_10\" ]\n" +
@@ -851,12 +851,12 @@ public class JobIT extends AbstractITCase {
         }
     }
 
-    public void testJobPriority() throws Exception {
+    public void testJobResolverWeight() throws Exception {
         prepareTestResources();
         try {
             String endpoint = "_zentity/resolution/zentity_test_entity_b";
             Request postResolution = new Request("POST", endpoint);
-            postResolution.setEntity(TEST_PAYLOAD_JOB_PRIORITY);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_RESOLVER_WEIGHT);
             Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 4);

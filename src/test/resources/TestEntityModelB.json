@@ -21,25 +21,25 @@
       "attributes": [
         "attribute_a", "attribute_b"
       ],
-      "priority": 1
+      "weight": -1
     },
     "resolver_ac": {
       "attributes": [
         "attribute_a", "attribute_c"
       ],
-      "priority": 1
+      "weight": -1
     },
     "resolver_bc": {
       "attributes": [
         "attribute_b", "attribute_c"
       ],
-      "priority": -1
+      "weight": 1
     },
     "resolver_cd": {
       "attributes": [
         "attribute_c", "attribute_d"
       ],
-      "priority": 1
+      "weight": -1
     },
     "resolver_x": {
       "attributes": [

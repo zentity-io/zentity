@@ -19,7 +19,7 @@ public class Resolver {
 
     private final String name;
     private Set<String> attributes = new TreeSet<>();
-    private int priority = 0;
+    private int weight = 0;
 
     public Resolver(String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -41,7 +41,7 @@ public class Resolver {
         return this.attributes;
     }
 
-    public int priority () { return this.priority; }
+    public int weight () { return this.weight; }
 
     public void attributes(JsonNode value) throws ValidationException {
         validateAttributes(value);
@@ -51,9 +51,9 @@ public class Resolver {
         this.attributes = attributes;
     }
 
-    public void priority(JsonNode value) throws ValidationException {
-        validatePriority(value);
-        this.priority = value.asInt();
+    public void weight(JsonNode value) throws ValidationException {
+        validateWeight(value);
+        this.weight = value.asInt();
     }
 
     private void validateName(String value) throws ValidationException {
@@ -75,9 +75,9 @@ public class Resolver {
         }
     }
 
-    private void validatePriority(JsonNode value) throws ValidationException {
+    private void validateWeight(JsonNode value) throws ValidationException {
         if (!value.isInt())
-            throw new ValidationException("'resolvers." + this.name + ".priority' must be an integer.");
+            throw new ValidationException("'resolvers." + this.name + ".weight' must be an integer.");
     }
 
     private void validateObject(JsonNode object) throws ValidationException {
@@ -96,7 +96,7 @@ public class Resolver {
      *      ATTRIBUTE_NAME,
      *      ...
      *    ],
-     *   "priority": INTEGER
+     *   "weight": INTEGER
      * }
      * </pre>
      *
@@ -121,8 +121,8 @@ public class Resolver {
                 case "attributes":
                     this.attributes(value);
                     break;
-                case "priority":
-                    this.priority(value);
+                case "weight":
+                    this.weight(value);
                     break;
                 default:
                     throw new ValidationException("'resolvers." + this.name + "." + name + "' is not a recognized field.");
