@@ -12,9 +12,9 @@ public class ResolverTest {
     public void testValid() throws Exception {
         new Resolver("resolver_name", VALID_OBJECT);
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\",\"attribute_b\"]}");
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":1}");
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":0}");
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":-1}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":0}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":-1}");
     }
 
     @Test(expected = ValidationException.class)
@@ -108,36 +108,36 @@ public class ResolverTest {
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\",{}]}");
     }
 
-    ////  "resolvers".RESOLVER_NAME."priority"  //////////////////////////////////////////////////////////////////////
+    ////  "resolvers".RESOLVER_NAME."weight"  //////////////////////////////////////////////////////////////////////
 
     @Test(expected = ValidationException.class)
-    public void testInvalidPriorityTypeArray() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":[]}");
+    public void testInvalidWeightTypeArray() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":[]}");
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidPriorityTypeBoolean() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":true}");
+    public void testInvalidWeightTypeBoolean() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":true}");
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidPriorityTypeFloat() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":1.0}");
+    public void testInvalidWeightTypeFloat() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1.0}");
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidPriorityTypeNull() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":null}");
+    public void testInvalidWeightTypeNull() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":null}");
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidPriorityTypeObject() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":{}}");
+    public void testInvalidWeightTypeObject() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":{}}");
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidPriorityTypeString() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"priority\":\"1\"}");
+    public void testInvalidWeightTypeString() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":\"1\"}");
     }
 
 }
