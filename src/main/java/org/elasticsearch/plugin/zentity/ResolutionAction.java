@@ -58,7 +58,7 @@ public class ResolutionAction extends BaseRestHandler {
                 // Parse and validate the job input.
                 Input input;
                 if (entityType == null || entityType.equals("")) {
-                    input = new Input(body, entityType);
+                    input = new Input(body);
                 } else {
                     GetResponse getResponse = ModelsAction.getEntityModel(entityType, client);
                     if (!getResponse.isExists())
@@ -66,8 +66,6 @@ public class ResolutionAction extends BaseRestHandler {
                     String model = getResponse.getSourceAsString();
                     input = new Input(body, new Model(model));
                 }
-                if (input.model() == null)
-                    throw new ValidationException("An entity model was not given for this request.");
 
                 // Prepare the entity resolution job.
                 Job job = new Job(client);
