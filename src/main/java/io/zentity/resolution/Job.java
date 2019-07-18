@@ -688,11 +688,15 @@ public class Job {
                             List<String> parentResolverClauses = new ArrayList<>();
                             for (String parentResolverName : parentResolversGroup) {
 
-                                // Construct a clause that checks if every attribute of the resolver does not exist.
+                                // Construct a clause that checks if any attribute of the resolver does not exist.
                                 List<String> attributeExistsClauses = new ArrayList<>();
                                 for (String attributeName : this.input.model().resolvers().get(parentResolverName).attributes())
-                                    attributeExistsClauses.add("{\"exists\":{\"field\":\"" + attributeName + "\"}}");
-                                String attributesExistsClause = "{\"bool\":{\"must_not\":[" + String.join(",", attributeExistsClauses) + "]}}";
+                                    attributeExistsClauses.add("{\"bool\":{\"must_not\":{\"exists\":{\"field\":\"" + attributeName + "\"}}}}");
+                                String attributesExistsClause = "";
+                                if (attributeExistsClauses.size() > 1)
+                                    attributesExistsClause = "{\"bool\":{\"should\":[" + String.join(",", attributeExistsClauses) + "]}}";
+                                else if (attributeExistsClauses.size() == 1)
+                                    attributesExistsClause = attributeExistsClauses.get(0);
 
                                 // Construct a clause for the resolver.
                                 List<String> parentResolverGroup = new ArrayList<>(Arrays.asList(parentResolverName));
