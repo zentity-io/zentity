@@ -275,6 +275,22 @@ public class Input {
         if (!json.isObject())
             throw new ValidationException("Input must be an object.");
 
+        // Validate recognized fields.
+        Iterator<Map.Entry<String, JsonNode>> fields = json.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> field = fields.next();
+            String name = field.getKey();
+            switch (name) {
+                case "attributes":
+                case "ids":
+                case "model":
+                case "scope":
+                    break;
+                default:
+                    throw new ValidationException("'" + name + "' is not a recognized field.");
+            }
+        }
+
         // Parse and validate the "model" field of the request body, or the entity model stored in the index.
         if (this.model == null) {
             if (this.entityType == null || !json.has("model"))
