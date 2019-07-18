@@ -210,9 +210,13 @@ public class ResolutionActionTest {
         new Input(requestBody, model);
     }
 
+    private static void parseInput(String requestBody) throws IOException, ValidationException {
+        new Input(requestBody);
+    }
+
     @Test
     public void testValidInput() throws Exception {
-        parseInput(validInput, new Model(ModelTest.VALID_OBJECT));
+        parseInput(validInput);
     }
 
     @Test
@@ -239,245 +243,245 @@ public class ResolutionActionTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesEmptyIdsEmpty() throws Exception {
-        parseInput("{" + validAttributesEmpty + "," + validIdsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributesEmpty + "," + validIdsEmpty + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesEmptyIdsEmptyTypeNull() throws Exception {
-        parseInput("{" + validAttributesEmpty + "," + validIdsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributesEmpty + "," + validIdsEmptyTypeNull + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesEmptyTypeNullIdsEmpty() throws Exception {
-        parseInput("{" + validAttributesEmptyTypeNull + "," + validIdsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributesEmptyTypeNull + "," + validIdsEmpty + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesEmptyTypeNullIdsEmptyTypeNull() throws Exception {
-        parseInput("{" + validAttributesEmptyTypeNull + "," + validIdsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributesEmptyTypeNull + "," + validIdsEmptyTypeNull + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesEmptyIdsMissing() throws Exception {
-        parseInput("{" + validAttributesEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributesEmpty + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesEmptyTypeNullIdsMissing() throws Exception {
-        parseInput("{" + validAttributesEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributesEmptyTypeNull + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesMissingIdsEmpty() throws Exception {
-        parseInput("{" + validIdsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validIdsEmpty + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesMissingIdsEmptyTypeNull() throws Exception {
-        parseInput("{" + validIdsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validIdsEmptyTypeNull + "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidInputAttributesMissingIdsMissing() throws Exception {
-        parseInput("{}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{}");
     }
 
     ////  "attributes"  ////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesEmpty() throws Exception {
-        new Input(inputAttributes(invalidAttributesEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputAttributes(invalidAttributesEmpty));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesTypeArray() throws Exception {
-        new Input(inputAttributes(invalidAttributesTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputAttributes(invalidAttributesTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesTypeFloat() throws Exception {
-        new Input(inputAttributes(invalidAttributesTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputAttributes(invalidAttributesTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesTypeInteger() throws Exception {
-        new Input(inputAttributes(invalidAttributesTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputAttributes(invalidAttributesTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesTypeNull() throws Exception {
-        new Input(inputAttributes(invalidAttributesTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputAttributes(invalidAttributesTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesTypeString() throws Exception {
-        new Input(inputAttributes(invalidAttributesTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputAttributes(invalidAttributesTypeString));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeNotFoundArray() throws Exception {
         String input = inputAttributes(invalidAttributeNotFoundArray);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeNotFoundObject() throws Exception {
         String input = inputAttributes(invalidAttributeNotFoundObject);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidAttributeTypeArray() throws Exception {
         String input = inputAttributes(validAttributeTypeArray);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidAttributeTypeArrayEmpty() throws Exception {
         String input = inputAttributes(validAttributeTypeArrayEmpty);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidAttributeTypeNull() throws Exception {
         String input = inputAttributes(validAttributeTypeNull);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidAttributeTypeBoolean() throws Exception {
         String input = inputModelAttributeTypes(validAttributeTypeBoolean);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidAttributeTypeNumber() throws Exception {
         String input = inputModelAttributeTypes(validAttributeTypeNumber);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidAttributeTypeString() throws Exception {
         String input = inputModelAttributeTypes(validAttributeTypeString);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeTypeBooleanWhenNumber() throws Exception {
         String input = inputModelAttributeTypes("\"attributes\":{\"attribute_type_boolean\":[1.0]}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeTypeBooleanWhenString() throws Exception {
         String input = inputModelAttributeTypes("\"attributes\":{\"attribute_type_boolean\":[\"abc\"]}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeTypeNumberWhenBoolean() throws Exception {
         String input = inputModelAttributeTypes("\"attributes\":{\"attribute_type_number\":[true]}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeTypeNumberWhenString() throws Exception {
         String input = inputModelAttributeTypes("\"attributes\":{\"attribute_type_number\":[\"abc\"]}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeTypeStringWhenBoolean() throws Exception {
         String input = inputModelAttributeTypes("\"attributes\":{\"attribute_type_string\":[true]}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidAttributeTypeStringWhenNumber() throws Exception {
         String input = inputModelAttributeTypes("\"attributes\":{\"attribute_type_string\":[1.0]}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     ////  "ids"  ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void testValidIds() throws Exception {
-        new Input(inputIds(validIds), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(validIds));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsTypeArray() throws Exception {
-        new Input(inputIds(invalidIdsTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsTypeFloat() throws Exception {
-        new Input(inputIds(invalidIdsTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsTypeInteger() throws Exception {
-        new Input(inputIds(invalidIdsTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsTypeString() throws Exception {
-        new Input(inputIds(invalidIdsTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsTypeString));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexNotFound() throws Exception {
-        new Input(inputIds(invalidIdsIndexNotFound), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexNotFound));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexTypeFloat() throws Exception {
-        new Input(inputIds(invalidIdsIndexTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexTypeInteger() throws Exception {
-        new Input(inputIds(invalidIdsIndexTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexTypeObject() throws Exception {
-        new Input(inputIds(invalidIdsIndexTypeObject), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexTypeObject));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexTypeString() throws Exception {
-        new Input(inputIds(invalidIdsIndexTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexTypeString));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexIdEmpty() throws Exception {
-        new Input(inputIds(invalidIdsIndexIdEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexIdEmpty));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexIdTypeArray() throws Exception {
-        new Input(inputIds(invalidIdsIndexIdTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexIdTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexIdTypeFloat() throws Exception {
-        new Input(inputIds(invalidIdsIndexIdTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexIdTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexIdTypeInteger() throws Exception {
-        new Input(inputIds(invalidIdsIndexIdTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexIdTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexIdTypeNull() throws Exception {
-        new Input(inputIds(invalidIdsIndexIdTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexIdTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIdsIndexIdTypeObject() throws Exception {
-        new Input(inputIds(invalidIdsIndexIdTypeObject), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputIds(invalidIdsIndexIdTypeObject));
     }
 
     ////  "model"  /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -516,32 +520,32 @@ public class ResolutionActionTest {
 
     @Test
     public void testValidScopeEmpty() throws Exception {
-        new Input(inputScope(validScopeEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(validScopeEmpty));
     }
 
     @Test
     public void testValidScopeTypeNull() throws Exception {
-        new Input(inputScope(validScopeTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(validScopeTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeTypeArray() throws Exception {
-        new Input(inputScope(invalidScopeTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeTypeFloat() throws Exception {
-        new Input(inputScope(invalidScopeTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeTypeInteger() throws Exception {
-        new Input(inputScope(invalidScopeTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeTypeString() throws Exception {
-        new Input(inputScope(invalidScopeTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeTypeString));
     }
 
     @Test(expected = ValidationException.class)
@@ -553,324 +557,324 @@ public class ResolutionActionTest {
 
     @Test
     public void testValidScopeExcludeEmpty() throws Exception {
-        new Input(inputScope(validScopeExcludeEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(validScopeExcludeEmpty));
     }
 
     @Test
     public void testValidScopeExcludeTypeNull() throws Exception {
-        new Input(inputScope(validScopeExcludeTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(validScopeExcludeTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeTypeArray() throws Exception {
-        new Input(inputScope(invalidScopeExcludeTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeExcludeTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeTypeBoolean() throws Exception {
-        new Input(inputScope(invalidScopeExcludeTypeBoolean), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeExcludeTypeBoolean));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeTypeFloat() throws Exception {
-        new Input(inputScope(invalidScopeExcludeTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeExcludeTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeTypeInteger() throws Exception {
-        new Input(inputScope(invalidScopeExcludeTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeExcludeTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeTypeString() throws Exception {
-        new Input(inputScope(invalidScopeExcludeTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeExcludeTypeString));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeUnrecognizedField() throws Exception {
-        new Input(inputScope(invalidScopeExcludeUnrecognizedField), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeExcludeUnrecognizedField));
     }
 
     ////  "scope"."include"  ///////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void testValidScopeIncludeEmpty() throws Exception {
-        new Input(inputScope(validScopeIncludeEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(validScopeIncludeEmpty));
     }
 
     @Test
     public void testValidScopeIncludeTypeNull() throws Exception {
-        new Input(inputScope(validScopeIncludeTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(validScopeIncludeTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeTypeArray() throws Exception {
-        new Input(inputScope(invalidScopeIncludeTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeIncludeTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeTypeBoolean() throws Exception {
-        new Input(inputScope(invalidScopeIncludeTypeBoolean), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeIncludeTypeBoolean));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeTypeFloat() throws Exception {
-        new Input(inputScope(invalidScopeIncludeTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeIncludeTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeTypeInteger() throws Exception {
-        new Input(inputScope(invalidScopeIncludeTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeIncludeTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeTypeString() throws Exception {
-        new Input(inputScope(invalidScopeIncludeTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeIncludeTypeString));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeUnrecognizedField() throws Exception {
-        new Input(inputScope(invalidScopeIncludeUnrecognizedField), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScope(invalidScopeIncludeUnrecognizedField));
     }
 
     ////  "scope"."exclude"."attributes"  //////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void testValidScopeExcludeAttributesEmpty() throws Exception {
-        new Input(inputScopeExcludeAttributes(validScopeAttributesEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(validScopeAttributesEmpty));
     }
 
     @Test
     public void testValidScopeExcludeAttributesTypeNull() throws Exception {
-        new Input(inputScopeExcludeAttributes(validScopeAttributesTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(validScopeAttributesTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributesTypeArray() throws Exception {
-        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributesTypeBoolean() throws Exception {
-        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeBoolean), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeBoolean));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributesTypeFloat() throws Exception {
-        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributesTypeInteger() throws Exception {
-        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributesTypeString() throws Exception {
-        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(invalidScopeAttributesTypeString));
     }
 
     ////  "scope"."include"."attributes"  //////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void testValidScopeIncludeAttributesEmpty() throws Exception {
-        new Input(inputScopeIncludeAttributes(validScopeAttributesEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(validScopeAttributesEmpty));
     }
 
     @Test
     public void testValidScopeIncludeAttributesTypeNull() throws Exception {
-        new Input(inputScopeIncludeAttributes(validScopeAttributesTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(validScopeAttributesTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributesTypeArray() throws Exception {
-        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeArray));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributesTypeBoolean() throws Exception {
-        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeBoolean), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeBoolean));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributesTypeFloat() throws Exception {
-        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeFloat), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeFloat));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributesTypeInteger() throws Exception {
-        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeInteger), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeInteger));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributesTypeString() throws Exception {
-        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeString), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(invalidScopeAttributesTypeString));
     }
 
     ////  "scope"."exclude"."attributes".ATTRIBUTE_NAME  ///////////////////////////////////////////////////////////////
 
     @Test
     public void testValidScopeExcludeAttributeTypeArray() throws Exception {
-        new Input(inputScopeExcludeAttributes(validScopeAttributeTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(validScopeAttributeTypeArray));
     }
 
     @Test
     public void testValidScopeExcludeAttributeTypeArrayEmpty() throws Exception {
-        new Input(inputScopeExcludeAttributes(validScopeAttributeTypeArrayEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(validScopeAttributeTypeArrayEmpty));
     }
 
     @Test
     public void testValidScopeExcludeAttributeTypeNull() throws Exception {
-        new Input(inputScopeExcludeAttributes(validScopeAttributeTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeExcludeAttributes(validScopeAttributeTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeNotFoundArray() throws Exception {
         String input = inputScopeExcludeAttributes(invalidScopeAttributeNotFoundArray);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeNotFoundString() throws Exception {
         String input = inputScopeExcludeAttributes(invalidScopeAttributeNotFoundString);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidScopeExcludeAttributeTypeBoolean() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{" + validScopeAttributeTypeBoolean + "}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidScopeExcludeAttributeTypeNumber() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{" + validScopeAttributeTypeNumber + "}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidScopeExcludeAttributeTypeString() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{" + validScopeAttributeTypeString + "}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeTypeBooleanWhenNumber() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{\"attributes\":{\"attribute_type_boolean\":[1.0]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeTypeBooleanWhenString() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{\"attributes\":{\"attribute_type_boolean\":[\"abc\"]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeTypeNumberWhenBoolean() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{\"attributes\":{\"attribute_type_number\":[true]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeTypeNumberWhenString() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{\"attributes\":{\"attribute_type_number\":[\"abc\"]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeTypeStringWhenBoolean() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{\"attributes\":{\"attribute_type_string\":[true]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeAttributeTypeStringWhenNumber() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"exclude\":{\"attributes\":{\"attribute_type_string\":[1.0]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     ////  "scope"."include"."attributes".ATTRIBUTE_NAME  ///////////////////////////////////////////////////////////////
 
     @Test
     public void testValidScopeIncludeAttributeTypeArray() throws Exception {
-        new Input(inputScopeIncludeAttributes(validScopeAttributeTypeArray), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(validScopeAttributeTypeArray));
     }
 
     @Test
     public void testValidScopeIncludeAttributeTypeArrayEmpty() throws Exception {
-        new Input(inputScopeIncludeAttributes(validScopeAttributeTypeArrayEmpty), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(validScopeAttributeTypeArrayEmpty));
     }
 
     @Test
     public void testValidScopeIncludeAttributeTypeNull() throws Exception {
-        new Input(inputScopeIncludeAttributes(validScopeAttributeTypeNull), new Model(ModelTest.VALID_OBJECT));
+        new Input(inputScopeIncludeAttributes(validScopeAttributeTypeNull));
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeNotFoundArray() throws Exception {
         String input = inputScopeIncludeAttributes(invalidScopeAttributeNotFoundArray);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeNotFoundString() throws Exception {
         String input = inputScopeIncludeAttributes(invalidScopeAttributeNotFoundString);
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidScopeIncludeAttributeTypeBoolean() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"include\":{" + validScopeAttributeTypeBoolean + "}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidScopeIncludeAttributeTypeNumber() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"include\":{" + validScopeAttributeTypeNumber + "}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test
     public void testValidScopeIncludeAttributeTypeString() throws Exception {
         String input = inputModelAttributeTypesScope("\"scope\":{\"include\":{" + validScopeAttributeTypeString + "}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeTypeBooleanWhenNumber() throws Exception {
         String input = inputScopeIncludeAttributes("\"scope\":{\"include\":{\"attributes\":{\"attribute_type_boolean\":[1.0]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeTypeBooleanWhenString() throws Exception {
         String input = inputScopeIncludeAttributes("\"scope\":{\"include\":{\"attributes\":{\"attribute_type_boolean\":[\"abc\"]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeTypeNumberWhenBoolean() throws Exception {
         String input = inputScopeIncludeAttributes("\"scope\":{\"include\":{\"attributes\":{\"attribute_type_number\":[true]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeTypeNumberWhenString() throws Exception {
         String input = inputScopeIncludeAttributes("\"scope\":{\"include\":{\"attributes\":{\"attribute_type_number\":[\"abc\"]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeTypeStringWhenBoolean() throws Exception {
         String input = inputScopeIncludeAttributes("\"scope\":{\"include\":{\"attributes\":{\"attribute_type_string\":[true]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeAttributeTypeStringWhenNumber() throws Exception {
         String input = inputScopeIncludeAttributes("\"scope\":{\"include\":{\"attributes\":{\"attribute_type_string\":[1.0]}}}");
-        new Input(input, new Model(parseRequestBody(input).get("model")));
+        new Input(input);
     }
 
     ////  "scope"."exclude"."indices"  /////////////////////////////////////////////////////////////////////////////////
@@ -878,7 +882,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeIndicesTypeArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(validScopeIndicesTypeArray));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(!input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
@@ -887,7 +891,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeIndicesTypeArrayEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(validScopeIndicesTypeArrayEmpty));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
@@ -896,7 +900,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeIndicesTypeNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(validScopeIndicesTypeNull));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
@@ -905,7 +909,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeIndicesTypeString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(validScopeIndicesTypeString));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(!input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
@@ -914,61 +918,61 @@ public class ResolutionActionTest {
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesNotFoundArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesNotFoundArray));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesNotFoundString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesNotFoundString));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeArrayFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeArrayFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeArrayInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeArrayInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeArrayNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeArrayNull));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeArrayObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeArrayObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeArrayStringEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeArrayStringEmpty));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeIndicesTypeObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(invalidScopeIndicesTypeObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     ////  "scope"."include"."indices"  /////////////////////////////////////////////////////////////////////////////////
@@ -976,7 +980,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeIndicesTypeArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(validScopeIndicesTypeArray));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(!input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(!input.model().indices().containsKey("index_name_c"));
@@ -985,7 +989,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeIndicesTypeArrayEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(validScopeIndicesTypeArrayEmpty));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
@@ -994,7 +998,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeIndicesTypeNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(validScopeIndicesTypeNull));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
@@ -1003,7 +1007,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeIndicesTypeString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(validScopeIndicesTypeString));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(!input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(!input.model().indices().containsKey("index_name_c"));
@@ -1012,61 +1016,61 @@ public class ResolutionActionTest {
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesNotFoundArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesNotFoundArray));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesNotFoundString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesNotFoundString));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeArrayFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeArrayFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeArrayInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeArrayInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeArrayObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeArrayObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeArrayNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeArrayNull));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeArrayStringEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeArrayStringEmpty));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeIndicesTypeObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(invalidScopeIndicesTypeObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     ////  "scope"."exclude"."resolvers"  ///////////////////////////////////////////////////////////////////////////////
@@ -1074,7 +1078,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeResolversTypeArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(validScopeResolversTypeArray));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
@@ -1083,7 +1087,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeResolversTypeArrayEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(validScopeResolversTypeArrayEmpty));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
@@ -1092,7 +1096,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeResolversTypeNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(validScopeResolversTypeNull));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
@@ -1101,7 +1105,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeExcludeResolversTypeString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(validScopeResolversTypeString));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
@@ -1110,61 +1114,61 @@ public class ResolutionActionTest {
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversNotFoundArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversNotFoundArray));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversNotFoundString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversNotFoundString));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeArrayFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeArrayFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeArrayInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeArrayInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeArrayObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeArrayObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeArrayNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeArrayNull));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeArrayStringEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeArrayStringEmpty));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeExcludeResolversTypeObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(invalidScopeResolversTypeObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     ////  "scope"."include"."resolvers"  ///////////////////////////////////////////////////////////////////////////////
@@ -1172,7 +1176,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeResolversTypeArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(validScopeResolversTypeArray));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_c"));
@@ -1181,7 +1185,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeResolversTypeArrayEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(validScopeResolversTypeArrayEmpty));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
@@ -1190,7 +1194,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeResolversTypeNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(validScopeResolversTypeNull));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
@@ -1199,7 +1203,7 @@ public class ResolutionActionTest {
     @Test
     public void testValidScopeIncludeResolversTypeString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(validScopeResolversTypeString));
-        Input input = new Input(requestBody, new Model(requestBody.get("model")));
+        Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_c"));
@@ -1208,62 +1212,62 @@ public class ResolutionActionTest {
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversNotFoundArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversNotFoundArray));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
 
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversNotFoundString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversNotFoundString));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeArrayFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeArrayFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeArrayInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeArrayInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeArrayObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeArrayObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeArrayNull() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeArrayNull));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeArrayStringEmpty() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeArrayStringEmpty));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeFloat() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeFloat));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeInteger() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeInteger));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScopeIncludeResolversTypeObject() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(invalidScopeResolversTypeObject));
-        new Input(requestBody, new Model(requestBody.get("model")));
+        new Input(requestBody);
     }
 
 }

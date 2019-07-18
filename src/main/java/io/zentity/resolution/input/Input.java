@@ -20,7 +20,6 @@ public class Input {
 
     private Map<String, Attribute> attributes = new TreeMap<>();
     private Map<String, Set<String>> ids = new TreeMap<>();
-    private String entityType;
     private Model model;
     private Scope scope = new Scope();
 
@@ -34,13 +33,11 @@ public class Input {
         this.deserialize(json);
     }
 
-    public Input(JsonNode json, String entityType) throws ValidationException, IOException {
-        this.entityType = parseEntityType(entityType);
+    public Input(JsonNode json) throws ValidationException, IOException {
         this.deserialize(json);
     }
 
-    public Input(String json, String entityType) throws ValidationException, IOException {
-        this.entityType = parseEntityType(entityType);
+    public Input(String json) throws ValidationException, IOException {
         this.deserialize(json);
     }
 
@@ -216,17 +213,6 @@ public class Input {
     }
 
     /**
-     * Parse and validate the entity type.
-     *
-     * @param entityType
-     */
-    private String parseEntityType(String entityType) {
-        if (entityType == null || Patterns.EMPTY_STRING.matcher(entityType).matches())
-            return null;
-        return entityType;
-    }
-
-    /**
      * Validate a top-level field of the input.
      *
      * @param json  JSON object.
@@ -293,10 +279,10 @@ public class Input {
 
         // Parse and validate the "model" field of the request body, or the entity model stored in the index.
         if (this.model == null) {
-            if (this.entityType == null || !json.has("model"))
+            if (!json.has("model"))
                 throw new ValidationException("You must specify either an entity type or an entity model.");
-            this.model = parseEntityModel(json.get("model"));
-        } else if (this.entityType != null) {
+            this.model = parseEntityModel(json);
+        } else if (json.has("model")) {
             throw new ValidationException("You must specify either an entity type or an entity model, not both.");
         }
 
