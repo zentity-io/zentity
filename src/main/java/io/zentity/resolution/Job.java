@@ -288,9 +288,11 @@ public class Job {
                 continue;
 
             // Combine each value clause into a single "should" or "filter" clause.
-            String valuesClause = String.join(",", valueClauses);
+            String valuesClause;
             if (valueClauses.size() > 1)
-                valuesClause = "{\"bool\":{\"" + combiner + "\":[" + valuesClause + "]}}";
+                valuesClause = "{\"bool\":{\"" + combiner + "\":[" + String.join(",", valueClauses) + "]}}";
+            else
+                valuesClause = valueClauses.get(0);
             indexFieldClauses.add(valuesClause);
         }
         return indexFieldClauses;
@@ -319,9 +321,11 @@ public class Job {
                 continue;
 
             // Combine each matcher clause into a single "should" or "filter" clause.
-            String indexFieldsClause = String.join(",", indexFieldClauses);
+            String indexFieldsClause;
             if (indexFieldClauses.size() > 1)
-                indexFieldsClause = "{\"bool\":{\"" + combiner + "\":[" + indexFieldsClause + "]}}";
+                indexFieldsClause = "{\"bool\":{\"" + combiner + "\":[" + String.join(",", indexFieldClauses) + "]}}";
+            else
+                indexFieldsClause = indexFieldClauses.get(0);
             attributeClauses.add(indexFieldsClause);
         }
         return attributeClauses;
@@ -347,14 +351,16 @@ public class Job {
             if (indexFieldClauses.size() == 0)
                 continue;
 
-            // Combine each matcher clause into a single "should" clause.
-            String indexFieldsClause = String.join(",", indexFieldClauses);
+            // Combine multiple matcher clauses into a single "should" clause.
+            String indexFieldsClause;
             if (indexFieldClauses.size() > 1)
-                indexFieldsClause = "{\"bool\":{\"should\":[" + indexFieldsClause + "]}}";
+                indexFieldsClause = "{\"bool\":{\"should\":[" + String.join(",", indexFieldClauses) + "]}}";
+            else
+                indexFieldsClause = indexFieldClauses.get(0);
 
             // Populate any child filters.
             String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributes, includeExplanation, _nameIdCounter);
-            if (!filter.equals("{}"))
+            if (!filter.isEmpty())
                 attributeClauses.add("{\"bool\":{\"filter\":[" + indexFieldsClause + "," + filter + "]}}");
             else
                 attributeClauses.add(indexFieldsClause);
@@ -366,9 +372,9 @@ public class Job {
         if (size > 1)
             return "{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}";
         else if (size == 1)
-            return "{\"bool\":{\"filter\":" + attributeClauses.get(0) + "}}";
+            return attributeClauses.get(0);
         else
-            return "{}";
+            return "";
     }
 
     /**
@@ -601,10 +607,11 @@ public class Job {
 
             // Construct query for this index.
             String query;
-            String queryClause = "{}";
-            List<String> queryClauses = new ArrayList<>();
+            String queryClause;
             List<String> queryMustNotClauses = new ArrayList<>();
+            String queryMustNotClause = "";
             List<String> queryFilterClauses = new ArrayList<>();
+            String queryFilterClause = "";
             List<String> topLevelClauses = new ArrayList<>();
             topLevelClauses.add("\"_source\":true");
 
@@ -624,8 +631,10 @@ public class Job {
             }
 
             // Construct the top-level "must_not" clause.
-            if (!queryMustNotClauses.isEmpty())
-                queryClauses.add("\"must_not\":[" + String.join(",", queryMustNotClauses) + "]");
+            if (queryMustNotClauses.size() > 1)
+                queryMustNotClause = "\"must_not\":[" + String.join(",", queryMustNotClauses) + "]";
+            else if (queryMustNotClauses.size() == 1)
+                queryMustNotClause = "\"must_not\":" + queryMustNotClauses.get(0);
 
             // Construct "scope.include.attributes" clauses. Combine them into a single "filter" clause.
             if (!this.input.scope().include().attributes().isEmpty()) {
@@ -638,14 +647,14 @@ public class Job {
             }
 
             // Construct the "ids" clause if this is the first hop and if any ids are specified for this index.
-            String idsClause = "{}";
+            String idsClause = "";
             if (filterIds) {
                 Set<String> ids = this.input().ids().get(indexName);
                 idsClause = "{\"bool\":{\"filter\":[{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}]}}";
             }
 
             // Construct the resolvers clause.
-            String resolversClause = "{}";
+            String resolversClause = "";
             TreeMap<String, TreeMap> resolversFilterTree;
             TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped= new TreeMap<>(Collections.reverseOrder());
             if (!this.attributes.isEmpty()) {
@@ -695,35 +704,59 @@ public class Job {
                                 // Construct a "should" clause for the above two clauses.
                                 parentResolverClauses.add("{\"bool\":{\"should\":[" + attributesExistsClause + "," + parentResolverClause + "]}}");
                             }
-
-                            // Construct a "filter" clause for every higher weight resolver clause.
-                            parentResolversClauses.add("{\"bool\":{\"filter\":[" + String.join(",", parentResolverClauses) + "]}}");
+                            if (parentResolverClauses.size() > 1)
+                                parentResolversClauses.add("{\"bool\":{\"filter\":[" + String.join(",", parentResolverClauses) + "]}}");
+                            else if (parentResolverClauses.size() == 1)
+                                parentResolversClauses.add(parentResolverClauses.get(0));
                         }
                     }
+
+                    // Combine the resolvers clause and parent resolvers clause in a "filter" query if necessary.
                     if (parentResolversClauses.size() > 0)
                         resolversClause = "{\"bool\":{\"filter\":[" + resolversClause + "," + String.join(",", parentResolversClauses) + "]}}";
                 }
             }
 
             // Combine the ids clause and resolvers clause in a "should" clause if necessary.
-            if (!idsClause.equals("{}") && !resolversClause.equals("{}"))
+            if (!idsClause.isEmpty() && !resolversClause.isEmpty())
                 queryFilterClauses.add("{\"bool\":{\"should\":[" + idsClause + "," + resolversClause + "]}}");
-            else if (!idsClause.equals("{}"))
+            else if (!idsClause.isEmpty())
                 queryFilterClauses.add(idsClause);
-            else
+            else if (!resolversClause.isEmpty())
                 queryFilterClauses.add(resolversClause);
 
-            // Construct the top-level "filter" clause.
-            if (!queryFilterClauses.isEmpty()) {
-                if (queryFilterClauses.size() > 1)
-                    queryClauses.add("\"filter\":[" + String.join(",", queryFilterClauses) + "]");
-                else
-                    queryClauses.add("\"filter\":" + queryFilterClauses.get(0));
-            }
-
             // Construct the "query" clause.
-            if (!queryClauses.isEmpty())
-                queryClause = "\"query\":{\"bool\":{" + String.join(",", queryClauses) + "}}";
+            if (!queryMustNotClause.isEmpty() && queryFilterClauses.size() > 0) {
+
+                // Construct the top-level "filter" clause. Combine this clause and the top-level "must_not" clause
+                // in a "bool" clause and add it to the "query" field.
+                if (queryFilterClauses.size() > 1)
+                    queryFilterClause = "\"filter\":[" + String.join(",", queryFilterClauses) + "]";
+                else
+                    queryFilterClause = "\"filter\":" + queryFilterClauses.get(0);
+                queryClause = "\"query\":{\"bool\":{" + queryMustNotClause + "," + queryFilterClause + "}}";
+
+            } else if (!queryMustNotClause.isEmpty()) {
+
+                // Wrap only the top-level "must_not" clause in a "bool" clause and add it to the "query" field.
+                queryClause = "\"query\":{\"bool\":{" + queryMustNotClause + "}}";
+
+            } else if (queryFilterClauses.size() > 0) {
+
+                // Construct the top-level "filter" clause and add only this clause to the "query" field.
+                // This prevents a redundant "bool"."filter" wrapper clause when the top-level "must_not" clause
+                // does not exist.
+                if (queryFilterClauses.size() > 1)
+                    queryFilterClause = "{\"bool\":{\"filter\":[" + String.join(",", queryFilterClauses) + "]}}";
+                else
+                    queryFilterClause = queryFilterClauses.get(0);
+                queryClause = "\"query\":" + queryFilterClause;
+
+            } else {
+
+                // This should never be reached, and if somehow it did, Elasticsearch would return an error.
+                queryClause = "\"query\":{}";
+            }
             topLevelClauses.add(queryClause);
 
             // Construct the "script_fields" clause.
