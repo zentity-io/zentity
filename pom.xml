@@ -17,7 +17,8 @@
         <zentity.version>1.3.1-beta1</zentity.version>
         <!-- dependency versions -->
         <elasticsearch.version>7.2.0</elasticsearch.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.core.version>2.9.9</jackson.core.version>
+        <jackson.databind.version>2.9.9.1</jackson.databind.version>
         <jdk.version>1.8</jdk.version>
         <log4j.version>2.9.1</log4j.version>
         <commons-io.version>2.6</commons-io.version>
@@ -43,13 +44,13 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.core.version}</version>
             <scope>provided</scope><!-- provided by elasticsearch -->
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.databind.version}</version>
             <scope>compile</scope><!-- not provided by elasticsearch -->
         </dependency>
         <!-- test infrastructure -->
