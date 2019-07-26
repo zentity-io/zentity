@@ -64,6 +64,7 @@ public abstract class Value implements ValueInterface {
         return this.serialized;
     }
 
+    @Override
     public int compareTo(Value o) {
         return this.serialized.compareTo(o.serialized);
     }
@@ -72,5 +73,11 @@ public abstract class Value implements ValueInterface {
     public String toString() {
         return this.serialized;
     }
+
+    @Override
+    public boolean equals(Object o) { return this.hashCode() == o.hashCode(); }
+
+    @Override
+    public int hashCode() { return this.serialized.hashCode(); }
 
 }

@@ -24,13 +24,15 @@ public class ResolutionActionTest {
     private static final String validModel = "\"model\":" + ModelTest.VALID_OBJECT;
     private static final String validAttributesEmpty = "\"attributes\":{}";
     private static final String validAttributesEmptyTypeNull = "\"attributes\":null";
-    private static final String validAttributesTypeNull = "\"attributes\":null";
     private static final String validAttributeTypeArray = "\"attributes\":{\"attribute_name\":[\"abc\"]}";
     private static final String validAttributeTypeArrayEmpty = "\"attributes\":{\"attribute_name\":[]}";
     private static final String validAttributeTypeNull = "\"attributes\":{\"attribute_name\":null}";
     private static final String validAttributeTypeBoolean = "\"attributes\":{\"attribute_type_boolean\":[true]}";
     private static final String validAttributeTypeNumber = "\"attributes\":{\"attribute_type_number\":[1.0]}";
     private static final String validAttributeTypeString = "\"attributes\":{\"attribute_type_string\":[\"abc\"]}";
+    private static final String validTermsEmpty = "\"terms\":[]";
+    private static final String validTermsEmptyTypeNull = "\"terms\":null";
+    private static final String validTermsTypeArray = "\"terms\":[\"abc\"]";
     private static final String validIdsEmpty = "\"ids\":{}";
     private static final String validIdsEmptyTypeNull = "\"ids\":null";
 
@@ -67,6 +69,12 @@ public class ResolutionActionTest {
     private static final String invalidAttributesTypeString = "\"attributes\":\"abc\"";
     private static final String invalidAttributeNotFoundArray = "\"attributes\":{\"attribute_name_x\":[\"abc\"]}";
     private static final String invalidAttributeNotFoundObject = "\"attributes\":{\"attribute_name_x\":{\"values\":[\"abc\"]}}";
+
+    // Invalid terms
+    private static final String invalidTermsTypeArray = "\"terms\":{}";
+    private static final String invalidTermsTypeFloat = "\"terms\":1.0";
+    private static final String invalidTermsTypeInteger = "\"terms\":1";
+    private static final String invalidTermsTypeString = "\"terms\":\"abc\"";
 
     // Invalid ids
     private static final String invalidIdsTypeArray = "\"ids\":[]";
@@ -228,6 +236,17 @@ public class ResolutionActionTest {
     public void testValidInputAttributesEmpty() throws Exception {
         parseInput("{" + validAttributesEmpty + "," + validIds + "}", new Model(ModelTest.VALID_OBJECT));
         parseInput("{" + validAttributesEmptyTypeNull + "," + validIds + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test
+    public void testValidInputTermsEmpty() throws Exception {
+        parseInput("{" + validAttributes + "," + validTermsEmpty + "}", new Model(ModelTest.VALID_OBJECT));
+        parseInput("{" + validAttributes + "," + validTermsEmptyTypeNull + "}", new Model(ModelTest.VALID_OBJECT));
+    }
+
+    @Test
+    public void testValidInputTermsArray() throws Exception {
+        parseInput("{" + validTermsTypeArray+ "}", new Model(ModelTest.VALID_OBJECT));
     }
 
     @Test
@@ -400,6 +419,28 @@ public class ResolutionActionTest {
     public void testInvalidAttributeTypeStringWhenNumber() throws Exception {
         String input = inputModelAttributeTypes("\"attributes\":{\"attribute_type_string\":[1.0]}");
         new Input(input);
+    }
+
+    ////  "terms"  ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidTermsTypeArray() throws Exception {
+        new Input(inputAttributes(invalidTermsTypeArray));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidTermsTypeFloat() throws Exception {
+        new Input(inputAttributes(invalidTermsTypeFloat));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidTermsTypeInteger() throws Exception {
+        new Input(inputAttributes(invalidTermsTypeInteger));
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidTermsTypeString() throws Exception {
+        new Input(inputAttributes(invalidTermsTypeString));
     }
 
     ////  "ids"  ///////////////////////////////////////////////////////////////////////////////////////////////////////

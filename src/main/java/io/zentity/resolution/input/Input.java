@@ -22,6 +22,7 @@ public class Input {
     private Map<String, Set<String>> ids = new TreeMap<>();
     private Model model;
     private Scope scope = new Scope();
+    private Set<Term> terms = new TreeSet<>();
 
     public Input(JsonNode json, Model model) throws ValidationException, IOException {
         this.model = model;
@@ -196,6 +197,31 @@ public class Input {
     }
 
     /**
+     * Parse and validate the "terms" field of the request body.
+     *
+     * @param requestBody The request body.
+     * @return The parsed "terms" field from the request body.
+     * @throws ValidationException
+     */
+    public static Set<Term> parseTerms(JsonNode requestBody) throws ValidationException {
+        Set<Term> terms = new TreeSet<>();
+        if (!requestBody.has("terms") || requestBody.get("terms").size() == 0)
+            return terms;
+        if (requestBody.get("terms").isArray()) {
+            Iterator<JsonNode> termsNode = requestBody.get("terms").elements();
+            while (termsNode.hasNext()) {
+                JsonNode termNode = termsNode.next();
+                if (!termNode.isTextual())
+                    throw new ValidationException("'terms' must be an array of strings.");
+                terms.add(new Term(termNode.asText()));
+            }
+        } else if (!requestBody.get("terms").isNull()) {
+            throw new ValidationException("'terms' must be an object or an array of strings.");
+        }
+        return terms;
+    }
+
+    /**
      * Parse and validate the entity model from the 'model' field of the request body.
      *
      * @param requestBody The request body.
@@ -257,6 +283,10 @@ public class Input {
         return this.scope;
     }
 
+    public Set<Term> terms() {
+        return this.terms;
+    }
+
     public void deserialize(JsonNode json) throws ValidationException, IOException {
         if (!json.isObject())
             throw new ValidationException("Input must be an object.");
@@ -271,6 +301,7 @@ public class Input {
                 case "ids":
                 case "model":
                 case "scope":
+                case "terms":
                     break;
                 default:
                     throw new ValidationException("'" + name + "' is not a recognized field.");
@@ -289,12 +320,15 @@ public class Input {
         // Parse and validate the "attributes" field of the request body.
         this.attributes = parseAttributes(json, this.model);
 
+        // Parse and validate the "terms" field of the request body.
+        this.terms = parseTerms(json);
+
         // Parse and validate the "ids" field of the request body.
         this.ids = parseIds(json, this.model);
 
-        // Ensure that either the "attributes" or "ids" field exists and is valid.
-        if (this.attributes().isEmpty() && this.ids.isEmpty())
-            throw new ValidationException("The 'attributes' and 'ids' fields are missing from the request body. At least one must exist.");
+        // Ensure that either the "attributes" or "terms" or "ids" field exists and is valid.
+        if (this.attributes().isEmpty() && this.terms.isEmpty() && this.ids.isEmpty())
+            throw new ValidationException("The 'attributes', 'terms', and 'ids' fields are missing from the request body. At least one must exist.");
 
         // Parse and validate the "scope" field of the request body.
         if (json.has("scope")) {
@@ -303,11 +337,11 @@ public class Input {
             // Parse and validate the "scope"."include" field of the request body.
             if (this.scope.include() != null) {
 
-                // Remove any resolvers entity model that do not appear in "scope.include.resolvers".
+                // Remove any resolvers of the entity model that do not appear in "scope.include.resolvers".
                 if (!this.scope.include().resolvers().isEmpty())
                     this.model = includeResolvers(this.model, this.scope.include().resolvers());
 
-                // Remove any indices entity model that do not appear in "scope.include.indices".
+                // Remove any indices of the entity model that do not appear in "scope.include.indices".
                 if (!this.scope.include().indices().isEmpty())
                     this.model = includeIndices(this.model, this.scope.include().indices());
             }
