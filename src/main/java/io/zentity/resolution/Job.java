@@ -11,6 +11,7 @@ import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.Attribute;
 import io.zentity.resolution.input.Input;
+import io.zentity.resolution.input.Term;
 import io.zentity.resolution.input.value.StringValue;
 import io.zentity.resolution.input.value.Value;
 import org.elasticsearch.action.search.SearchAction;
@@ -602,7 +603,7 @@ public class Job {
             for (String resolverName : this.input.model().resolvers().keySet())
                 if (canQuery(this.input.model(), indexName, resolverName, this.attributes))
                     resolvers.add(resolverName);
-            if (resolvers.size() == 0 && !filterIds)
+            if (resolvers.size() == 0 && !filterIds && (this.hop == 0 && this.input.terms().isEmpty()))
                 continue;
 
             // Construct query for this index.
@@ -653,10 +654,10 @@ public class Job {
                 idsClause = "{\"bool\":{\"filter\":[{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}]}}";
             }
 
-            // Construct the resolvers clause.
+            // Construct the resolvers clause for attribute values.
             String resolversClause = "";
             TreeMap<String, TreeMap> resolversFilterTree;
-            TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped= new TreeMap<>(Collections.reverseOrder());
+            TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped = new TreeMap<>(Collections.reverseOrder());
             if (!this.attributes.isEmpty()) {
 
                 // Group the resolvers by their weight level.
@@ -719,6 +720,158 @@ public class Job {
                     if (parentResolversClauses.size() > 0)
                         resolversClause = "{\"bool\":{\"filter\":[" + resolversClause + "," + String.join(",", parentResolversClauses) + "]}}";
                 }
+            }
+
+            // Construct the resolvers clause for any terms in the first hop.
+            // Convert each term into each attribute value that matches its type.
+            // Don't tier the resolvers by weights. Weights should be used only when the attribute values are certain.
+            // In this case, terms are not certain to be attribute values of the entity until they match,
+            // unlike structured attribute search where the attributes are assumed be known.
+            List<String> termResolvers = new ArrayList<>();
+            TreeMap<String, TreeMap> termResolversFilterTree = new TreeMap<>();
+            if (this.hop == 0 && !this.input.terms().isEmpty()) {
+                String termResolversClause = "";
+
+                // Get the names of each attribute of each in-scope resolver.
+                TreeSet<String> resolverAttributes = new TreeSet<>();
+                for (String resolverName : this.input().model().resolvers().keySet())
+                    resolverAttributes.addAll(this.input().model().resolvers().get(resolverName).attributes());
+
+                // For each attribute, attempt to convert each term to a value of that attribute.
+                // If the term does not match the attribute type, or if the term cannot be converted to a value
+                // of that attribute, then skip the term and move on.
+                //
+                // Date attributes will require a format, but the format could be declared in the input attributes,
+                // the model attributes, or the model matchers in descending order of precedence. If the pa
+                Map<String, TreeSet<Value>> termValues = new TreeMap<>();
+                for (String attributeName : resolverAttributes) {
+                    String attributeType = this.input().model().attributes().get(attributeName).type();
+                    for (Term term : this.input().terms()) {
+                        try {
+                            switch (attributeType) {
+                                case "boolean":
+                                    if (term.isBoolean()) {
+                                        termValues.putIfAbsent(attributeName, new TreeSet<>());
+                                        termValues.get(attributeName).add(term.booleanValue());
+                                    }
+                                    break;
+                                case "date":
+                                    // Determine which date format to use to parse the term.
+                                    Index index = this.input.model().indices().get(indexName);
+                                    // Check if the "format" param is defined in the input attribute.
+                                    if (this.input.attributes().containsKey(attributeName) && this.input.attributes().get(attributeName).params().containsKey("format") && !this.input.attributes().get(attributeName).params().get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(this.input.attributes().get(attributeName).params().get("format")).matches()) {
+                                        String format = this.input.attributes().get(attributeName).params().get("format");
+                                        if (term.isDate(format)) {
+                                            termValues.putIfAbsent(attributeName, new TreeSet<>());
+                                            termValues.get(attributeName).add(term.dateValue());
+                                        }
+                                    } else {
+                                        // Otherwise check if the "format" param is defined in the model attribute.
+                                        Map<String, String> params = this.input.model().attributes().get(attributeName).params();
+                                        if (params.containsKey("format") && !params.get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
+                                            String format = params.get("format");
+                                            if (term.isDate(format)) {
+                                                termValues.putIfAbsent(attributeName, new TreeSet<>());
+                                                termValues.get(attributeName).add(term.dateValue());
+                                            }
+                                        } else {
+                                            // Otherwise check if the "format" param is defined in the matcher
+                                            // associated with any index field associated with the attribute.
+                                            // Add any date values that successfully parse.
+                                            for (String indexFieldName : index.attributeIndexFieldsMap().get(attributeName).keySet()) {
+                                                String matcherName = index.attributeIndexFieldsMap().get(attributeName).get(indexFieldName).matcher();
+                                                params = input.model().matchers().get(matcherName).params();
+                                                if (params.containsKey("format") && !params.get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
+                                                    String format = params.get("format");
+                                                    if (term.isDate(format)) {
+                                                        termValues.putIfAbsent(attributeName, new TreeSet<>());
+                                                        termValues.get(attributeName).add(term.dateValue());
+                                                    }
+                                                } else {
+                                                    // If we've gotten this far, then this term can't be converted
+                                                    // to a date value. Skip it and move on.
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case "number":
+                                    if (term.isNumber()) {
+                                        termValues.putIfAbsent(attributeName, new TreeSet<>());
+                                        termValues.get(attributeName).add(term.numberValue());
+                                    }
+                                    break;
+                                case "string":
+                                    termValues.putIfAbsent(attributeName, new TreeSet<>());
+                                    termValues.get(attributeName).add(term.stringValue());
+                                    break;
+                                default:
+                                    break;
+                            }
+                        } catch (ValidationException | IOException e) {
+                            // continue;
+                        }
+                    }
+                }
+
+                // Include any known attribute values in this clause.
+                // This is necessary if a request has both "attributes" and "terms".
+                if (!this.attributes.isEmpty()) {
+                    for (String attributeName : this.attributes.keySet()) {
+                        for (Value value : this.attributes.get(attributeName).values()) {
+                            termValues.putIfAbsent(attributeName, new TreeSet<>());
+                            termValues.get(attributeName).add(value);
+                        }
+                    }
+                }
+
+                // Convert the values as if it was an input Attribute.
+                Map<String, Attribute> termAttributes = new TreeMap<>();
+                for (String attributeName : termValues.keySet()) {
+                    String attributeType = this.input().model().attributes().get(attributeName).type();
+                    List<String> jsonValues = new ArrayList<>();
+                    for (Value value : termValues.get(attributeName)) {
+                        if (value instanceof StringValue)
+                            jsonValues.add(Json.quoteString(value.serialized()));
+                        else
+                            jsonValues.add(value.serialized());
+                    }
+                    // Pass params from the input "attributes" if any were defined.
+                    String attributesJson;
+                    if (this.input.attributes().containsKey(attributeName) && !this.input.attributes().get(attributeName).params().isEmpty()) {
+                        Set<String> params = new TreeSet<>();
+                        for (String paramName : this.input.attributes().get(attributeName).params().keySet()) {
+                            String paramValue = this.input.attributes().get(attributeName).params().get(paramName);
+                            params.add("\"" + paramName + "\":" + "\"" + paramValue + "\"");
+                        }
+                        String paramsJson = "{" + String.join(",", params) + "}";
+                        attributesJson = "{\"values\":[" + String.join(",", jsonValues) + "],\"params\":" + paramsJson + "}";
+                    } else {
+                        attributesJson = "{\"values\":[" + String.join(",", jsonValues) + "]}";
+                    }
+                    termAttributes.put(attributeName, new Attribute(attributeName, attributeType, attributesJson));
+                }
+
+                // Determine which resolvers can be queried for this index using these attributes.
+                for (String resolverName : this.input.model().resolvers().keySet())
+                    if (canQuery(this.input.model(), indexName, resolverName, termAttributes))
+                        termResolvers.add(resolverName);
+
+                // Construct the resolvers clause for term attribute values.
+                if (termResolvers.size() > 0) {
+                    Map<String, Integer> counts = countAttributesAcrossResolvers(this.input.model(), termResolvers);
+                    List<List<String>> termResolversSorted = sortResolverAttributes(this.input.model(), termResolvers, counts);
+                    termResolversFilterTree = makeResolversFilterTree(termResolversSorted);
+                    termResolversClause = populateResolversFilterTree(this.input.model(), indexName, termResolversFilterTree, termAttributes, this.includeExplanation, _nameIdCounter);
+                }
+
+                // Combine the two resolvers clauses in a "filter" clause if both exist.
+                // If only the termResolversClause exists, set resolversClause to termResolversClause.
+                // If neither clause exists, do nothing because resolversClause already does not exist.
+                if (!resolversClause.isEmpty() && !termResolversClause.isEmpty())
+                    queryFilterClauses.add("{\"bool\":{\"filter\":[" + resolversClause + "," + termResolversClause + "]}}");
+                else if (!termResolversClause.isEmpty())
+                    resolversClause = termResolversClause;
             }
 
             // Combine the ids clause and resolvers clause in a "should" clause if necessary.
@@ -794,11 +947,36 @@ public class Job {
                     if (responseDataCopyObjHits.has("hits"))
                         responseDataCopyObjHits.remove("hits");
                 }
-                String resolversListLogged = Json.ORDERED_MAPPER.writeValueAsString(resolvers);
-                String resolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(resolversFilterTreeGrouped);
-                String resolversLogged = "{\"list\":" + resolversListLogged + ",\"tree\":" + resolversFilterTreeLogged + "}";
+                List<String> filtersLoggedList = new ArrayList<>();
+                if (!resolvers.isEmpty() && !resolversFilterTreeGrouped.isEmpty()) {
+                    List<String> attributesResolversSummary = new ArrayList<>();
+                    for (String resolverName : resolvers) {
+                        List<String> resolversAttributes = new ArrayList<>();
+                        for (String attributeName : input.model().resolvers().get(resolverName).attributes())
+                            resolversAttributes.add("\"" + attributeName + "\"");
+                        attributesResolversSummary.add("\"" + resolverName + "\":{\"attributes\":[" +  String.join(",", resolversAttributes) + "]}");
+                    }
+                    String attributesResolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(resolversFilterTreeGrouped);
+                    filtersLoggedList.add("\"attributes\":{\"tree\":" + attributesResolversFilterTreeLogged + ",\"resolvers\":{" + String.join(",", attributesResolversSummary) + "}}");
+                } else {
+                    filtersLoggedList.add("\"attributes\":null");
+                }
+                if (!termResolvers.isEmpty() && !termResolversFilterTree.isEmpty()) {
+                    List<String> termsResolversSummary = new ArrayList<>();
+                    for (String resolverName : termResolvers) {
+                        List<String> resolverAttributes = new ArrayList<>();
+                        for (String attributeName : input.model().resolvers().get(resolverName).attributes())
+                            resolverAttributes.add("\"" + attributeName + "\"");
+                        termsResolversSummary.add("\"" + resolverName + "\":{\"attributes\":[" +  String.join(",", resolverAttributes) + "]}");
+                    }
+                    String termResolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(termResolversFilterTree);
+                    filtersLoggedList.add("\"terms\":{\"tree\":{\"0\":" + termResolversFilterTreeLogged + "},\"resolvers\":{" + String.join(",", termsResolversSummary) + "}}");
+                } else {
+                    filtersLoggedList.add("\"terms\":null");
+                }
+                String filtersLogged = String.join(",", filtersLoggedList);
                 String searchLogged = "{\"request\":" + query + ",\"response\":" + responseDataCopyObj + "}";
-                String logged = "{\"_hop\":" + this.hop + ",\"_index\":\"" + indexName + "\",\"resolvers\":" + resolversLogged + ",\"search\":" + searchLogged + "}";
+                String logged = "{\"_hop\":" + this.hop + ",\"_index\":\"" + indexName + "\",\"filters\":{" + filtersLogged + "},\"search\":" + searchLogged + "}";
                 this.queries.add(logged);
             }
 
@@ -901,7 +1079,8 @@ public class Job {
                             String indexFieldName = _name[1];
                             String matcherName = _name[2];
                             String attributeValueSerialized = new String(Base64.getDecoder().decode(_name[3]));
-                            if (this.attributes.get(attributeName).values().iterator().next() instanceof StringValue)
+                            String attributeType = this.input().model().attributes().get(attributeName).type();
+                            if (attributeType.equals("string") || attributeType.equals("date"))
                                 attributeValueSerialized = "\"" + attributeValueSerialized + "\"";
                             JsonNode attributeValueNode = Json.MAPPER.readTree("{\"attribute_value\":" + attributeValueSerialized + "}").get("attribute_value");
                             JsonNode indexFieldValueNode = docAttributes.get(attributeName);
@@ -924,7 +1103,7 @@ public class Job {
                         }
 
                         // Summarize matched resolvers
-                        for (String resolverName : resolvers) {
+                        for (String resolverName : input.model().resolvers().keySet()) {
                             if (expAttributes.containsAll(input.model().resolvers().get(resolverName).attributes())) {
                                 ObjectNode docExpResolverObjNode = docExpResolversObjNode.putObject(resolverName);
                                 ArrayNode docExpResolverAttributesArrNode = docExpResolverObjNode.putArray("attributes");
