@@ -584,6 +584,7 @@ public class Job {
         // Prepare to collect attributes from the results of these queries as the inputs to subsequent queries.
         Map<String, Attribute> nextInputAttributes = new TreeMap<>();
         Boolean newHits = false;
+        int _query = 0;
 
         // Construct a query for each index that maps to a resolver.
         for (String indexName : this.input.model().indices().keySet()) {
@@ -976,7 +977,7 @@ public class Job {
                 }
                 String filtersLogged = String.join(",", filtersLoggedList);
                 String searchLogged = "{\"request\":" + query + ",\"response\":" + responseDataCopyObj + "}";
-                String logged = "{\"_hop\":" + this.hop + ",\"_index\":\"" + indexName + "\",\"filters\":{" + filtersLogged + "},\"search\":" + searchLogged + "}";
+                String logged = "{\"_hop\":" + this.hop + ",\"_query\":" + _query + ",\"_index\":\"" + indexName + "\",\"filters\":{" + filtersLogged + "},\"search\":" + searchLogged + "}";
                 this.queries.add(logged);
             }
 
@@ -1048,6 +1049,7 @@ public class Job {
                     docObjNode.remove("_score");
                     docObjNode.remove("fields");
                     docObjNode.put("_hop", this.hop);
+                    docObjNode.put("_query", _query);
                     if (this.includeAttributes) {
                         ObjectNode docAttributesObjNode = docObjNode.putObject("_attributes");
                         for (String attributeName : docAttributes.keySet()) {
@@ -1127,6 +1129,7 @@ public class Job {
                     this.hits.add(doc.toString());
                 }
             }
+            _query++;
         }
 
         // Stop traversing if we've reached max depth.
