@@ -1091,7 +1091,7 @@ public class JobIT extends AbstractITCase {
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
 
             /*
-            Elasticsearch 7.0.0+ has a different behavior when querying date ranges.
+            Elasticsearch 7.0.0 - 7.2.0 has a different behavior when querying date ranges.
 
             To demonstrate, compare this query (below) with the test indices, data, and entity models on Elasticsearch
             versions 6.7.1 and 7.0.0:
@@ -1122,7 +1122,13 @@ public class JobIT extends AbstractITCase {
             */
             Properties props = new Properties();
             props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
-            if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+            Set<String> dateBugVersions = new TreeSet<>();
+            dateBugVersions.add("7.0.0");
+            dateBugVersions.add("7.0.1");
+            dateBugVersions.add("7.1.0");
+            dateBugVersions.add("7.1.1");
+            dateBugVersions.add("7.2.0");
+            if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
                 assertEquals(json.get("hits").get("total").asInt(), 15);
             } else {
                 assertEquals(json.get("hits").get("total").asInt(), 13);
@@ -1140,7 +1146,7 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("d2,1");
             docsExpected.add("b1,2");
             docsExpected.add("c3,2");
-            if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+            if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
                 docsExpected.add("d3,1");
                 docsExpected.add("a4,2");
                 docsExpected.add("c4,2");
@@ -1166,7 +1172,7 @@ public class JobIT extends AbstractITCase {
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
 
             /*
-            Elasticsearch 7.0.0+ has a different behavior when querying date ranges.
+            Elasticsearch 7.0.0 - 7.2.0 has a different behavior when querying date ranges.
 
             To demonstrate, compare this query (below) with the test indices, data, and entity models on Elasticsearch
             versions 6.7.1 and 7.0.0:
@@ -1197,7 +1203,13 @@ public class JobIT extends AbstractITCase {
             */
             Properties props = new Properties();
             props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
-            if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+            Set<String> dateBugVersions = new TreeSet<>();
+            dateBugVersions.add("7.0.0");
+            dateBugVersions.add("7.0.1");
+            dateBugVersions.add("7.1.0");
+            dateBugVersions.add("7.1.1");
+            dateBugVersions.add("7.2.0");
+            if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
                 assertEquals(json.get("hits").get("total").asInt(), 15);
             } else {
                 assertEquals(json.get("hits").get("total").asInt(), 13);
@@ -1215,7 +1227,7 @@ public class JobIT extends AbstractITCase {
             docsExpected.add("d2,1");
             docsExpected.add("b1,2");
             docsExpected.add("c3,2");
-            if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+            if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
                 docsExpected.add("d3,1");
                 docsExpected.add("a4,2");
                 docsExpected.add("c4,2");
