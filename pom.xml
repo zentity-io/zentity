@@ -19,7 +19,7 @@
         <elasticsearch.version>7.3.1</elasticsearch.version>
         <jackson.core.version>2.9.9</jackson.core.version>
         <jackson.databind.version>2.9.9.2</jackson.databind.version>
-        <jdk.version>1.8</jdk.version>
+        <jdk.version>1.12</jdk.version>
         <log4j.version>2.9.1</log4j.version>
         <commons-io.version>2.6</commons-io.version>
         <!-- maven plugin versions -->
