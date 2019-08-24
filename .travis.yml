@@ -1,6 +1,6 @@
 language: java
 jdk:
-  - oraclejdk12
+  - oraclejdk11
 env:
   matrix:
     - ELASTICSEARCH_VERSION=7.3.1
