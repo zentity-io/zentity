@@ -87,41 +87,13 @@
         <attribute name="timeoutproperty"/>
         <sequential>
             <echo>Waiting for elasticsearch to become available on port @{port}...</echo>
-            <waitfor maxwait="30" maxwaitunit="second"
+            <waitfor maxwait="60" maxwaitunit="second"
                      checkevery="500" checkeveryunit="millisecond"
                      timeoutproperty="@{timeoutproperty}">
                 <http url="http://localhost:@{port}"/>
             </waitfor>
         </sequential>
     </macrodef>
-
-    <scriptdef name="isGreater" language="javascript">
-        <attribute name="v1"/>
-        <attribute name="v2"/>
-        <![CDATA[
-
-            var i, l, d, s = false;
-
-            a = attributes.get("v1").split('.');
-            b = attributes.get("v2").split('.');
-            l = Math.min(a.length, b.length);
-
-            for (i=0; i<l; i++) {
-                d = parseInt(a[i], 10) - parseInt(b[i], 10);
-                if (d !== 0) {
-                    project.setProperty("compare-result", d > 0);
-                    s = true;
-                    break;
-                }
-            }
-
-            if(!s){
-                d = a.length - b.length;
-                project.setProperty("compare-result", d >= 0);
-            }
-
-            ]]>
-    </scriptdef>
 
     <!-- start elasticsearch and wait until its ready -->
     <macrodef name="startup-elasticsearch">
@@ -144,25 +116,16 @@
             </fail>
             <!-- run bin/elasticsearch with args -->
             <echo>Starting up external cluster...</echo>
-            <isGreater v1="${elasticsearch.version}" v2="5.0.0"/>
-
-            <echo if:true="${compare-result}">running Elasticsearch 5.0.0 or superior</echo>
-            <echo unless:true="${compare-result}">running Elasticsearch &lt; 5.0.0</echo>
 
             <chmod file="@{home}/bin/elasticsearch" perm="ugo+rx"/>
             <run-script script="@{home}/bin/elasticsearch"
                         spawn="@{spawn}">
                 <nested>
-                    <arg value="-Des.pidfile=@{es.pidfile}" unless:true="${compare-result}"/>
-                    <arg value="-Des.cluster.name=@{es.cluster.name}" unless:true="${compare-result}"/>
-                    <arg value="-Des.http.port=@{es.http.port}" unless:true="${compare-result}"/>
-                    <arg value="-Des.transport.tcp.port=@{es.transport.tcp.port}" unless:true="${compare-result}"/>
-                    <arg value="-Des.network.host=127.0.0.1" unless:true="${compare-result}"/>
-                    <arg value="-Epidfile=@{es.pidfile}" if:true="${compare-result}"/>
-                    <arg value="-Ecluster.name=@{es.cluster.name}" if:true="${compare-result}"/>
-                    <arg value="-Ehttp.port=@{es.http.port}" if:true="${compare-result}"/>
-                    <arg value="-Etransport.tcp.port=@{es.transport.tcp.port}" if:true="${compare-result}"/>
-                    <arg value="-Enetwork.host=127.0.0.1" if:true="${compare-result}"/>
+                    <arg value="-Epidfile=@{es.pidfile}"/>
+                    <arg value="-Ecluster.name=@{es.cluster.name}"/>
+                    <arg value="-Ehttp.port=@{es.http.port}"/>
+                    <arg value="-Etransport.tcp.port=@{es.transport.tcp.port}"/>
+                    <arg value="-Enetwork.host=127.0.0.1"/>
                     <additional-args/>
                 </nested>
             </run-script>
@@ -275,9 +238,7 @@
             <local name="url"/>
             <makeurl property="url" file="@{file}"/>
 
-            <isGreater v1="${elasticsearch.version}" v2="5.0.0"/>
-            <property name="commandline" value="@{home}/bin/plugin" unless:true="${compare-result}"/>
-            <property name="commandline" value="@{home}/bin/elasticsearch-plugin" if:true="${compare-result}"/>
+            <property name="commandline" value="@{home}/bin/elasticsearch-plugin"/>
 
             <!-- install plugin -->
             <echo>Installing plugin @{name}...</echo>
