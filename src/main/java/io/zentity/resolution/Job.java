@@ -1,5 +1,6 @@
 package io.zentity.resolution;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -1119,13 +1120,16 @@ public class Job {
                         // The index field name might not refer to the _source property.
                         // If it's not in the _source, remove the last part of the index field name from the dot notation.
                         // Index field names can reference multi-fields, which are not returned in the _source.
-                        String path = this.input.model().indices().get(indexName).fields().get(indexFieldName).path();
-                        String pathParent = this.input.model().indices().get(indexName).fields().get(indexFieldName).pathParent();
+                        // If the document does not contain a given index field, skip that field.
+                        JsonPointer path = this.input.model().indices().get(indexName).fields().get(indexFieldName).path();
+                        JsonPointer pathParent = this.input.model().indices().get(indexName).fields().get(indexFieldName).pathParent();
                         JsonNode valueNode = doc.get("_source").at(path);
-                        if (valueNode.isMissingNode())
-                            valueNode = doc.get("_source").at(pathParent);
-                        if (valueNode.isMissingNode())
-                            continue;
+                        if (valueNode.isMissingNode()) {
+                            if (pathParent != null)
+                                valueNode = doc.get("_source").at(pathParent);
+                            else
+                                continue;
+                        }
                         docAttributes.put(attributeName, valueNode);
                         Value value = Value.create(attributeType, valueNode);
                         nextInputAttributes.get(attributeName).values().add(value);
