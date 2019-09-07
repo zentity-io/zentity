@@ -38,6 +38,7 @@ public class ResolutionAction extends BaseRestHandler {
         // Parse the request params that will be passed to the job configuration
         String entityType = restRequest.param("entity_type");
         Boolean includeAttributes = restRequest.paramAsBoolean("_attributes", Job.DEFAULT_INCLUDE_ATTRIBUTES);
+        Boolean includeErrorTrace = restRequest.paramAsBoolean("error_trace", Job.DEFAULT_INCLUDE_ERROR_TRACE);
         Boolean includeExplanation = restRequest.paramAsBoolean("_explanation", Job.DEFAULT_INCLUDE_EXPLANATION);
         Boolean includeHits = restRequest.paramAsBoolean("hits", Job.DEFAULT_INCLUDE_HITS);
         Boolean includeQueries = restRequest.paramAsBoolean("queries", Job.DEFAULT_INCLUDE_QUERIES);
@@ -70,6 +71,7 @@ public class ResolutionAction extends BaseRestHandler {
                 // Prepare the entity resolution job.
                 Job job = new Job(client);
                 job.includeAttributes(includeAttributes);
+                job.includeErrorTrace(includeErrorTrace);
                 job.includeExplanation(includeExplanation);
                 job.includeHits(includeHits);
                 job.includeQueries(includeQueries);
@@ -82,7 +84,10 @@ public class ResolutionAction extends BaseRestHandler {
 
                 // Run the entity resolution job.
                 String response = job.run();
-                channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
+                if (job.failed())
+                    channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", response));
+                else
+                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
 
             } catch (ValidationException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));

@@ -33,6 +33,8 @@ import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -53,6 +55,7 @@ public class Job {
 
     // Constants
     public static final boolean DEFAULT_INCLUDE_ATTRIBUTES = true;
+    public static final boolean DEFAULT_INCLUDE_ERROR_TRACE = true;
     public static final boolean DEFAULT_INCLUDE_EXPLANATION = false;
     public static final boolean DEFAULT_INCLUDE_HITS = true;
     public static final boolean DEFAULT_INCLUDE_QUERIES = false;
@@ -65,6 +68,7 @@ public class Job {
     // Job configuration
     private Input input;
     private boolean includeAttributes = DEFAULT_INCLUDE_ATTRIBUTES;
+    private boolean includeErrorTrace = DEFAULT_INCLUDE_ERROR_TRACE;
     private boolean includeExplanation = DEFAULT_INCLUDE_EXPLANATION;
     private boolean includeHits = DEFAULT_INCLUDE_HITS;
     private boolean includeQueries = DEFAULT_INCLUDE_QUERIES;
@@ -79,6 +83,7 @@ public class Job {
     private NodeClient client;
     private Map<String, Set<String>> docIds = new TreeMap<>();
     private String error = null;
+    private boolean failed = false;
     private List<String> hits = new ArrayList<>();
     private int hop = 0;
     private Set<String> missingIndices = new TreeSet<>();
@@ -89,16 +94,20 @@ public class Job {
         this.client = client;
     }
 
-    public static String serializeException(Exception e) throws IOException {
-        String serialized;
-        if (e instanceof ElasticsearchException) {
-            ElasticsearchException ee = (ElasticsearchException) e;
-            String cause = Strings.toString(ee.toXContent(jsonBuilder().startObject(), ToXContent.EMPTY_PARAMS).endObject());
-            serialized = "{\"error\":{\"root_cause\":[" + cause + "],\"type\":\"" + ElasticsearchException.getExceptionName(ee) + "\",\"reason\":\"" + e.getMessage() + "\"},\"status\":" + ee.status().getStatus() + "}";
-        } else {
-            serialized = "{\"error\":{\"type\":\"" + e.getClass() + "\",\"reason\":\"" + e.getMessage() + "\"}}";
+    public static String serializeException(Exception e, boolean includeErrorTrace) {
+        List<String> errorParts = new ArrayList<>();
+        if (e instanceof ElasticsearchException)
+            errorParts.add("\"by\":\"elasticsearch\"");
+        else
+            errorParts.add("\"by\":\"zentity\"");
+        errorParts.add("\"type\":\"" + e.getClass().getCanonicalName() + "\"");
+        errorParts.add("\"reason\":\"" + e.getMessage() + "\"");
+        if (includeErrorTrace) {
+            StringWriter traceWriter = new StringWriter();
+            e.printStackTrace(new PrintWriter(traceWriter));
+            errorParts.add("\"stack_trace\":" + Json.quoteString(traceWriter.toString()) + "");
         }
-        return serialized;
+        return String.join(",", errorParts);
     }
 
     public static String serializeLoggedQuery(Input input, int _hop, int _query, String indexName, String request, String response, List<String> resolvers, TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped, List<String> termResolvers, TreeMap<String, TreeMap> termResolversFilterTree) throws JsonProcessingException {
@@ -522,6 +531,7 @@ public class Job {
         this.attributes = new TreeMap<>(this.input().attributes());
         this.docIds = new TreeMap<>();
         this.error = null;
+        this.failed = false;
         this.hits = new ArrayList<>();
         this.hop = 0;
         this.missingIndices = new TreeSet<>();
@@ -535,6 +545,14 @@ public class Job {
 
     public void includeAttributes(boolean includeAttributes) {
         this.includeAttributes = includeAttributes;
+    }
+
+    public boolean includeErrorTrace() {
+        return this.includeErrorTrace;
+    }
+
+    public void includeErrorTrace(boolean includeErrorTrace) {
+        this.includeErrorTrace = includeErrorTrace;
     }
 
     public boolean includeExplanation() {
@@ -607,6 +625,14 @@ public class Job {
 
     public void input(Input input) {
         this.input = input;
+    }
+
+    public boolean failed() {
+        return this.failed;
+    }
+
+    public boolean ran() {
+        return this.ran;
     }
 
     /**
@@ -997,7 +1023,6 @@ public class Job {
             // Submit query to Elasticsearch.
             SearchResponse response = null;
             Exception responseError = null;
-            boolean fatalError = false;
             try {
                 response = this.search(indexName, query);
             } catch (IndexNotFoundException e) {
@@ -1006,7 +1031,7 @@ public class Job {
                 responseError = e;
             } catch (Exception e) {
                 // Fail the job for any other error.
-                fatalError = true;
+                this.failed = true;
                 responseError = e;
             }
 
@@ -1028,7 +1053,9 @@ public class Job {
                     }
                     responseString = responseDataCopyObj.toString();
                 } else {
-                    responseString = serializeException(responseError);
+                    ElasticsearchException e = (ElasticsearchException) responseError;
+                    String cause = Strings.toString(e.toXContent(jsonBuilder().startObject(), ToXContent.EMPTY_PARAMS).endObject());
+                    responseString = "{\"error\":{\"root_cause\":[" + cause + "],\"type\":\"" + ElasticsearchException.getExceptionName(e) + "\",\"reason\":\"" + e.getMessage() + "\"},\"status\":" + e.status().getStatus() + "}";
                 }
                 String logged = serializeLoggedQuery(this.input, this.hop, _query, indexName, query, responseString, resolvers, resolversFilterTreeGrouped, termResolvers, termResolversFilterTree);
                 this.queries.add(logged);
@@ -1036,8 +1063,8 @@ public class Job {
 
             // Stop traversing if there was an error not due to a missing index.
             // Include the logged query in the response.
-            if (fatalError) {
-                this.error = serializeLoggedQuery(this.input, this.hop, _query, indexName, query, serializeException(responseError), resolvers, resolversFilterTreeGrouped, termResolvers, termResolversFilterTree);
+            if (this.failed) {
+                this.error = serializeException(responseError, this.includeErrorTrace);
                 return;
             }
 
@@ -1228,7 +1255,7 @@ public class Job {
      * @return A JSON string to be returned as the body of the response to a client.
      * @throws IOException
      */
-    public String run() throws IOException, ValidationException {
+    public String run() throws IOException {
         try {
 
             // Reset the state of the job if reusing this Job object.
@@ -1238,22 +1265,28 @@ public class Job {
                 this.attributes = new TreeMap<>(this.input.attributes());
 
             // Start timer and begin job
+            String response;
             long startTime = System.nanoTime();
-            this.traverse();
-            long took = TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-
-            // Format response
-            List<String> responseParts = new ArrayList<>();
-            responseParts.add("\"took\":" + Long.toString(took));
-            if (this.error != null)
-                responseParts.add("\"error\":" + this.error);
-            if (this.includeHits)
-                responseParts.add("\"hits\":{\"total\":" + this.hits.size() + ",\"hits\":[" + String.join(",", this.hits) + "]}");
-            if (this.includeQueries || this.profile)
-                responseParts.add("\"queries\":[" + queries + "]");
-            String response = "{" + String.join(",", responseParts) + "}";
-            if (this.pretty)
-                response = Json.ORDERED_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(Json.ORDERED_MAPPER.readTree(response));
+            try {
+                this.traverse();
+            } catch (Exception e) {
+                this.failed = true;
+                this.error = serializeException(e, this.includeErrorTrace);
+            } finally {
+                long took = TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+                // Format response
+                List<String> responseParts = new ArrayList<>();
+                responseParts.add("\"took\":" + Long.toString(took));
+                if (this.error != null)
+                    responseParts.add("\"error\":{" + this.error + "}");
+                if (this.includeHits)
+                    responseParts.add("\"hits\":{\"total\":" + this.hits.size() + ",\"hits\":[" + String.join(",", this.hits) + "]}");
+                if (this.includeQueries || this.profile)
+                    responseParts.add("\"queries\":[" + queries + "]");
+                response = "{" + String.join(",", responseParts) + "}";
+                if (this.pretty)
+                    response = Json.ORDERED_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(Json.ORDERED_MAPPER.readTree(response));
+            }
             return response;
 
         } finally {
