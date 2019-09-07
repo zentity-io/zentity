@@ -1,5 +1,6 @@
 package io.zentity.model;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
@@ -19,8 +20,8 @@ public class IndexField {
 
     private final String index;
     private final String name;
-    private String path;
-    private String pathParent;
+    private JsonPointer path;
+    private JsonPointer pathParent;
     private String attribute;
     private String matcher;
 
@@ -48,11 +49,11 @@ public class IndexField {
         return this.name;
     }
 
-    public String path() {
+    public JsonPointer path() {
         return this.path;
     }
 
-    public String pathParent() {
+    public JsonPointer pathParent() {
         return this.pathParent;
     }
 
@@ -76,9 +77,9 @@ public class IndexField {
 
     private void nameToPaths(String name) {
         String[] parts = Patterns.PERIOD.split(name);
-        this.path = "/" + String.join("/", parts);
+        this.path = JsonPointer.compile("/" + String.join("/", parts));
         if (parts.length > 1)
-            this.pathParent = "/" + String.join("/", Arrays.copyOf(parts, parts.length - 1));
+            this.pathParent = JsonPointer.compile("/" + String.join("/", Arrays.copyOf(parts, parts.length - 1)));
     }
 
     private void validateName(String value) throws ValidationException {
