@@ -89,9 +89,16 @@ public class Job {
         this.client = client;
     }
 
-    public static String serializeElasticsearchException(ElasticsearchException e) throws IOException {
-        String cause = Strings.toString(e.toXContent(jsonBuilder().startObject(), ToXContent.EMPTY_PARAMS).endObject());
-        return "{\"error\":{\"root_cause\":[" + cause + "],\"type\":\"" + ElasticsearchException.getExceptionName(e) + "\",\"reason\":\"" + e.getMessage() + "\"},\"status\":" + e.status().getStatus() + "}";
+    public static String serializeException(Exception e) throws IOException {
+        String serialized;
+        if (e instanceof ElasticsearchException) {
+            ElasticsearchException ee = (ElasticsearchException) e;
+            String cause = Strings.toString(ee.toXContent(jsonBuilder().startObject(), ToXContent.EMPTY_PARAMS).endObject());
+            serialized = "{\"error\":{\"root_cause\":[" + cause + "],\"type\":\"" + ElasticsearchException.getExceptionName(ee) + "\",\"reason\":\"" + e.getMessage() + "\"},\"status\":" + ee.status().getStatus() + "}";
+        } else {
+            serialized = "{\"error\":{\"type\":\"" + e.getClass() + "\",\"reason\":\"" + e.getMessage() + "\"}}";
+        }
+        return serialized;
     }
 
     public static String serializeLoggedQuery(Input input, int _hop, int _query, String indexName, String request, String response, List<String> resolvers, TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped, List<String> termResolvers, TreeMap<String, TreeMap> termResolversFilterTree) throws JsonProcessingException {
@@ -645,8 +652,6 @@ public class Job {
             if (!this.docIds.containsKey(indexName))
                 this.docIds.put(indexName, new TreeSet<>());
 
-            boolean filterIds = this.hop == 0 && this.input().ids().containsKey(indexName) && !this.input().ids().get(indexName).isEmpty();
-
             // "_explanation" uses named queries, and each value of the "_name" fields must be unique.
             // Use a counter to prepend a unique and deterministic identifier for each "_name" field in the query.
             AtomicInteger _nameIdCounter = new AtomicInteger();
@@ -656,7 +661,12 @@ public class Job {
             for (String resolverName : this.input.model().resolvers().keySet())
                 if (canQuery(this.input.model(), indexName, resolverName, this.attributes))
                     resolvers.add(resolverName);
-            if (resolvers.size() == 0 && !filterIds && (this.hop == 0 && this.input.terms().isEmpty()))
+
+            // Determine if we can query this index.
+            boolean canQueryIds = this.hop == 0 && this.input().ids().containsKey(indexName) && !this.input().ids().get(indexName).isEmpty();
+            boolean canQueryTerms = this.hop == 0 && !this.input.terms().isEmpty();
+            boolean canQueryAttributes = resolvers.size() > 0;
+            if (!canQueryAttributes && !canQueryIds && !canQueryTerms)
                 continue;
 
             // Construct query for this index.
@@ -702,7 +712,7 @@ public class Job {
 
             // Construct the "ids" clause if this is the first hop and if any ids are specified for this index.
             String idsClause = "";
-            if (filterIds) {
+            if (canQueryIds) {
                 Set<String> ids = this.input().ids().get(indexName);
                 idsClause = "{\"bool\":{\"filter\":[{\"ids\":{\"values\":[" + String.join(",", ids) + "]}}]}}";
             }
@@ -782,7 +792,7 @@ public class Job {
             // unlike structured attribute search where the attributes are assumed be known.
             List<String> termResolvers = new ArrayList<>();
             TreeMap<String, TreeMap> termResolversFilterTree = new TreeMap<>();
-            if (this.hop == 0 && !this.input.terms().isEmpty()) {
+            if (canQueryTerms) {
                 String termResolversClause = "";
 
                 // Get the names of each attribute of each in-scope resolver.
@@ -986,7 +996,7 @@ public class Job {
 
             // Submit query to Elasticsearch.
             SearchResponse response = null;
-            ElasticsearchException responseError = null;
+            Exception responseError = null;
             boolean fatalError = false;
             try {
                 response = this.search(indexName, query);
@@ -994,7 +1004,7 @@ public class Job {
                 // Don't fail the job if an index was missing.
                 this.missingIndices.add(e.getIndex().getName());
                 responseError = e;
-            } catch (ElasticsearchException e) {
+            } catch (Exception e) {
                 // Fail the job for any other error.
                 fatalError = true;
                 responseError = e;
@@ -1018,7 +1028,7 @@ public class Job {
                     }
                     responseString = responseDataCopyObj.toString();
                 } else {
-                    responseString = serializeElasticsearchException(responseError);
+                    responseString = serializeException(responseError);
                 }
                 String logged = serializeLoggedQuery(this.input, this.hop, _query, indexName, query, responseString, resolvers, resolversFilterTreeGrouped, termResolvers, termResolversFilterTree);
                 this.queries.add(logged);
@@ -1027,7 +1037,7 @@ public class Job {
             // Stop traversing if there was an error not due to a missing index.
             // Include the logged query in the response.
             if (fatalError) {
-                this.error = serializeLoggedQuery(this.input, this.hop, _query, indexName, query, serializeElasticsearchException(responseError), resolvers, resolversFilterTreeGrouped, termResolvers, termResolversFilterTree);
+                this.error = serializeLoggedQuery(this.input, this.hop, _query, indexName, query, serializeException(responseError), resolvers, resolversFilterTreeGrouped, termResolvers, termResolversFilterTree);
                 return;
             }
 
