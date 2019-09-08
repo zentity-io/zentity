@@ -111,6 +111,9 @@
             }
           }
         }
+      },
+      "unused": {
+        "type": "keyword"
       }
     }
   }

@@ -226,7 +226,7 @@ public class Job {
      * @param attributes   The values for the input attributes.
      * @return Boolean decision.
      */
-    public static boolean canQuery(Model model, String indexName, String resolverName, Map<String, Attribute> attributes) {
+    public static boolean canQueryResolver(Model model, String indexName, String resolverName, Map<String, Attribute> attributes) {
 
         // Each attribute of the resolver must pass these conditions:
         for (String attributeName : model.resolvers().get(resolverName).attributes()) {
@@ -686,7 +686,7 @@ public class Job {
             // Determine which resolvers can be queried for this index.
             List<String> resolvers = new ArrayList<>();
             for (String resolverName : this.input.model().resolvers().keySet())
-                if (canQuery(this.input.model(), indexName, resolverName, this.attributes))
+                if (canQueryResolver(this.input.model(), indexName, resolverName, this.attributes))
                     resolvers.add(resolverName);
 
             // Determine if we can query this index.
@@ -944,7 +944,7 @@ public class Job {
 
                 // Determine which resolvers can be queried for this index using these attributes.
                 for (String resolverName : this.input.model().resolvers().keySet())
-                    if (canQuery(this.input.model(), indexName, resolverName, termAttributes))
+                    if (canQueryResolver(this.input.model(), indexName, resolverName, termAttributes))
                         termResolvers.add(resolverName);
 
                 // Construct the resolvers clause for term attribute values.

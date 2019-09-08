@@ -65,7 +65,7 @@
     },
     "matcher_b": {
       "clause": {
-        "term": {
+        "example_malformed_query": {
           "{{ field }}": "{{ value }}"
         }
       }
