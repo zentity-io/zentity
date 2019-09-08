@@ -29,6 +29,9 @@
     },
     "attribute_object": {
       "type": "string"
+    },
+    "attribute_unused": {
+      "type": "string"
     }
   },
   "resolvers": {
@@ -100,6 +103,11 @@
     "resolver_object": {
       "attributes": [
         "attribute_object"
+      ]
+    },
+    "resolver_unused": {
+      "attributes": [
+        "attribute_unused"
       ]
     }
   },
@@ -200,6 +208,10 @@
         "object.a.b.c.keyword": {
           "attribute": "attribute_object",
           "matcher": "matcher_b"
+        },
+        "unused": {
+          "attribute": "attribute_unused",
+          "matcher": "matcher_b"
         }
       }
     },
@@ -267,6 +279,10 @@
         },
         "object.a.b.c.keyword": {
           "attribute": "attribute_object",
+          "matcher": "matcher_b"
+        },
+        "unused": {
+          "attribute": "attribute_unused",
           "matcher": "matcher_b"
         }
       }
@@ -336,6 +352,10 @@
         "object.a.b.c.keyword": {
           "attribute": "attribute_object",
           "matcher": "matcher_b"
+        },
+        "unused": {
+          "attribute": "attribute_unused",
+          "matcher": "matcher_b"
         }
       }
     },
@@ -403,6 +423,10 @@
         },
         "object.a.b.c.keyword": {
           "attribute": "attribute_object",
+          "matcher": "matcher_b"
+        },
+        "unused": {
+          "attribute": "attribute_unused",
           "matcher": "matcher_b"
         }
       }

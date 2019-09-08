@@ -112,6 +112,9 @@
               }
             }
           }
+        },
+        "unused": {
+          "type": "keyword"
         }
       }
     }
