@@ -22,7 +22,8 @@ public class JobIT extends AbstractITCase {
     private final int TEST_RESOURCES_A = 0;
     private final int TEST_RESOURCES_B = 1;
     private final int TEST_RESOURCES_ELASTICSEARCH_ERROR = 2;
-    
+    private final int TEST_RESOURCES_ZENTITY_ERROR = 3;
+
     private final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_a\": [ \"a_00\" ]\n" +
@@ -485,7 +486,7 @@ public class JobIT extends AbstractITCase {
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
-    private final StringEntity TEST_PAYLOAD_JOB_ELASTICSEARCH_ERROR = new StringEntity("{\n" +
+    private final StringEntity TEST_PAYLOAD_JOB_ERROR = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_a\": [ \"a_10\" ],\n" +
             "    \"attribute_b\": [ \"b_10\" ]\n" +
@@ -516,6 +517,10 @@ public class JobIT extends AbstractITCase {
         client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_elasticsearch_error"));
     }
 
+    private void destroyTestEntityModelZentityError() throws IOException {
+        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_zentity_error"));
+    }
+
     private void destroyTestResources(int testResourceSet) throws IOException {
         destroyTestIndices();
         switch (testResourceSet) {
@@ -526,6 +531,9 @@ public class JobIT extends AbstractITCase {
                 destroyTestEntityModelB();
                 break;
             case TEST_RESOURCES_ELASTICSEARCH_ERROR:
+                destroyTestEntityModelElasticsearchError();
+                break;
+            case TEST_RESOURCES_ZENTITY_ERROR:
                 destroyTestEntityModelElasticsearchError();
                 break;
         }
@@ -553,6 +561,14 @@ public class JobIT extends AbstractITCase {
         Request postModelElasticsearchError = new Request("POST", "_zentity/models/zentity_test_entity_elasticsearch_error");
         postModelElasticsearchError.setEntity(testEntityModelElasticsearchError);
         client.performRequest(postModelElasticsearchError);
+    }
+
+    private void prepareTestEntityModelZentityError() throws Exception {
+        ByteArrayEntity testEntityModelZentityError;
+        testEntityModelZentityError = new ByteArrayEntity(readFile("TestEntityModelZentityError.json"), ContentType.APPLICATION_JSON);
+        Request postModelZentityError = new Request("POST", "_zentity/models/zentity_test_entity_zentity_error");
+        postModelZentityError.setEntity(testEntityModelZentityError);
+        client.performRequest(postModelZentityError);
     }
 
     private void prepareTestIndices() throws Exception {
@@ -604,6 +620,9 @@ public class JobIT extends AbstractITCase {
                 break;
             case TEST_RESOURCES_ELASTICSEARCH_ERROR:
                 prepareTestEntityModelElasticsearchError();
+                break;
+            case TEST_RESOURCES_ZENTITY_ERROR:
+                prepareTestEntityModelZentityError();
                 break;
         }
     }
@@ -1504,7 +1523,7 @@ public class JobIT extends AbstractITCase {
         try {
             String endpoint = "_zentity/resolution/zentity_test_entity_elasticsearch_error";
             Request postResolution = new Request("POST", endpoint);
-            postResolution.setEntity(TEST_PAYLOAD_JOB_ELASTICSEARCH_ERROR);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_ERROR);
             try {
                 client.performRequest(postResolution);
             } catch (ResponseException e) {
@@ -1527,7 +1546,7 @@ public class JobIT extends AbstractITCase {
             Request postResolutionQueriesNoTrace  = new Request("POST", endpointQueriesNoTrace);
             postResolutionQueriesNoTrace.addParameter("error_trace", "false");
             postResolutionQueriesNoTrace.addParameter("queries", "true");
-            postResolutionQueriesNoTrace.setEntity(TEST_PAYLOAD_JOB_ELASTICSEARCH_ERROR);
+            postResolutionQueriesNoTrace.setEntity(TEST_PAYLOAD_JOB_ERROR);
             try {
                 client.performRequest(postResolutionQueriesNoTrace);
             } catch (ResponseException e) {
@@ -1544,6 +1563,50 @@ public class JobIT extends AbstractITCase {
                 docsExpected.add("a2,0");
                 docsExpected.add("a3,0");
                 assertEquals(docsExpected, getActual(json));
+            }
+        } finally {
+            destroyTestResources(testResourceSet);
+        }
+    }
+
+    public void testJobZentityError() throws Exception {
+        int testResourceSet = TEST_RESOURCES_ZENTITY_ERROR;
+        prepareTestResources(testResourceSet);
+        try {
+            String endpoint = "_zentity/resolution/zentity_test_entity_zentity_error";
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_ERROR);
+            try {
+                client.performRequest(postResolution);
+            } catch (ResponseException e) {
+                Response response = e.getResponse();
+                assertEquals(response.getStatusLine().getStatusCode(), 500);
+                JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+                assertEquals(json.get("error").get("by").asText(), "zentity");
+                assertEquals(json.get("error").get("type").asText(), "io.zentity.model.ValidationException");
+                assertEquals(json.get("error").get("reason").asText(), "Expected 'number' attribute data type.");
+                assertEquals(json.get("error").get("stack_trace").asText().startsWith("io.zentity.model.ValidationException: Expected 'number' attribute data type."), true);
+                assertEquals(json.get("hits").get("total").asInt(), 0);
+            }
+
+            // Test error_trace=false and queries=true
+            String endpointQueriesNoTrace = "_zentity/resolution/zentity_test_entity_zentity_error";
+            Request postResolutionQueriesNoTrace  = new Request("POST", endpointQueriesNoTrace);
+            postResolutionQueriesNoTrace.addParameter("error_trace", "false");
+            postResolutionQueriesNoTrace.addParameter("queries", "true");
+            postResolutionQueriesNoTrace.setEntity(TEST_PAYLOAD_JOB_ERROR);
+            try {
+                client.performRequest(postResolutionQueriesNoTrace);
+            } catch (ResponseException e) {
+                Response response = e.getResponse();
+                assertEquals(response.getStatusLine().getStatusCode(), 500);
+                JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+                assertEquals(json.get("error").get("by").asText(), "zentity");
+                assertEquals(json.get("error").get("type").asText(), "io.zentity.model.ValidationException");
+                assertEquals(json.get("error").get("reason").asText(), "Expected 'number' attribute data type.");
+                assertEquals(json.get("error").get("stack_trace"), null);
+                assertEquals(json.get("queries").isMissingNode(), false);
+                assertEquals(json.get("hits").get("total").asInt(), 0);
             }
         } finally {
             destroyTestResources(testResourceSet);
