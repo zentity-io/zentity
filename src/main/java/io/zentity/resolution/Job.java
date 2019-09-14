@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1086,32 +1087,41 @@ public class Job {
 
                 // Gather attributes from the doc. Store them in the "_attributes" field of the doc,
                 // and include them in the attributes for subsequent queries.
-                TreeMap<String, JsonNode> docAttributes = new TreeMap<>();
+                TreeMap<String, TreeSet<Value>> docAttributes = new TreeMap<>();
+                TreeMap<String, JsonNode> docIndexFields = new TreeMap<>();
                 for (String indexFieldName : this.input.model().indices().get(indexName).fields().keySet()) {
                     String attributeName = this.input.model().indices().get(indexName).fields().get(indexFieldName).attribute();
                     if (this.input.model().attributes().get(attributeName) == null)
                         continue;
                     String attributeType = this.input.model().attributes().get(attributeName).type();
+                    if (!docAttributes.containsKey(attributeName))
+                        docAttributes.put(attributeName, new TreeSet<>());
                     if (!nextInputAttributes.containsKey(attributeName))
                         nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
 
-                    // Get the attribute value from the doc.
+                    // Get the attribute values from the doc.
                     if (doc.has("fields") && doc.get("fields").has(indexFieldName)) {
 
                         // Get the attribute value from the "fields" field if it exists there.
                         // This would include 'date' attribute types, for example.
                         JsonNode valueNode = doc.get("fields").get(indexFieldName);
-                        if (valueNode.size() > 1) {
-                            docAttributes.put(attributeName, valueNode); // Return multiple values (as an array) in "_attributes"
-                            for (JsonNode vNode : valueNode) {
+                        if (valueNode.isArray()) {
+                            Iterator<JsonNode> valueNodeIterator = valueNode.elements();
+                            while (valueNodeIterator.hasNext()) {
+                                JsonNode vNode = valueNodeIterator.next();
                                 Value value = Value.create(attributeType, vNode);
+                                docAttributes.get(attributeName).add(value);
                                 nextInputAttributes.get(attributeName).values().add(value);
                             }
+                            if (valueNode.size() == 1)
+                                docIndexFields.put(indexFieldName, valueNode.elements().next());
+                            else
+                                docIndexFields.put(indexFieldName, valueNode);
                         } else {
-                            JsonNode vNode = valueNode.get(0); // Return single value (not as an array) in "_attributes"
-                            docAttributes.put(attributeName, vNode);
-                            Value value = Value.create(attributeType, vNode);
+                            Value value = Value.create(attributeType, valueNode);
+                            docAttributes.get(attributeName).add(value);
                             nextInputAttributes.get(attributeName).values().add(value);
+                            docIndexFields.put(indexFieldName, valueNode);
                         }
 
                     } else {
@@ -1130,9 +1140,20 @@ public class Job {
                             else
                                 continue;
                         }
-                        docAttributes.put(attributeName, valueNode);
-                        Value value = Value.create(attributeType, valueNode);
-                        nextInputAttributes.get(attributeName).values().add(value);
+                        docIndexFields.put(indexFieldName, valueNode);
+                        if (valueNode.isArray()) {
+                            Iterator<JsonNode> valueNodeIterator = valueNode.elements();
+                            while (valueNodeIterator.hasNext()) {
+                                JsonNode vNode = valueNodeIterator.next();
+                                Value value = Value.create(attributeType, vNode);
+                                docAttributes.get(attributeName).add(value);
+                                nextInputAttributes.get(attributeName).values().add(value);
+                            }
+                        } else {
+                            Value value = Value.create(attributeType, valueNode);
+                            docAttributes.get(attributeName).add(value);
+                            nextInputAttributes.get(attributeName).values().add(value);
+                        }
                     }
                 }
 
@@ -1146,8 +1167,9 @@ public class Job {
                     if (this.includeAttributes) {
                         ObjectNode docAttributesObjNode = docObjNode.putObject("_attributes");
                         for (String attributeName : docAttributes.keySet()) {
-                            JsonNode values = docAttributes.get(attributeName);
-                            docAttributesObjNode.set(attributeName, values);
+                            ArrayNode docAttributeArrNode = docAttributesObjNode.putArray(attributeName);
+                            for (Value value : docAttributes.get(attributeName))
+                                docAttributeArrNode.add(value.value());
                         }
                     }
 
@@ -1178,7 +1200,6 @@ public class Job {
                             if (attributeType.equals("string") || attributeType.equals("date"))
                                 attributeValueSerialized = "\"" + attributeValueSerialized + "\"";
                             JsonNode attributeValueNode = Json.MAPPER.readTree("{\"attribute_value\":" + attributeValueSerialized + "}").get("attribute_value");
-                            JsonNode indexFieldValueNode = docAttributes.get(attributeName);
                             JsonNode matcherParamsNode;
                             if (input.attributes().containsKey(attributeName))
                                 matcherParamsNode = Json.ORDERED_MAPPER.readTree(Json.ORDERED_MAPPER.writeValueAsString(input.attributes().get(attributeName).params()));
@@ -1189,7 +1210,7 @@ public class Job {
                             ObjectNode docExpDetailsObjNode = Json.ORDERED_MAPPER.createObjectNode();
                             docExpDetailsObjNode.put("attribute", attributeName);
                             docExpDetailsObjNode.put("target_field", indexFieldName);
-                            docExpDetailsObjNode.put("target_value", indexFieldValueNode);
+                            docExpDetailsObjNode.put("target_value", docIndexFields.get(indexFieldName));
                             docExpDetailsObjNode.put("input_value", attributeValueNode);
                             docExpDetailsObjNode.put("input_matcher", matcherName);
                             docExpDetailsObjNode.putPOJO("input_matcher_params", matcherParamsNode);

@@ -55,7 +55,7 @@ public abstract class Value implements ValueInterface {
     }
 
     @Override
-    public Object value() {
+    public JsonNode value() {
         return this.value;
     }
 

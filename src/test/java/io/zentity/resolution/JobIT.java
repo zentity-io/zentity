@@ -534,7 +534,7 @@ public class JobIT extends AbstractITCase {
                 destroyTestEntityModelElasticsearchError();
                 break;
             case TEST_RESOURCES_ZENTITY_ERROR:
-                destroyTestEntityModelElasticsearchError();
+                destroyTestEntityModelZentityError();
                 break;
         }
     }
