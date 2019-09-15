@@ -1,0 +1,53 @@
+{
+  "attributes": {
+    "string": {},
+    "array": {}
+  },
+  "resolvers": {
+    "string": {
+      "attributes": [
+        "string"
+      ]
+    },
+    "array": {
+      "attributes": [
+        "array"
+      ]
+    }
+  },
+  "matchers": {
+    "exact": {
+      "clause": {
+        "term": {
+          "{{ field }}": "{{ value }}"
+        }
+      }
+    }
+  },
+  "indices": {
+    ".zentity_test_index_arrays": {
+      "fields": {
+        "string": {
+          "attribute": "string",
+          "matcher": "exact"
+        },
+        "array_1": {
+          "attribute": "array",
+          "matcher": "exact"
+        },
+        "array_2": {
+          "attribute": "array",
+          "matcher": "exact"
+        },
+        "array_3": {
+          "attribute": "array",
+          "matcher": "exact"
+        },
+        "array_4": {
+          "attribute": "array",
+          "matcher": "exact"
+        }
+      }
+    }
+  }
+}
