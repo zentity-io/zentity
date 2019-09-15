@@ -1105,10 +1105,14 @@ public class Job {
                         // Get the attribute value from the "fields" field if it exists there.
                         // This would include 'date' attribute types, for example.
                         JsonNode valueNode = doc.get("fields").get(indexFieldName);
-                        if (valueNode.isArray()) {
+                        if (valueNode.isNull() || valueNode.isMissingNode()) {
+                            continue;
+                        } else if (valueNode.isArray()) {
                             Iterator<JsonNode> valueNodeIterator = valueNode.elements();
                             while (valueNodeIterator.hasNext()) {
                                 JsonNode vNode = valueNodeIterator.next();
+                                if (vNode.isNull() || valueNode.isMissingNode())
+                                    continue;
                                 Value value = Value.create(attributeType, vNode);
                                 docAttributes.get(attributeName).add(value);
                                 nextInputAttributes.get(attributeName).values().add(value);
@@ -1140,11 +1144,15 @@ public class Job {
                             else
                                 continue;
                         }
+                        if (valueNode.isNull() || valueNode.isMissingNode())
+                            continue;
                         docIndexFields.put(indexFieldName, valueNode);
                         if (valueNode.isArray()) {
                             Iterator<JsonNode> valueNodeIterator = valueNode.elements();
                             while (valueNodeIterator.hasNext()) {
                                 JsonNode vNode = valueNodeIterator.next();
+                                if (vNode.isNull() || valueNode.isMissingNode())
+                                    continue;
                                 Value value = Value.create(attributeType, vNode);
                                 docAttributes.get(attributeName).add(value);
                                 nextInputAttributes.get(attributeName).values().add(value);

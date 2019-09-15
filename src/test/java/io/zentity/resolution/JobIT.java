@@ -21,8 +21,9 @@ public class JobIT extends AbstractITCase {
 
     private final int TEST_RESOURCES_A = 0;
     private final int TEST_RESOURCES_B = 1;
-    private final int TEST_RESOURCES_ELASTICSEARCH_ERROR = 2;
-    private final int TEST_RESOURCES_ZENTITY_ERROR = 3;
+    private final int TEST_RESOURCES_ARRAYS = 3;
+    private final int TEST_RESOURCES_ELASTICSEARCH_ERROR = 4;
+    private final int TEST_RESOURCES_ZENTITY_ERROR = 5;
 
     private final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
@@ -493,16 +494,30 @@ public class JobIT extends AbstractITCase {
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
+    private final StringEntity TEST_PAYLOAD_JOB_ARRAYS = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"string\": [ \"abc\" ],\n" +
+            "    \"array\": [ \"222\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
     private byte[] readFile(String filename) throws IOException {
         InputStream stream = this.getClass().getResourceAsStream("/" + filename);
         return IOUtils.toByteArray(stream);
     }
 
-    private void destroyTestIndices() throws IOException {
-        client.performRequest(new Request("DELETE", ".zentity_test_index_a"));
-        client.performRequest(new Request("DELETE", ".zentity_test_index_b"));
-        client.performRequest(new Request("DELETE", ".zentity_test_index_c"));
-        client.performRequest(new Request("DELETE", ".zentity_test_index_d"));
+    private void destroyTestIndices(int testResourceSet) throws IOException {
+        switch (testResourceSet) {
+            case TEST_RESOURCES_ARRAYS:
+                client.performRequest(new Request("DELETE", ".zentity_test_index_arrays"));
+                break;
+            default:
+                client.performRequest(new Request("DELETE", ".zentity_test_index_a"));
+                client.performRequest(new Request("DELETE", ".zentity_test_index_b"));
+                client.performRequest(new Request("DELETE", ".zentity_test_index_c"));
+                client.performRequest(new Request("DELETE", ".zentity_test_index_d"));
+                break;
+        }
     }
 
     private void destroyTestEntityModelA() throws IOException {
@@ -511,6 +526,10 @@ public class JobIT extends AbstractITCase {
 
     private void destroyTestEntityModelB() throws IOException {
         client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_b"));
+    }
+
+    private void destroyTestEntityModelArrays() throws IOException {
+        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_arrays"));
     }
 
     private void destroyTestEntityModelElasticsearchError() throws IOException {
@@ -522,13 +541,16 @@ public class JobIT extends AbstractITCase {
     }
 
     private void destroyTestResources(int testResourceSet) throws IOException {
-        destroyTestIndices();
+        destroyTestIndices(testResourceSet);
         switch (testResourceSet) {
             case TEST_RESOURCES_A:
                 destroyTestEntityModelA();
                 break;
             case TEST_RESOURCES_B:
                 destroyTestEntityModelB();
+                break;
+            case TEST_RESOURCES_ARRAYS:
+                destroyTestEntityModelArrays();
                 break;
             case TEST_RESOURCES_ELASTICSEARCH_ERROR:
                 destroyTestEntityModelElasticsearchError();
@@ -555,6 +577,14 @@ public class JobIT extends AbstractITCase {
         client.performRequest(postModelB);
     }
 
+    private void prepareTestEntityModelArrays() throws Exception {
+        ByteArrayEntity testEntityModelArrays;
+        testEntityModelArrays = new ByteArrayEntity(readFile("TestEntityModelArrays.json"), ContentType.APPLICATION_JSON);
+        Request postModelArrays = new Request("POST", "_zentity/models/zentity_test_entity_arrays");
+        postModelArrays.setEntity(testEntityModelArrays);
+        client.performRequest(postModelArrays);
+    }
+
     private void prepareTestEntityModelElasticsearchError() throws Exception {
         ByteArrayEntity testEntityModelElasticsearchError;
         testEntityModelElasticsearchError = new ByteArrayEntity(readFile("TestEntityModelElasticsearchError.json"), ContentType.APPLICATION_JSON);
@@ -571,7 +601,7 @@ public class JobIT extends AbstractITCase {
         client.performRequest(postModelZentityError);
     }
 
-    private void prepareTestIndices() throws Exception {
+    private void prepareTestIndices(int testResourceSet) throws Exception {
 
         // Load files
         ByteArrayEntity testIndex;
@@ -580,27 +610,50 @@ public class JobIT extends AbstractITCase {
         // Elasticsearch 7.0.0+ removes mapping types
         Properties props = new Properties();
         props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
-        if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
-            testIndex = new ByteArrayEntity(readFile("TestIndex.json"), ContentType.APPLICATION_JSON);
-            testData = new ByteArrayEntity(readFile("TestData.txt"), ContentType.create("application/x-ndjson"));
-        } else {
-            testIndex = new ByteArrayEntity(readFile("TestIndexElasticsearch6.json"), ContentType.APPLICATION_JSON);
-            testData = new ByteArrayEntity(readFile("TestDataElasticsearch6.txt"), ContentType.create("application/x-ndjson"));
+        switch (testResourceSet) {
+            case TEST_RESOURCES_ARRAYS:
+                if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+                    testIndex = new ByteArrayEntity(readFile("TestIndexArrays.json"), ContentType.APPLICATION_JSON);
+                    testData = new ByteArrayEntity(readFile("TestDataArrays.txt"), ContentType.create("application/x-ndjson"));
+                } else {
+                    testIndex = new ByteArrayEntity(readFile("TestIndexArraysElasticsearch6.json"), ContentType.APPLICATION_JSON);
+                    testData = new ByteArrayEntity(readFile("TestDataArraysElasticsearch6.txt"), ContentType.create("application/x-ndjson"));
+                }
+                break;
+            default:
+                if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
+                    testIndex = new ByteArrayEntity(readFile("TestIndex.json"), ContentType.APPLICATION_JSON);
+                    testData = new ByteArrayEntity(readFile("TestData.txt"), ContentType.create("application/x-ndjson"));
+                } else {
+                    testIndex = new ByteArrayEntity(readFile("TestIndexElasticsearch6.json"), ContentType.APPLICATION_JSON);
+                    testData = new ByteArrayEntity(readFile("TestDataElasticsearch6.txt"), ContentType.create("application/x-ndjson"));
+                }
+                break;
         }
 
         // Create indices
-        Request putTestIndexA = new Request("PUT", ".zentity_test_index_a");
-        putTestIndexA.setEntity(testIndex);
-        client.performRequest(putTestIndexA);
-        Request putTestIndexB = new Request("PUT", ".zentity_test_index_b");
-        putTestIndexB.setEntity(testIndex);
-        client.performRequest(putTestIndexB);
-        Request putTestIndexC = new Request("PUT", ".zentity_test_index_c");
-        putTestIndexC.setEntity(testIndex);
-        client.performRequest(putTestIndexC);
-        Request putTestIndexD = new Request("PUT", ".zentity_test_index_d");
-        putTestIndexD.setEntity(testIndex);
-        client.performRequest(putTestIndexD);
+        switch (testResourceSet) {
+            case TEST_RESOURCES_ARRAYS:
+                Request putTestIndexArrays = new Request("PUT", ".zentity_test_index_arrays");
+                putTestIndexArrays.setEntity(testIndex);
+                client.performRequest(putTestIndexArrays);
+                break;
+            default:
+                Request putTestIndexA = new Request("PUT", ".zentity_test_index_a");
+                putTestIndexA.setEntity(testIndex);
+                client.performRequest(putTestIndexA);
+                Request putTestIndexB = new Request("PUT", ".zentity_test_index_b");
+                putTestIndexB.setEntity(testIndex);
+                client.performRequest(putTestIndexB);
+                Request putTestIndexC = new Request("PUT", ".zentity_test_index_c");
+                putTestIndexC.setEntity(testIndex);
+                client.performRequest(putTestIndexC);
+                Request putTestIndexD = new Request("PUT", ".zentity_test_index_d");
+                putTestIndexD.setEntity(testIndex);
+                client.performRequest(putTestIndexD);
+                break;
+        }
+
 
         // Load data into indices
         Request postBulk = new Request("POST", "_bulk");
@@ -610,13 +663,16 @@ public class JobIT extends AbstractITCase {
     }
 
     private void prepareTestResources(int testResourceSet) throws Exception {
-        prepareTestIndices();
+        prepareTestIndices(testResourceSet);
         switch (testResourceSet) {
             case TEST_RESOURCES_A:
                 prepareTestEntityModelA();
                 break;
             case TEST_RESOURCES_B:
                 prepareTestEntityModelB();
+                break;
+            case TEST_RESOURCES_ARRAYS:
+                prepareTestEntityModelArrays();
                 break;
             case TEST_RESOURCES_ELASTICSEARCH_ERROR:
                 prepareTestEntityModelElasticsearchError();
@@ -1608,6 +1664,45 @@ public class JobIT extends AbstractITCase {
                 assertEquals(json.get("queries").isMissingNode(), false);
                 assertEquals(json.get("hits").get("total").asInt(), 0);
             }
+        } finally {
+            destroyTestResources(testResourceSet);
+        }
+    }
+
+    public void testJobArrays() throws Exception {
+        int testResourceSet = TEST_RESOURCES_ARRAYS;
+        prepareTestResources(testResourceSet);
+        try {
+            String endpoint = "_zentity/resolution/zentity_test_entity_arrays";
+            Set<String> docsExpectedArrays = new TreeSet<>();
+            docsExpectedArrays.add("1,0");
+            docsExpectedArrays.add("2,1");
+
+            Request q1 = new Request("POST", endpoint);
+            q1.addParameter("_explanation", "true");
+            q1.setEntity(TEST_PAYLOAD_JOB_ARRAYS);
+            Response r1 = client.performRequest(q1);
+            JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
+            assertEquals(j1.get("hits").get("total").asInt(), 2);
+            assertEquals(docsExpectedArrays, getActual(j1));
+
+            for (JsonNode doc : j1.get("hits").get("hits")) {
+                String attributesExpected = "";
+                String explanationExpected = "";
+                switch (doc.get("_id").asText()) {
+                    case "1":
+                        attributesExpected = "{\"array\":[\"111\",\"222\",\"333\",\"444\"],\"string\":[\"abc\"]}";
+                        explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]},\"string\":{\"attributes\":[\"string\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_2\",\"target_value\":[\"222\",\"222\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"array\",\"target_field\":\"array_4\",\"target_value\":[\"222\",\"333\",\"444\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"string\",\"target_field\":\"string\",\"target_value\":\"abc\",\"input_value\":\"abc\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
+                        break;
+                    case "2":
+                        attributesExpected = "{\"array\":[\"444\",\"555\"],\"string\":[\"xyz\"]}";
+                        explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_1\",\"target_value\":[\"444\"],\"input_value\":\"444\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
+                        break;
+                }
+                assertEquals(attributesExpected, Json.MAPPER.writeValueAsString(doc.get("_attributes")));
+                assertEquals(explanationExpected, Json.MAPPER.writeValueAsString(doc.get("_explanation")));
+            }
+
         } finally {
             destroyTestResources(testResourceSet);
         }
