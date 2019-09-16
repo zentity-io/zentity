@@ -1,0 +1,27 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings" : {
+    "doc": {
+      "properties": {
+        "array_1": {
+          "type": "keyword"
+        },
+        "array_2": {
+          "type": "keyword"
+        },
+        "array_3": {
+          "type": "keyword"
+        },
+        "array_4": {
+          "type": "keyword"
+        },
+        "string": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
