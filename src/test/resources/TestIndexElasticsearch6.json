@@ -93,6 +93,9 @@
         "type_string": {
           "type": "keyword"
         },
+        "type_string_null": {
+          "type": "keyword"
+        },
         "object": {
           "properties": {
             "a": {

@@ -1094,10 +1094,6 @@ public class Job {
                     if (this.input.model().attributes().get(attributeName) == null)
                         continue;
                     String attributeType = this.input.model().attributes().get(attributeName).type();
-                    if (!docAttributes.containsKey(attributeName))
-                        docAttributes.put(attributeName, new TreeSet<>());
-                    if (!nextInputAttributes.containsKey(attributeName))
-                        nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
 
                     // Get the attribute values from the doc.
                     if (doc.has("fields") && doc.get("fields").has(indexFieldName)) {
@@ -1114,6 +1110,10 @@ public class Job {
                                 if (vNode.isNull() || valueNode.isMissingNode())
                                     continue;
                                 Value value = Value.create(attributeType, vNode);
+                                if (!docAttributes.containsKey(attributeName))
+                                    docAttributes.put(attributeName, new TreeSet<>());
+                                if (!nextInputAttributes.containsKey(attributeName))
+                                    nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
                                 docAttributes.get(attributeName).add(value);
                                 nextInputAttributes.get(attributeName).values().add(value);
                             }
@@ -1123,6 +1123,10 @@ public class Job {
                                 docIndexFields.put(indexFieldName, valueNode);
                         } else {
                             Value value = Value.create(attributeType, valueNode);
+                            if (!docAttributes.containsKey(attributeName))
+                                docAttributes.put(attributeName, new TreeSet<>());
+                            if (!nextInputAttributes.containsKey(attributeName))
+                                nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
                             docAttributes.get(attributeName).add(value);
                             nextInputAttributes.get(attributeName).values().add(value);
                             docIndexFields.put(indexFieldName, valueNode);
@@ -1154,11 +1158,19 @@ public class Job {
                                 if (vNode.isNull() || valueNode.isMissingNode())
                                     continue;
                                 Value value = Value.create(attributeType, vNode);
+                                if (!docAttributes.containsKey(attributeName))
+                                    docAttributes.put(attributeName, new TreeSet<>());
+                                if (!nextInputAttributes.containsKey(attributeName))
+                                    nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
                                 docAttributes.get(attributeName).add(value);
                                 nextInputAttributes.get(attributeName).values().add(value);
                             }
                         } else {
                             Value value = Value.create(attributeType, valueNode);
+                            if (!docAttributes.containsKey(attributeName))
+                                docAttributes.put(attributeName, new TreeSet<>());
+                            if (!nextInputAttributes.containsKey(attributeName))
+                                nextInputAttributes.put(attributeName, new Attribute(attributeName, attributeType));
                             docAttributes.get(attributeName).add(value);
                             nextInputAttributes.get(attributeName).values().add(value);
                         }

@@ -1,5 +1,6 @@
 package io.zentity.resolution;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import org.apache.commons.io.IOUtils;
@@ -703,6 +704,14 @@ public class JobIT extends AbstractITCase {
             Response response = client.performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 40);
+            JsonPointer pathAttributes = JsonPointer.compile("/_attributes");
+            JsonPointer pathNull = JsonPointer.compile("/_attributes/attribute_type_string_null");
+            JsonPointer pathUnused = JsonPointer.compile("/_attributes/attribute_type_string_unused");
+            for (JsonNode doc : json.get("hits").get("hits")) {
+                assertEquals(doc.at(pathAttributes).isMissingNode(), false);
+                assertEquals(doc.at(pathNull).isMissingNode(), true);
+                assertEquals(doc.at(pathUnused).isMissingNode(), true);
+            }
         } finally {
             destroyTestResources(testResourceSet);
         }
@@ -1692,7 +1701,7 @@ public class JobIT extends AbstractITCase {
                 switch (doc.get("_id").asText()) {
                     case "1":
                         attributesExpected = "{\"array\":[\"111\",\"222\",\"333\",\"444\"],\"string\":[\"abc\"]}";
-                        explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]},\"string\":{\"attributes\":[\"string\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_2\",\"target_value\":[\"222\",\"222\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"array\",\"target_field\":\"array_4\",\"target_value\":[\"222\",\"333\",\"444\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"string\",\"target_field\":\"string\",\"target_value\":\"abc\",\"input_value\":\"abc\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
+                        explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]},\"string\":{\"attributes\":[\"string\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_2\",\"target_value\":[\"222\",null,\"222\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"array\",\"target_field\":\"array_4\",\"target_value\":[\"222\",\"333\",\"444\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"string\",\"target_field\":\"string\",\"target_value\":\"abc\",\"input_value\":\"abc\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
                         break;
                     case "2":
                         attributesExpected = "{\"array\":[\"444\",\"555\"],\"string\":[\"xyz\"]}";
