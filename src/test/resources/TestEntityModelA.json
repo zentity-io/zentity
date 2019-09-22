@@ -27,6 +27,9 @@
     "attribute_type_string": {
       "type": "string"
     },
+    "attribute_type_string_null": {
+      "type": "string"
+    },
     "attribute_object": {
       "type": "string"
     },
@@ -98,6 +101,11 @@
     "resolver_type_string": {
       "attributes": [
         "attribute_type_string"
+      ]
+    },
+    "resolver_type_string_null": {
+      "attributes": [
+        "attribute_type_string_null"
       ]
     },
     "resolver_object": {
@@ -205,6 +213,10 @@
           "attribute": "attribute_type_string",
           "matcher": "matcher_b"
         },
+        "type_string_null": {
+          "attribute": "attribute_type_string_null",
+          "matcher": "matcher_b"
+        },
         "object.a.b.c.keyword": {
           "attribute": "attribute_object",
           "matcher": "matcher_b"
@@ -275,6 +287,10 @@
         },
         "type_string": {
           "attribute": "attribute_type_string",
+          "matcher": "matcher_b"
+        },
+        "type_string_null": {
+          "attribute": "attribute_type_string_null",
           "matcher": "matcher_b"
         },
         "object.a.b.c.keyword": {
@@ -349,6 +365,10 @@
           "attribute": "attribute_type_string",
           "matcher": "matcher_b"
         },
+        "type_string_null": {
+          "attribute": "attribute_type_string_null",
+          "matcher": "matcher_b"
+        },
         "object.a.b.c.keyword": {
           "attribute": "attribute_object",
           "matcher": "matcher_b"
@@ -419,6 +439,10 @@
         },
         "type_string": {
           "attribute": "attribute_type_string",
+          "matcher": "matcher_b"
+        },
+        "type_string_null": {
+          "attribute": "attribute_type_string_null",
           "matcher": "matcher_b"
         },
         "object.a.b.c.keyword": {
