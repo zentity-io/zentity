@@ -70,10 +70,10 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
             IndexNameExpressionResolver indexNameExpressionResolver,
             Supplier<DiscoveryNodes> nodesInCluster) {
         List<RestHandler> handlers = new ArrayList<RestHandler>() {{
-            new HomeAction(settings, restController);
-            new ModelsAction(settings, restController);
-            new ResolutionAction(settings, restController);
-            new SetupAction(settings, restController);
+            new HomeAction(restController);
+            new ModelsAction(restController);
+            new ResolutionAction(restController);
+            new SetupAction(restController);
         }};
         return handlers;
     }

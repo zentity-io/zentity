@@ -15,7 +15,6 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -38,8 +37,7 @@ public class ModelsAction extends BaseRestHandler {
     public static final String INDEX_NAME = ".zentity-models";
 
     @Inject
-    public ModelsAction(Settings settings, RestController controller) {
-        super(settings);
+    public ModelsAction(RestController controller) {
         controller.registerHandler(GET, "_zentity/models", this);
         controller.registerHandler(GET, "_zentity/models/{entity_type}", this);
         controller.registerHandler(POST, "_zentity/models/{entity_type}", this);

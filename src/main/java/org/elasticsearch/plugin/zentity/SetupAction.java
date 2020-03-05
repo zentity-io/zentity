@@ -48,8 +48,7 @@ public class SetupAction extends BaseRestHandler {
             "}";
 
     @Inject
-    public SetupAction(Settings settings, RestController controller) {
-        super(settings);
+    public SetupAction(RestController controller) {
         controller.registerHandler(POST, "_zentity/_setup", this);
     }
 

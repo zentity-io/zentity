@@ -121,7 +121,7 @@
             <run-script script="@{home}/bin/elasticsearch"
                         spawn="@{spawn}">
                 <nested>
-                    <arg value="-Epidfile=@{es.pidfile}"/>
+                    <arg value="-p=@{es.pidfile}"/>
                     <arg value="-Ecluster.name=@{es.cluster.name}"/>
                     <arg value="-Ehttp.port=@{es.http.port}"/>
                     <arg value="-Etransport.tcp.port=@{es.transport.tcp.port}"/>

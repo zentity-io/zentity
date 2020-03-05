@@ -7,7 +7,6 @@ import io.zentity.resolution.input.Input;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestController;
@@ -19,8 +18,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 public class ResolutionAction extends BaseRestHandler {
 
     @Inject
-    ResolutionAction(Settings settings, RestController controller) {
-        super(settings);
+    ResolutionAction(RestController controller) {
         controller.registerHandler(POST, "_zentity/resolution", this);
         controller.registerHandler(POST, "_zentity/resolution/{entity_type}", this);
     }
