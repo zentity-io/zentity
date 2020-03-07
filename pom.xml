@@ -16,7 +16,7 @@
         <zentity.website>https://zentity.io</zentity.website>
         <zentity.version>1.5.1</zentity.version>
         <!-- dependency versions -->
-        <elasticsearch.version>7.6.0</elasticsearch.version>
+        <elasticsearch.version>7.6.1</elasticsearch.version>
         <jackson.core.version>2.9.10</jackson.core.version>
         <jackson.databind.version>2.9.10.3</jackson.databind.version>
         <jdk.version>1.11</jdk.version>

@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -61,11 +62,22 @@ public class Job {
     public static final boolean DEFAULT_INCLUDE_EXPLANATION = false;
     public static final boolean DEFAULT_INCLUDE_HITS = true;
     public static final boolean DEFAULT_INCLUDE_QUERIES = false;
+    public static final boolean DEFAULT_INCLUDE_SEQ_NO_PRIMARY_TERM = false;
     public static final boolean DEFAULT_INCLUDE_SOURCE = true;
+    public static final boolean DEFAULT_INCLUDE_VERSION = false;
     public static final int DEFAULT_MAX_DOCS_PER_QUERY = 1000;
     public static final int DEFAULT_MAX_HOPS = 100;
+    public static final String DEFAULT_MAX_TIME_PER_QUERY = "10s";
     public static final boolean DEFAULT_PRETTY = false;
     public static final boolean DEFAULT_PROFILE = false;
+
+    // Constants (optional search parameters)
+    public static Boolean DEFAULT_SEARCH_ALLOW_PARTIAL_SEARCH_RESULTS = null;
+    public static Integer DEFAULT_SEARCH_BATCHED_REDUCE_SIZE = null;
+    public static Integer DEFAULT_SEARCH_MAX_CONCURRENT_SHARD_REQUESTS = null;
+    public static Integer DEFAULT_SEARCH_PRE_FILTER_SHARD_SIZE = null;
+    public static String DEFAULT_SEARCH_PREFERENCE = null;
+    public static Boolean DEFAULT_SEARCH_REQUEST_CACHE = null;
 
     // Job configuration
     private Input input;
@@ -74,11 +86,22 @@ public class Job {
     private boolean includeExplanation = DEFAULT_INCLUDE_EXPLANATION;
     private boolean includeHits = DEFAULT_INCLUDE_HITS;
     private boolean includeQueries = DEFAULT_INCLUDE_QUERIES;
+    private boolean includeSeqNoPrimaryTerm = DEFAULT_INCLUDE_SEQ_NO_PRIMARY_TERM;
     private boolean includeSource = DEFAULT_INCLUDE_SOURCE;
+    private boolean includeVersion = DEFAULT_INCLUDE_VERSION;
     private int maxDocsPerQuery = DEFAULT_MAX_DOCS_PER_QUERY;
     private int maxHops = DEFAULT_MAX_HOPS;
+    private String maxTimePerQuery = DEFAULT_MAX_TIME_PER_QUERY;
     private boolean pretty = DEFAULT_PRETTY;
     private boolean profile = DEFAULT_PROFILE;
+
+    // Job configuration (optional search parameters)
+    private Boolean searchAllowPartialSearchResults = DEFAULT_SEARCH_ALLOW_PARTIAL_SEARCH_RESULTS;
+    private Integer searchBatchedReduceSize = DEFAULT_SEARCH_BATCHED_REDUCE_SIZE;
+    private Integer searchMaxConcurrentShardRequests = DEFAULT_SEARCH_MAX_CONCURRENT_SHARD_REQUESTS;
+    private Integer searchPreFilterShardSize = DEFAULT_SEARCH_PRE_FILTER_SHARD_SIZE;
+    private String searchPreference = DEFAULT_SEARCH_PREFERENCE;
+    private Boolean searchRequestCache = DEFAULT_SEARCH_REQUEST_CACHE;
 
     // Job state
     private Map<String, Attribute> attributes = new TreeMap<>();
@@ -581,12 +604,30 @@ public class Job {
         this.includeQueries = includeQueries;
     }
 
+    public Boolean includeSeqNoPrimaryTerm() {
+        return this.includeSeqNoPrimaryTerm;
+    }
+
+    public void includeSeqNoPrimaryTerm(Boolean includeSeqNoPrimaryTerm) { this.includeSeqNoPrimaryTerm = includeSeqNoPrimaryTerm; }
+
     public boolean includeSource() {
         return this.includeSource;
     }
 
     public void includeSource(boolean includeSource) {
         this.includeSource = includeSource;
+    }
+
+    public Boolean includeVersion() { return this.includeVersion;  }
+
+    public void includeVersion(Boolean includeVersion) { this.includeVersion = includeVersion; }
+
+    public int maxDocsPerQuery() {
+        return this.maxDocsPerQuery;
+    }
+
+    public void maxDocsPerQuery(int maxDocsPerQuery) {
+        this.maxDocsPerQuery = maxDocsPerQuery;
     }
 
     public int maxHops() {
@@ -597,13 +638,9 @@ public class Job {
         this.maxHops = maxHops;
     }
 
-    public int maxDocsPerQuery() {
-        return this.maxDocsPerQuery;
-    }
+    public String maxTimePerQuery() { return this.maxTimePerQuery; }
 
-    public void maxDocsPerQuery(int maxDocsPerQuery) {
-        this.maxDocsPerQuery = maxDocsPerQuery;
-    }
+    public void maxTimePerQuery(String maxTimePerQuery) { this.maxTimePerQuery = maxTimePerQuery; }
 
     public boolean pretty() {
         return this.pretty;
@@ -620,6 +657,41 @@ public class Job {
     public void profile(Boolean profile) {
         this.profile = profile;
     }
+
+    public Boolean searchAllowPartialSearchResults() {
+        return this.searchAllowPartialSearchResults;
+    }
+
+    public void searchAllowPartialSearchResults(Boolean searchAllowPartialSearchResults) { this.searchAllowPartialSearchResults = searchAllowPartialSearchResults; }
+
+    public Integer searchBatchedReduceSize() {
+        return this.searchBatchedReduceSize;
+    }
+
+    public void searchBatchedReduceSize(Integer searchBatchedReduceSize) { this.searchBatchedReduceSize = searchBatchedReduceSize; }
+
+    public Integer searchMaxConcurrentShardRequests() {
+        return this.searchMaxConcurrentShardRequests;
+    }
+
+    public void searchMaxConcurrentShardRequests(Integer searchMaxConcurrentShardRequests) { this.searchMaxConcurrentShardRequests = searchMaxConcurrentShardRequests; }
+
+    public Integer searchPreFilterShardSize() {
+        return this.searchPreFilterShardSize;
+    }
+
+    public void searchPreFilterShardSize(Integer searchPreFilterShardSize) { this.searchPreFilterShardSize = searchPreFilterShardSize; }
+
+    public String searchPreference() {
+        return this.searchPreference;
+    }
+
+    public void searchPreference(String searchPreference) { this.searchPreference = searchPreference; }
+    public Boolean searchRequestCache() {
+        return this.searchRequestCache;
+    }
+
+    public void searchRequestCache(Boolean searchRequestCache) { this.searchRequestCache = searchRequestCache; }
 
     public Input input() {
         return this.input;
@@ -653,7 +725,22 @@ public class Job {
             searchSourceBuilder.parseXContent(parser);
         }
         SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client, SearchAction.INSTANCE);
-        return searchRequestBuilder.setIndices(indexName).setSource(searchSourceBuilder).execute().actionGet();
+        searchRequestBuilder.setIndices(indexName).setSource(searchSourceBuilder);
+        if (this.searchAllowPartialSearchResults != null)
+            searchRequestBuilder.setAllowPartialSearchResults(this.searchAllowPartialSearchResults);
+        if (this.searchBatchedReduceSize != null)
+            searchRequestBuilder.setBatchedReduceSize(this.searchBatchedReduceSize);
+        if (this.searchMaxConcurrentShardRequests != null)
+            searchRequestBuilder.setMaxConcurrentShardRequests(this.searchMaxConcurrentShardRequests);
+        if (this.searchPreFilterShardSize != null)
+            searchRequestBuilder.setPreFilterShardSize(this.searchPreFilterShardSize);
+        if (this.searchPreference != null)
+            searchRequestBuilder.setPreference(this.searchPreference);
+        if (this.searchRequestCache != null)
+            searchRequestBuilder.setRequestCache(this.searchRequestCache);
+        if (this.maxTimePerQuery != null)
+            searchRequestBuilder.setTimeout(TimeValue.parseTimeValue(this.maxTimePerQuery, "timeout"));
+        return searchRequestBuilder.execute().actionGet();
     }
 
     /**
@@ -1018,6 +1105,10 @@ public class Job {
             // Construct the "profile" clause.
             if (this.profile)
                 topLevelClauses.add("\"profile\":true");
+            if (this.includeSeqNoPrimaryTerm)
+                topLevelClauses.add("\"seq_no_primary_term\":true");
+            if (this.includeVersion)
+                topLevelClauses.add("\"version\":true");
 
             // Construct the final query.
             query = "{" + String.join(",", topLevelClauses) + "}";
