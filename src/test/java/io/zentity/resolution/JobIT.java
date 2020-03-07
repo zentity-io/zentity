@@ -1716,4 +1716,62 @@ public class JobIT extends AbstractITCase {
             destroyTestResources(testResourceSet);
         }
     }
+
+    public void testJobSearchParams() throws Exception {
+        int testResourceSet = TEST_RESOURCES_A;
+        prepareTestResources(testResourceSet);
+        try {
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_ATTRIBUTES);
+            postResolution.addParameter("_seq_no_primary_term", "true");
+            postResolution.addParameter("_version", "true");
+            postResolution.addParameter("max_time_per_query", "5s");
+            postResolution.addParameter("search.allow_partial_search_results", "true");
+            postResolution.addParameter("search.batched_reduce_size", "5");
+            postResolution.addParameter("search.max_concurrent_shard_requests", "5");
+            postResolution.addParameter("search.pre_filter_shard_size", "5");
+            postResolution.addParameter("search.request_cache", "true");
+            Response response = client.performRequest(postResolution);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 6);
+            Set<String> docsExpected = new TreeSet<>();
+            docsExpected.add("a0,0");
+            docsExpected.add("b0,0");
+            docsExpected.add("c0,1");
+            docsExpected.add("a1,2");
+            docsExpected.add("b1,3");
+            docsExpected.add("c1,4");
+            assertEquals(docsExpected, getActual(json));
+            for (JsonNode doc : json.get("hits").get("hits")) {
+                assertTrue(doc.has("_primary_term"));
+                assertTrue(doc.has("_seq_no"));
+                assertTrue(doc.has("_version"));
+            }
+
+            String endpoint2 = "_zentity/resolution/zentity_test_entity_a";
+            Request postResolution2 = new Request("POST", endpoint2);
+            postResolution2.setEntity(TEST_PAYLOAD_JOB_ATTRIBUTES);
+            postResolution2.addParameter("_seq_no_primary_term", "false");
+            postResolution2.addParameter("_version", "false");
+            Response response2 = client.performRequest(postResolution2);
+            JsonNode json2 = Json.MAPPER.readTree(response2.getEntity().getContent());
+            assertEquals(json2.get("hits").get("total").asInt(), 6);
+            Set<String> docsExpected2 = new TreeSet<>();
+            docsExpected2.add("a0,0");
+            docsExpected2.add("b0,0");
+            docsExpected2.add("c0,1");
+            docsExpected2.add("a1,2");
+            docsExpected2.add("b1,3");
+            docsExpected2.add("c1,4");
+            assertEquals(docsExpected2, getActual(json2));
+            for (JsonNode doc : json2.get("hits").get("hits")) {
+                assertFalse(doc.has("_primary_term"));
+                assertFalse(doc.has("_seq_no"));
+                assertFalse(doc.has("_version"));
+            }
+        } finally {
+            destroyTestResources(testResourceSet);
+        }
+    }
 }
