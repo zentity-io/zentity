@@ -62,6 +62,7 @@ public class Job {
     public static final boolean DEFAULT_INCLUDE_EXPLANATION = false;
     public static final boolean DEFAULT_INCLUDE_HITS = true;
     public static final boolean DEFAULT_INCLUDE_QUERIES = false;
+    public static final boolean DEFAULT_INCLUDE_SCORE = false;
     public static final boolean DEFAULT_INCLUDE_SEQ_NO_PRIMARY_TERM = false;
     public static final boolean DEFAULT_INCLUDE_SOURCE = true;
     public static final boolean DEFAULT_INCLUDE_VERSION = false;
@@ -86,6 +87,7 @@ public class Job {
     private boolean includeExplanation = DEFAULT_INCLUDE_EXPLANATION;
     private boolean includeHits = DEFAULT_INCLUDE_HITS;
     private boolean includeQueries = DEFAULT_INCLUDE_QUERIES;
+    private boolean includeScore = DEFAULT_INCLUDE_SCORE;
     private boolean includeSeqNoPrimaryTerm = DEFAULT_INCLUDE_SEQ_NO_PRIMARY_TERM;
     private boolean includeSource = DEFAULT_INCLUDE_SOURCE;
     private boolean includeVersion = DEFAULT_INCLUDE_VERSION;
@@ -603,6 +605,12 @@ public class Job {
     public void includeQueries(boolean includeQueries) {
         this.includeQueries = includeQueries;
     }
+
+    public Boolean includeScore() {
+        return this.includeScore;
+    }
+
+    public void includeScore(Boolean includeScore) { this.includeScore = includeScore; }
 
     public Boolean includeSeqNoPrimaryTerm() {
         return this.includeSeqNoPrimaryTerm;
