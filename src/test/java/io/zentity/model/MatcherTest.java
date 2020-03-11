@@ -11,7 +11,7 @@ public class MatcherTest {
     @Test
     public void testValid() throws Exception {
         new Matcher("matcher_name", VALID_OBJECT);
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}}}");
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":0.5}");
     }
 
     @Test(expected = ValidationException.class)
@@ -61,6 +61,41 @@ public class MatcherTest {
     @Test(expected = ValidationException.class)
     public void testInvalidClauseTypeString() throws Exception {
         new Matcher("matcher_name", "{\"clause\":\"foobar\"}");
+    }
+
+    ////  "matchers".MATCHER_NAME."quality"  ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    public void testValidQualityValue() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":0.0}");
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":0.5}");
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":1.0}");
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":null}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeArray() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":[]}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeBoolean() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":true}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeInteger() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":1}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeFloatNegative() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":-1.0}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeObject() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":{}}");
     }
 
 }

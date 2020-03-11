@@ -24,6 +24,7 @@ public class IndexField {
     private JsonPointer pathParent;
     private String attribute;
     private String matcher;
+    private Float quality;
 
     public IndexField(String index, String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -82,6 +83,11 @@ public class IndexField {
             this.pathParent = JsonPointer.compile("/" + String.join("/", Arrays.copyOf(parts, parts.length - 1)));
     }
 
+    public void quality(JsonNode value) throws ValidationException {
+        validateQuality(value);
+        this.quality = value.floatValue();
+    }
+
     private void validateName(String value) throws ValidationException {
         if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'indices." + this.index + "' has a field with an empty name.");
@@ -106,6 +112,13 @@ public class IndexField {
             throw new ValidationException("'indices." + this.index + "." + this.name + "' must be an object.");
         if (object.size() == 0)
             throw new ValidationException("'indices." + this.index + "." + this.name + "' is empty.");
+    }
+
+    private void validateQuality(JsonNode value) throws ValidationException {
+        if (!value.isNull() && !value.isFloatingPointNumber())
+            throw new ValidationException("'indices." + this.index + "." + this.name + ".quality' must be a floating point number.");
+        if (value.isFloatingPointNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
+            throw new ValidationException("'indices." + this.index + "." + this.name + ".quality' must be in the range of 0.0 - 1.0.");
     }
 
     /**
@@ -141,6 +154,9 @@ public class IndexField {
                     break;
                 case "matcher":
                     this.matcher(value);
+                    break;
+                case "quality":
+                    this.quality(value);
                     break;
                 default:
                     throw new ValidationException("'indices." + this.index + "." + this.name + "." + name + "' is not a recognized field.");

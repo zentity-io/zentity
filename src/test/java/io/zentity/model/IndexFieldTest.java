@@ -69,6 +69,11 @@ public class IndexFieldTest {
 
     ////  "indices".INDEX_NAME."fields".INDEX_FIELD_NAME."matcher"  ////////////////////////////////////////////////////
 
+    @Test
+    public void testValidMatcherMissing() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\"}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidMatcherEmpty() throws Exception {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"matcher\":\" \"}");
@@ -97,5 +102,40 @@ public class IndexFieldTest {
     @Test(expected = ValidationException.class)
     public void testInvalidMatcherTypeObject() throws Exception {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"matcher\":{}}");
+    }
+
+    ////  "indices".INDEX_NAME."fields".INDEX_FIELD_NAME."quality"  ////////////////////////////////////////////////////
+
+    @Test
+    public void testValidQualityValue() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0.0}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0.5}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":1.0}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":null}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeArray() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":[]}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeBoolean() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":true}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeInteger() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":1}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeFloatNegative() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":-1.0}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityTypeObject() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":{}}");
     }
 }

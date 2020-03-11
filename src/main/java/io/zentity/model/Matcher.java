@@ -23,6 +23,7 @@ public class Matcher {
     private final String name;
     private String clause;
     private Map<String, String> params = new TreeMap<>();
+    private Float quality;
     private Map<String, Pattern> variables = new TreeMap<>();
 
     public Matcher(String name, JsonNode json) throws ValidationException, JsonProcessingException {
@@ -67,6 +68,10 @@ public class Matcher {
         return this.params;
     }
 
+    public Float quality() {
+        return this.quality;
+    }
+
     public Map<String, Pattern> variables() {
         return this.variables;
     }
@@ -75,6 +80,11 @@ public class Matcher {
         validateClause(value);
         this.clause = Json.MAPPER.writeValueAsString(value);
         this.variables = parseVariables(this.clause);
+    }
+
+    public void quality(JsonNode value) throws ValidationException {
+        validateQuality(value);
+        this.quality = value.floatValue();
     }
 
     private void validateName(String value) throws ValidationException {
@@ -96,12 +106,21 @@ public class Matcher {
             throw new ValidationException("'matchers." + this.name + "' is empty.");
     }
 
+    private void validateQuality(JsonNode value) throws ValidationException {
+        if (!value.isNull() && !value.isFloatingPointNumber())
+            throw new ValidationException("'matchers." + this.name + ".quality' must be a floating point number.");
+        if (value.isFloatingPointNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
+            throw new ValidationException("'matchers." + this.name + ".quality' must be in the range of 0.0 - 1.0.");
+    }
+
     /**
      * Deserialize, validate, and hold the state of a matcher object of an entity model.
      * Expected structure of the json variable:
      * <pre>
      * {
-     *   "clause": MATCHER_CLAUSE
+     *   "clause": MATCHER_CLAUSE,
+     *   "params": MATCHER_PARAMS,
+     *   "quality": MATCHER_QUALITY
      * }
      * </pre>
      *
@@ -144,6 +163,9 @@ public class Matcher {
                         else
                             this.params().put(paramField, paramValue.asText());
                     }
+                    break;
+                case "quality":
+                    this.quality(value);
                     break;
                 default:
                     throw new ValidationException("'matchers." + this.name + "." + name + "' is not a recognized field.");
