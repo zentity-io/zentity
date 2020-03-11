@@ -21,6 +21,7 @@ public class Attribute {
 
     private final String name;
     private Map<String, String> params = new TreeMap<>();
+    private Float score;
     private String type = "string";
 
     public Attribute(String name, JsonNode json) throws ValidationException, JsonProcessingException {
@@ -47,6 +48,11 @@ public class Attribute {
         return this.type;
     }
 
+    public void score(JsonNode value) throws ValidationException {
+        validateScore(value);
+        this.score = value.floatValue();
+    }
+
     public void type(JsonNode value) throws ValidationException {
         validateType(value);
         this.type = value.textValue();
@@ -55,6 +61,13 @@ public class Attribute {
     private void validateName(String value) throws ValidationException {
         if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'attributes' has an attribute with empty name.");
+    }
+
+    private void validateScore(JsonNode value) throws ValidationException {
+        if (!value.isNull() && !value.isFloatingPointNumber())
+            throw new ValidationException("'attributes." + this.name + ".score' must be a floating point number.");
+        if (value.isFloatingPointNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
+            throw new ValidationException("'attributes." + this.name + ".score' must be in the range of 0.0 - 1.0.");
     }
 
     /**
@@ -139,6 +152,9 @@ public class Attribute {
                         else
                             this.params().put(paramField, paramValue.asText());
                     }
+                    break;
+                case "score":
+                    this.score(value);
                     break;
                 default:
                     throw new ValidationException("'attributes." + this.name + "." + name + "' is not a recognized field.");
