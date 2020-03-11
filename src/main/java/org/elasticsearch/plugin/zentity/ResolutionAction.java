@@ -40,6 +40,7 @@ public class ResolutionAction extends BaseRestHandler {
         Boolean includeExplanation = restRequest.paramAsBoolean("_explanation", Job.DEFAULT_INCLUDE_EXPLANATION);
         Boolean includeHits = restRequest.paramAsBoolean("hits", Job.DEFAULT_INCLUDE_HITS);
         Boolean includeQueries = restRequest.paramAsBoolean("queries", Job.DEFAULT_INCLUDE_QUERIES);
+        Boolean includeScore = restRequest.paramAsBoolean("_score", Job.DEFAULT_INCLUDE_SCORE);
         Boolean includeSeqNoPrimaryTerm = restRequest.paramAsBoolean("_seq_no_primary_term", Job.DEFAULT_INCLUDE_SEQ_NO_PRIMARY_TERM);
         Boolean includeSource = restRequest.paramAsBoolean("_source", Job.DEFAULT_INCLUDE_SOURCE);
         Boolean includeVersion = restRequest.paramAsBoolean("_version", Job.DEFAULT_INCLUDE_VERSION);
@@ -94,6 +95,7 @@ public class ResolutionAction extends BaseRestHandler {
                 job.includeExplanation(includeExplanation);
                 job.includeHits(includeHits);
                 job.includeQueries(includeQueries);
+                job.includeScore(includeScore);
                 job.includeSeqNoPrimaryTerm(includeSeqNoPrimaryTerm);
                 job.includeSource(includeSource);
                 job.includeVersion(includeVersion);
