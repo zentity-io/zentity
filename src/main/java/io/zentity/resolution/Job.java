@@ -1287,7 +1287,7 @@ public class Job {
                     }
 
                     // Determine why any matching documents matched if including "_score" or "_explanation".
-                    Map<String, Float> bestAttributeConfidenceScores = new HashMap<>();
+                    Map<String, Double> bestAttributeConfidenceScores = new HashMap<>();
                     if (namedFilters && docObjNode.has("matched_queries") && docObjNode.get("matched_queries").size() > 0) {
                         ObjectNode docExpObjNode = docObjNode.putObject("_explanation");
                         ObjectNode docExpResolversObjNode = docExpObjNode.putObject("resolvers");
@@ -1304,7 +1304,7 @@ public class Job {
 
                         // Create tuple-like objects that describe which attribute values matched which
                         // index field values using which matchers and matcher parameters.
-                        Map<String, ArrayList<Float>> attributeConfidenceScores = new HashMap<>();
+                        Map<String, ArrayList<Double>> attributeConfidenceScores = new HashMap<>();
                         for (String mq : matchedQueries) {
                             String[] _name = COLON.split(mq);
                             String attributeName = _name[0];
@@ -1334,16 +1334,16 @@ public class Job {
 
                             // Calculate the attribute confidence score for this match.
                             if (this.includeScore) {
-                                Float abs = this.input().model().attributes().get(attributeName).score();
-                                Float mqs = this.input().model().matchers().get(matcherName).quality();
-                                Float iqs = this.input().model().indices().get(indexName).fields().get(indexFieldName).quality();
+                                Double abs = this.input().model().attributes().get(attributeName).score();
+                                Double mqs = this.input().model().matchers().get(matcherName).quality();
+                                Double iqs = this.input().model().indices().get(indexName).fields().get(indexFieldName).quality();
                                 if (abs == null)
                                     continue;
-                                Float score = abs;
+                                Double score = abs;
                                 if (mqs != null)
-                                    score = ((score - (float) 0.5) / (score - (float) 0.0) * ((score * mqs) - score)) + score;
+                                    score = ((score - 0.5) / (score - 0.0) * ((score * mqs) - score)) + score;
                                 if (iqs != null)
-                                    score = ((score - (float) 0.5) / (score - (float) 0.0) * ((score * iqs) - score)) + score;
+                                    score = ((score - 0.5) / (score - 0.0) * ((score * iqs) - score)) + score;
                                 attributeConfidenceScores.putIfAbsent(attributeName, new ArrayList<>());
                                 attributeConfidenceScores.get(attributeName).add(score);
                             }
@@ -1354,7 +1354,7 @@ public class Job {
                             // Deconflict multiple attribute confidence scores for the same attribute
                             // by selecting the highest score.
                             for (String attributeName : attributeConfidenceScores.keySet()) {
-                                Float best = Collections.max(attributeConfidenceScores.get(attributeName));
+                                Double best = Collections.max(attributeConfidenceScores.get(attributeName));
                                 bestAttributeConfidenceScores.put(attributeName, best);
                             }
 
@@ -1362,19 +1362,19 @@ public class Job {
                             // conflation of probability distributions.
                             //
                             // https://arxiv.org/pdf/0808.1808v4.pdf
-                            Float documentConfidenceScore;
-                            ArrayList<Float> scores = new ArrayList<>();
-                            ArrayList<Float> scoresInverse = new ArrayList<>();
+                            Double documentConfidenceScore;
+                            ArrayList<Double> scores = new ArrayList<>();
+                            ArrayList<Double> scoresInverse = new ArrayList<>();
                             for (String attributeName : bestAttributeConfidenceScores.keySet()) {
-                                Float score = bestAttributeConfidenceScores.get(attributeName);
+                                Double score = bestAttributeConfidenceScores.get(attributeName);
                                 if (score == null)
                                     continue;
                                 scores.add(score);
-                                scoresInverse.add((float) 1.0 - score);
+                                scoresInverse.add(1.0 - score);
                             }
                             if (scores.size() > 0) {
-                                Float productScores = scores.stream().reduce((float) 1.0, (a, b) -> a * b);
-                                Float productScoresInverse = scoresInverse.stream().reduce((float) 1.0, (a, b) -> a * b);
+                                Double productScores = scores.stream().reduce(1.0, (a, b) -> a * b);
+                                Double productScoresInverse = scoresInverse.stream().reduce(1.0, (a, b) -> a * b);
                                 documentConfidenceScore = productScores / (productScores + productScoresInverse);
                                 docObjNode.put("_score", documentConfidenceScore);
                             }

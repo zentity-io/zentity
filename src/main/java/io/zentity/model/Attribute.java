@@ -21,7 +21,7 @@ public class Attribute {
 
     private final String name;
     private Map<String, String> params = new TreeMap<>();
-    private Float score;
+    private Double score;
     private String type = "string";
 
     public Attribute(String name, JsonNode json) throws ValidationException, JsonProcessingException {
@@ -44,7 +44,7 @@ public class Attribute {
         return this.params;
     }
 
-    public Float score() {
+    public Double score() {
         return this.score;
     }
 
@@ -54,7 +54,7 @@ public class Attribute {
 
     public void score(JsonNode value) throws ValidationException {
         validateScore(value);
-        this.score = value.floatValue();
+        this.score = value.doubleValue();
     }
 
     public void type(JsonNode value) throws ValidationException {
