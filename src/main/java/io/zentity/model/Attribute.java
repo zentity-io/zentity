@@ -44,6 +44,10 @@ public class Attribute {
         return this.params;
     }
 
+    public Float score() {
+        return this.score;
+    }
+
     public String type() {
         return this.type;
     }
