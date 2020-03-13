@@ -104,6 +104,7 @@ public class Job {
     private boolean failed = false;
     private List<String> hits = new ArrayList<>();
     private int hop = 0;
+    private Map<String, Map<String, Map<String, Map<String, Double>>>> matchScores = new HashMap<>();
     private Set<String> missingIndices = new TreeSet<>();
     private List<String> queries = new ArrayList<>();
     private boolean ran = false;
@@ -552,6 +553,7 @@ public class Job {
         this.failed = false;
         this.hits = new ArrayList<>();
         this.hop = 0;
+        this.matchScores = new HashMap<>();
         this.missingIndices = new TreeSet<>();
         this.queries = new ArrayList<>();
         this.ran = false;
@@ -706,6 +708,85 @@ public class Job {
 
     public boolean ran() {
         return this.ran;
+    }
+
+    /**
+     * Combine match scores into a document confidence score using conflation of probability distributions.
+     * https://arxiv.org/pdf/0808.1808v4.pdf
+     *
+     * @param attributeConfidenceScores
+     */
+    public static Double calculateDocumentConfidenceScore(List<Double> attributeConfidenceScores) {
+        Double documentConfidenceScore = null;
+        ArrayList<Double> scores = new ArrayList<>();
+        ArrayList<Double> scoresInverse = new ArrayList<>();
+        for (Double score : attributeConfidenceScores) {
+            if (score == null)
+                continue;
+            scores.add(score);
+            scoresInverse.add(1.0 - score);
+        }
+        if (scores.size() > 0) {
+            Double productScores = scores.stream().reduce(1.0, (a, b) -> a * b);
+            Double productScoresInverse = scoresInverse.stream().reduce(1.0, (a, b) -> a * b);
+            documentConfidenceScore = productScores / (productScores + productScoresInverse);
+        }
+        return documentConfidenceScore;
+    }
+
+    /**
+     * Calculate a match score given an attribute base score, matcher quality score, and index field quality score.
+     *
+     * @param attributeBaseScore
+     * @param matcherQualityScore
+     * @param indexFieldQualityScore
+     * @return
+     */
+    public static Double calculateMatchScore(Double attributeBaseScore, Double matcherQualityScore, Double indexFieldQualityScore) {
+        if (attributeBaseScore == null)
+            return null;
+        Double score = attributeBaseScore;
+        if (matcherQualityScore != null)
+            score = ((score - 0.5) / (score - 0.0) * ((score * matcherQualityScore) - score)) + score;
+        if (indexFieldQualityScore != null)
+            score = ((score - 0.5) / (score - 0.0) * ((score * indexFieldQualityScore) - score)) + score;
+        return score;
+    }
+
+    /**
+     * Get a cached match score or calculate and cache a match score.
+     *
+     * @param attributeName
+     * @param matcherName
+     * @param indexName
+     * @param indexFieldName
+     * @return
+     */
+    private Double getMatchScore(String attributeName, String matcherName, String indexName, String indexFieldName) {
+
+        // Return the cached match score if it exists.
+        if (this.matchScores.containsKey(attributeName))
+            if (this.matchScores.get(attributeName).containsKey(matcherName))
+                if (this.matchScores.get(attributeName).get(matcherName).containsKey(indexName))
+                    if (this.matchScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName))
+                        return this.matchScores.get(attributeName).get(matcherName).get(indexName).get(indexFieldName);
+
+        // Calculate the match score, cache it, and return it.
+        Double attributeBaseScore = this.input().model().attributes().get(attributeName).score();
+        Double matcherQualityScore = this.input().model().matchers().get(matcherName).quality();
+        Double indexFieldQualityScore = this.input().model().indices().get(indexName).fields().get(indexFieldName).quality();
+        if (attributeBaseScore == null)
+            return null;
+        Double matchScore = calculateMatchScore(attributeBaseScore, matcherQualityScore, indexFieldQualityScore);
+        if (!this.matchScores.containsKey(attributeName))
+            this.matchScores.put(attributeName, new HashMap<>());
+        else if (!this.matchScores.get(attributeName).containsKey(matcherName))
+            this.matchScores.get(attributeName).put(matcherName, new HashMap<>());
+        else if (!this.matchScores.get(attributeName).get(matcherName).containsKey(indexName))
+            this.matchScores.get(attributeName).get(matcherName).put(indexName, new HashMap<>());
+        else if (!this.matchScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName))
+            this.matchScores.get(attributeName).get(matcherName).get(indexName).put(indexFieldName, matchScore);
+        return matchScore;
     }
 
     /**
@@ -1287,7 +1368,7 @@ public class Job {
                     }
 
                     // Determine why any matching documents matched if including "_score" or "_explanation".
-                    Map<String, Double> bestAttributeConfidenceScores = new HashMap<>();
+                    List<Double> bestAttributeConfidenceScores = new ArrayList<>();
                     if (namedFilters && docObjNode.has("matched_queries") && docObjNode.get("matched_queries").size() > 0) {
                         ObjectNode docExpObjNode = docObjNode.putObject("_explanation");
                         ObjectNode docExpResolversObjNode = docExpObjNode.putObject("resolvers");
@@ -1322,6 +1403,17 @@ public class Job {
                                 matcherParamsNode = Json.ORDERED_MAPPER.readTree(Json.ORDERED_MAPPER.writeValueAsString(input.model().matchers().get(matcherName).params()));
                             else
                                 matcherParamsNode = Json.ORDERED_MAPPER.readTree("{}");
+
+                            // Calculate the attribute confidence score for this match.
+                            Double matchScore = null;
+                            if (this.includeScore) {
+                                matchScore = this.getMatchScore(attributeName, matcherName, indexName, indexFieldName);
+                                if (matchScore != null) {
+                                    attributeConfidenceScores.putIfAbsent(attributeName, new ArrayList<>());
+                                    attributeConfidenceScores.get(attributeName).add(matchScore);
+                                }
+                            }
+
                             ObjectNode docExpDetailsObjNode = Json.ORDERED_MAPPER.createObjectNode();
                             docExpDetailsObjNode.put("attribute", attributeName);
                             docExpDetailsObjNode.put("target_field", indexFieldName);
@@ -1329,24 +1421,13 @@ public class Job {
                             docExpDetailsObjNode.put("input_value", attributeValueNode);
                             docExpDetailsObjNode.put("input_matcher", matcherName);
                             docExpDetailsObjNode.putPOJO("input_matcher_params", matcherParamsNode);
+                            if (this.includeScore)
+                                if (matchScore == null)
+                                    docExpDetailsObjNode.putNull("score");
+                                else
+                                    docExpDetailsObjNode.put("score", matchScore);
                             docExpMatchesArrNode.add(docExpDetailsObjNode);
                             expAttributes.add(attributeName);
-
-                            // Calculate the attribute confidence score for this match.
-                            if (this.includeScore) {
-                                Double abs = this.input().model().attributes().get(attributeName).score();
-                                Double mqs = this.input().model().matchers().get(matcherName).quality();
-                                Double iqs = this.input().model().indices().get(indexName).fields().get(indexFieldName).quality();
-                                if (abs == null)
-                                    continue;
-                                Double score = abs;
-                                if (mqs != null)
-                                    score = ((score - 0.5) / (score - 0.0) * ((score * mqs) - score)) + score;
-                                if (iqs != null)
-                                    score = ((score - 0.5) / (score - 0.0) * ((score * iqs) - score)) + score;
-                                attributeConfidenceScores.putIfAbsent(attributeName, new ArrayList<>());
-                                attributeConfidenceScores.get(attributeName).add(score);
-                            }
                         }
 
                         if (this.includeScore) {
@@ -1355,29 +1436,13 @@ public class Job {
                             // by selecting the highest score.
                             for (String attributeName : attributeConfidenceScores.keySet()) {
                                 Double best = Collections.max(attributeConfidenceScores.get(attributeName));
-                                bestAttributeConfidenceScores.put(attributeName, best);
+                                bestAttributeConfidenceScores.add(best);
                             }
 
-                            // Combine the attribute confidence scores into a final document confidence score using
-                            // conflation of probability distributions.
-                            //
-                            // https://arxiv.org/pdf/0808.1808v4.pdf
-                            Double documentConfidenceScore;
-                            ArrayList<Double> scores = new ArrayList<>();
-                            ArrayList<Double> scoresInverse = new ArrayList<>();
-                            for (String attributeName : bestAttributeConfidenceScores.keySet()) {
-                                Double score = bestAttributeConfidenceScores.get(attributeName);
-                                if (score == null)
-                                    continue;
-                                scores.add(score);
-                                scoresInverse.add(1.0 - score);
-                            }
-                            if (scores.size() > 0) {
-                                Double productScores = scores.stream().reduce(1.0, (a, b) -> a * b);
-                                Double productScoresInverse = scoresInverse.stream().reduce(1.0, (a, b) -> a * b);
-                                documentConfidenceScore = productScores / (productScores + productScoresInverse);
+                            // Combine the attribute confidence scores into a final document confidence score.
+                            Double documentConfidenceScore = calculateDocumentConfidenceScore(bestAttributeConfidenceScores);
+                            if (documentConfidenceScore != null)
                                 docObjNode.put("_score", documentConfidenceScore);
-                            }
                         }
 
                         // Summarize matched resolvers

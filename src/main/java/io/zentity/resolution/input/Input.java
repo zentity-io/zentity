@@ -10,11 +10,7 @@ import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.scope.Scope;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Input {
 

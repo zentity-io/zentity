@@ -7,10 +7,7 @@ import io.zentity.resolution.input.Input;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class JobTest {
@@ -1084,6 +1081,46 @@ public class JobTest {
                 "}";
         Input input = new Input(json, model);
         Job.makeScriptFieldsClause(input, "index");
+    }
+
+    /**
+     * Test various calculations of the document confidence score.
+     */
+    @Test
+    public void testCalculateDocumentConfidenceScore() {
+
+        // Inputs of 1.0 must always produce an output of 1.0
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 1.00)), 1.00000000000, 0.0000000001);
+
+        // Other scores
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.95)), 0.98275862069, 0.0000000001);
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.85)), 0.94444444444, 0.0000000001);
+
+        // Inputs of 0.5 or null must not affect the output score
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.65, 0.75)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.65, 0.75, 0.50)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.65, 0.75, null)), 0.87195121951, 0.0000000001);
+
+        // Inputs of 0.0 must always produce an output of 0.0
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.00)), 0.00000000000, 0.0000000001);
+    }
+
+    /**
+     * Document confidence scores must be null given an empty list of scores.
+     */
+    @Test
+    public void testCalculateDocumentConfidenceScoreEmptyInput() {
+        List<Double> scores = new ArrayList<>();
+        Assert.assertNull(Job.calculateDocumentConfidenceScore(scores));
+    }
+
+    /**
+     * Document confidence scores must be null given only null scores.
+     */
+    @Test
+    public void testCalculateDocumentConfidenceScoreNullInput() {
+        Double nullScore = null;
+        Assert.assertNull(Job.calculateDocumentConfidenceScore(Arrays.asList(nullScore, nullScore)));
     }
 
 }
