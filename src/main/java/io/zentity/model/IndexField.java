@@ -24,7 +24,7 @@ public class IndexField {
     private JsonPointer pathParent;
     private String attribute;
     private String matcher;
-    private Float quality;
+    private Double quality;
 
     public IndexField(String index, String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -83,13 +83,13 @@ public class IndexField {
             this.pathParent = JsonPointer.compile("/" + String.join("/", Arrays.copyOf(parts, parts.length - 1)));
     }
 
-    public Float quality() {
+    public Double quality() {
         return this.quality;
     }
 
     public void quality(JsonNode value) throws ValidationException {
         validateQuality(value);
-        this.quality = value.floatValue();
+        this.quality = value.doubleValue();
     }
 
     private void validateName(String value) throws ValidationException {

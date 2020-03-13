@@ -23,7 +23,7 @@ public class Matcher {
     private final String name;
     private String clause;
     private Map<String, String> params = new TreeMap<>();
-    private Float quality;
+    private Double quality;
     private Map<String, Pattern> variables = new TreeMap<>();
 
     public Matcher(String name, JsonNode json) throws ValidationException, JsonProcessingException {
@@ -68,7 +68,7 @@ public class Matcher {
         return this.params;
     }
 
-    public Float quality() {
+    public Double quality() {
         return this.quality;
     }
 
@@ -84,7 +84,7 @@ public class Matcher {
 
     public void quality(JsonNode value) throws ValidationException {
         validateQuality(value);
-        this.quality = value.floatValue();
+        this.quality = value.doubleValue();
     }
 
     private void validateName(String value) throws ValidationException {
