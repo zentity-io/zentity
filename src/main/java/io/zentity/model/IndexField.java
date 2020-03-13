@@ -83,6 +83,10 @@ public class IndexField {
             this.pathParent = JsonPointer.compile("/" + String.join("/", Arrays.copyOf(parts, parts.length - 1)));
     }
 
+    public Float quality() {
+        return this.quality;
+    }
+
     public void quality(JsonNode value) throws ValidationException {
         validateQuality(value);
         this.quality = value.floatValue();
