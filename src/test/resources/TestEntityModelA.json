@@ -1,25 +1,36 @@
 {
   "attributes": {
     "attribute_a": {
-      "type": "string"
+      "type": "string",
+      "score": 0.8
     },
-    "attribute_b": {},
-    "attribute_c": {},
-    "attribute_d": {},
+    "attribute_b": {
+      "score": 0.6
+    },
+    "attribute_c": {
+      "score": null
+    },
+    "attribute_d": {
+      "score": 0.5
+    },
     "attribute_type_boolean": {
-      "type": "boolean"
+      "type": "boolean",
+      "score": 0.5
     },
     "attribute_type_date": {
-      "type": "date"
+      "type": "date",
+      "score": 0.9
     },
     "attribute_type_double": {
-      "type": "number"
+      "type": "number",
+      "score": 0.75
     },
     "attribute_type_float": {
       "type": "number"
     },
     "attribute_type_integer": {
-      "type": "number"
+      "type": "number",
+      "score": 0.65
     },
     "attribute_type_long": {
       "type": "number"
@@ -125,14 +136,16 @@
         "match": {
           "{{ field }}": "{{ value }}"
         }
-      }
+      },
+      "quality": 0.77
     },
     "matcher_b": {
       "clause": {
         "term": {
           "{{ field }}": "{{ value }}"
         }
-      }
+      },
+      "quality": 0.98
     },
     "matcher_c": {
       "clause": {
@@ -147,7 +160,8 @@
       "params" :{
         "format": "yyyy-MM-dd'T'HH:mm:ss.0000",
         "window": "2s"
-      }
+      },
+      "quality": null
     }
   },
   "indices": {
@@ -155,15 +169,18 @@
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",
-          "matcher": "matcher_a"
+          "matcher": "matcher_a",
+          "quality": 0.99
         },
         "field_a.keyword": {
           "attribute": "attribute_a",
-          "matcher": "matcher_b"
+          "matcher": "matcher_b",
+          "quality": 1.0
         },
         "field_b.clean": {
           "attribute": "attribute_b",
-          "matcher": "matcher_a"
+          "matcher": "matcher_a",
+          "quality": null
         },
         "field_b.keyword": {
           "attribute": "attribute_b",
@@ -183,7 +200,8 @@
         },
         "field_d.keyword": {
           "attribute": "attribute_d",
-          "matcher": "matcher_b"
+          "matcher": "matcher_b",
+          "quality": 0.95
         },
         "type_boolean": {
           "attribute": "attribute_type_boolean",
@@ -231,7 +249,8 @@
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",
-          "matcher": "matcher_a"
+          "matcher": "matcher_a",
+          "quality": 0.91
         },
         "field_a.keyword": {
           "attribute": "attribute_a",
@@ -239,11 +258,13 @@
         },
         "field_b.clean": {
           "attribute": "attribute_b",
-          "matcher": "matcher_a"
+          "matcher": "matcher_a",
+          "quality": 0.73
         },
         "field_b.keyword": {
           "attribute": "attribute_b",
-          "matcher": "matcher_b"
+          "matcher": "matcher_b",
+          "quality": 0.97
         },
         "field_c.clean": {
           "attribute": "attribute_c",
@@ -383,11 +404,13 @@
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",
-          "matcher": "matcher_a"
+          "matcher": "matcher_a",
+          "quality": 0.87
         },
         "field_a.keyword": {
           "attribute": "attribute_a",
-          "matcher": "matcher_b"
+          "matcher": "matcher_b",
+          "quality": 0.92
         },
         "field_b.clean": {
           "attribute": "attribute_b",
@@ -403,7 +426,8 @@
         },
         "field_c.keyword": {
           "attribute": "attribute_c",
-          "matcher": "matcher_b"
+          "matcher": "matcher_b",
+          "quality": 0.0
         },
         "field_d.clean": {
           "attribute": "attribute_d",
@@ -411,11 +435,13 @@
         },
         "field_d.keyword": {
           "attribute": "attribute_d",
-          "matcher": "matcher_b"
+          "matcher": "matcher_b",
+          "quality": 0.95
         },
         "type_boolean": {
           "attribute": "attribute_type_boolean",
-          "matcher": "matcher_b"
+          "matcher": "matcher_b",
+          "quality": 0.0
         },
         "type_date": {
           "attribute": "attribute_type_date",

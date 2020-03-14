@@ -1134,6 +1134,9 @@ public class JobTest {
         // Inputs of 0.0 must always produce an output of 0.0
         Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.00)), 0.00000000000, 0.0000000001);
 
+        // Inputs of 1.0 and 0.0 together must always produce an output of 0.5
+        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 1.00, 0.00)), 0.50000000000, 0.0000000001);
+
         // The order of the inputs must not matter
         Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.75, 0.65)), 0.87195121951, 0.0000000001);
         Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.65, 0.55, 0.75)), 0.87195121951, 0.0000000001);

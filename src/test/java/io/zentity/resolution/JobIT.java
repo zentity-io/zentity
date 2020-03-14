@@ -11,6 +11,7 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.plugin.zentity.ZentityPlugin;
+import org.junit.Assert;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -1769,6 +1770,63 @@ public class JobIT extends AbstractITCase {
                 assertFalse(doc.has("_primary_term"));
                 assertFalse(doc.has("_seq_no"));
                 assertFalse(doc.has("_version"));
+            }
+        } finally {
+            destroyTestResources(testResourceSet);
+        }
+    }
+
+    public void testJobScore() throws Exception {
+        int testResourceSet = TEST_RESOURCES_A;
+        prepareTestResources(testResourceSet);
+        try {
+            String endpoint = "_zentity/resolution/zentity_test_entity_a";
+            Request postResolution = new Request("POST", endpoint);
+            postResolution.setEntity(TEST_PAYLOAD_JOB_NO_SCOPE);
+            postResolution.addParameter("_explanation", "true");
+            postResolution.addParameter("_score", "true");
+            postResolution.addParameter("max_docs_per_query", "1");
+            postResolution.addParameter("max_hops", "3");
+            Response response = client.performRequest(postResolution);
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+            assertEquals(json.get("hits").get("total").asInt(), 14);
+            for (JsonNode doc : json.get("hits").get("hits")) {
+                switch (doc.get("_id").textValue()) {
+                    case "a0":
+                    case "b0":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.794, 0.0000000001);
+                        break;
+                    case "a1":
+                    case "b1":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.5, 0.0000000001);
+                        break;
+                    case "c0":
+                    case "d0":
+                    case "c2":
+                    case "d2":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.0, 0.0000000001);
+                        break;
+                    case "a2":
+                    case "b2":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.8426393720609059, 0.0000000001);
+                        break;
+                    case "c1":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9356979368877253, 0.0000000001);
+                        break;
+                    case "d1":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9262128928820453, 0.0000000001);
+                        break;
+                    case "a3":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9684567702655289, 0.0000000001);
+                        break;
+                    case "b3":
+                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9680814702469515, 0.0000000001);
+                        break;
+                    default:
+                        Assert.fail();
+                }
+                for (JsonNode match : doc.get("_explanation").get("matches"))
+                    assertFalse(match.get("score").isMissingNode());
             }
         } finally {
             destroyTestResources(testResourceSet);
