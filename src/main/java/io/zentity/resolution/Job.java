@@ -714,6 +714,9 @@ public class Job {
      * Combine match scores into a document confidence score using conflation of probability distributions.
      * https://arxiv.org/pdf/0808.1808v4.pdf
      *
+     * If the inputs contain both a 1.0 and a 0.0, this will lead to a division by zero. When that happens,
+     * set the output score to 0.5, which represents complete uncertainty.
+     *
      * @param attributeConfidenceScores
      */
     public static Double calculateDocumentConfidenceScore(List<Double> attributeConfidenceScores) {
@@ -730,12 +733,15 @@ public class Job {
             Double productScores = scores.stream().reduce(1.0, (a, b) -> a * b);
             Double productScoresInverse = scoresInverse.stream().reduce(1.0, (a, b) -> a * b);
             documentConfidenceScore = productScores / (productScores + productScoresInverse);
+            if (documentConfidenceScore.isNaN())
+                documentConfidenceScore = 0.5;
         }
         return documentConfidenceScore;
     }
 
     /**
      * Calculate a match score given an attribute base score, matcher quality score, and index field quality score.
+     * A score of 0.0 will lead to a division by zero. When that happens, set the output score to 0.0.
      *
      * @param attributeBaseScore
      * @param matcherQualityScore
@@ -750,6 +756,8 @@ public class Job {
             score = ((score - 0.5) / (score - 0.0) * ((score * matcherQualityScore) - score)) + score;
         if (indexFieldQualityScore != null)
             score = ((score - 0.5) / (score - 0.0) * ((score * indexFieldQualityScore) - score)) + score;
+        if (score.isNaN())
+            score = 0.0;
         return score;
     }
 
