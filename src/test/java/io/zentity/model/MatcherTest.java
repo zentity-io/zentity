@@ -98,4 +98,9 @@ public class MatcherTest {
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":{}}");
     }
 
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityValueTooHigh() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":100.0}");
+    }
+
 }

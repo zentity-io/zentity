@@ -68,6 +68,11 @@ public class AttributeTest {
         new Attribute("attribute_name", "{\"score\":{}}");
     }
 
+    @Test(expected = ValidationException.class)
+    public void testInvalidScoreValueTooHigh() throws Exception {
+        new Attribute("attribute_name", "{\"score\":100.0}");
+    }
+
     ////  "attributes".ATTRIBUTE_NAME."type"  //////////////////////////////////////////////////////////////////////////
 
     @Test

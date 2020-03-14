@@ -138,4 +138,9 @@ public class IndexFieldTest {
     public void testInvalidQualityTypeObject() throws Exception {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":{}}");
     }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidQualityValueTooHigh() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":100.0}");
+    }
 }
