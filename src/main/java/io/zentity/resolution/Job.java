@@ -97,6 +97,7 @@ public class Job {
     private Boolean searchRequestCache = DEFAULT_SEARCH_REQUEST_CACHE;
 
     // Job state
+    private Map<String, Map<String, Map<String, Map<String, Double>>>> attributeIdentityConfidenceScores = new HashMap<>();
     private Map<String, Attribute> attributes = new TreeMap<>();
     private NodeClient client;
     private Map<String, Set<String>> docIds = new TreeMap<>();
@@ -104,7 +105,6 @@ public class Job {
     private boolean failed = false;
     private List<String> hits = new ArrayList<>();
     private int hop = 0;
-    private Map<String, Map<String, Map<String, Map<String, Double>>>> matchScores = new HashMap<>();
     private Set<String> missingIndices = new TreeSet<>();
     private List<String> queries = new ArrayList<>();
     private boolean ran = false;
@@ -547,13 +547,13 @@ public class Job {
      * Resets the variables that hold the state of the job, in case the same Job object is reused.
      */
     private void resetState() {
+        this.attributeIdentityConfidenceScores = new HashMap<>();
         this.attributes = new TreeMap<>(this.input().attributes());
         this.docIds = new TreeMap<>();
         this.error = null;
         this.failed = false;
         this.hits = new ArrayList<>();
         this.hop = 0;
-        this.matchScores = new HashMap<>();
         this.missingIndices = new TreeSet<>();
         this.queries = new ArrayList<>();
         this.ran = false;
@@ -711,19 +711,23 @@ public class Job {
     }
 
     /**
-     * Combine match scores into a document confidence score using conflation of probability distributions.
+     * Combine a list of attribute identity confidence scores into a single composite identity confidence score using
+     * conflation of probability distributions.
+     *
      * https://arxiv.org/pdf/0808.1808v4.pdf
      *
-     * If the inputs contain both a 1.0 and a 0.0, this will lead to a division by zero. When that happens,
-     * set the output score to 0.5, which represents complete uncertainty.
+     * If the list of attribute identity confidence scores contain both a 1.0 and a 0.0, this will lead to a division by
+     * zero. When that happens, set the composite identity confidence score to 0.5, because there can be no certainty
+     * when there are conflicting input scores that suggest both a complete confidence in a true match and a complete
+     * confidence in a false match.
      *
-     * @param attributeConfidenceScores
+     * @param attributeIdentityConfidenceScores
      */
-    public static Double calculateDocumentConfidenceScore(List<Double> attributeConfidenceScores) {
-        Double documentConfidenceScore = null;
+    public static Double calculateCompositeIdentityConfidenceScore(List<Double> attributeIdentityConfidenceScores) {
+        Double compositeIdentityConfidenceScore = null;
         ArrayList<Double> scores = new ArrayList<>();
         ArrayList<Double> scoresInverse = new ArrayList<>();
-        for (Double score : attributeConfidenceScores) {
+        for (Double score : attributeIdentityConfidenceScores) {
             if (score == null)
                 continue;
             scores.add(score);
@@ -732,26 +736,27 @@ public class Job {
         if (scores.size() > 0) {
             Double productScores = scores.stream().reduce(1.0, (a, b) -> a * b);
             Double productScoresInverse = scoresInverse.stream().reduce(1.0, (a, b) -> a * b);
-            documentConfidenceScore = productScores / (productScores + productScoresInverse);
-            if (documentConfidenceScore.isNaN())
-                documentConfidenceScore = 0.5;
+            compositeIdentityConfidenceScore = productScores / (productScores + productScoresInverse);
+            if (compositeIdentityConfidenceScore.isNaN())
+                compositeIdentityConfidenceScore = 0.5;
         }
-        return documentConfidenceScore;
+        return compositeIdentityConfidenceScore;
     }
 
     /**
-     * Calculate a match score given an attribute base score, matcher quality score, and index field quality score.
-     * A score of 0.0 will lead to a division by zero. When that happens, set the output score to 0.0.
+     * Calculate an attribute identity confidence score given a base score, a matcher quality score, and an index field
+     * quality score. Any quality score of 0.0 will lead to a division by zero. When that happens, set the output score
+     * to 0.0, because an attribute can give no confidence of an identity when any of the quality scores are 0.0.
      *
-     * @param attributeBaseScore
+     * @param attributeIdentityConfidenceBaseScore
      * @param matcherQualityScore
      * @param indexFieldQualityScore
      * @return
      */
-    public static Double calculateMatchScore(Double attributeBaseScore, Double matcherQualityScore, Double indexFieldQualityScore) {
-        if (attributeBaseScore == null)
+    public static Double calculateAttributeIdentityConfidenceScore(Double attributeIdentityConfidenceBaseScore, Double matcherQualityScore, Double indexFieldQualityScore) {
+        if (attributeIdentityConfidenceBaseScore == null)
             return null;
-        Double score = attributeBaseScore;
+        Double score = attributeIdentityConfidenceBaseScore;
         if (matcherQualityScore != null)
             score = ((score - 0.5) / (score - 0.0) * ((score * matcherQualityScore) - score)) + score;
         if (indexFieldQualityScore != null)
@@ -762,7 +767,8 @@ public class Job {
     }
 
     /**
-     * Get a cached match score or calculate and cache a match score.
+     * Get a cached attribute identity confidence score, or calculate and cache an attribute identity confidence score.
+     * This function helps minimize calculations over the life of the resolution job.
      *
      * @param attributeName
      * @param matcherName
@@ -770,31 +776,31 @@ public class Job {
      * @param indexFieldName
      * @return
      */
-    private Double getMatchScore(String attributeName, String matcherName, String indexName, String indexFieldName) {
+    private Double getAttributeIdentityConfidenceScore(String attributeName, String matcherName, String indexName, String indexFieldName) {
 
         // Return the cached match score if it exists.
-        if (this.matchScores.containsKey(attributeName))
-            if (this.matchScores.get(attributeName).containsKey(matcherName))
-                if (this.matchScores.get(attributeName).get(matcherName).containsKey(indexName))
-                    if (this.matchScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName))
-                        return this.matchScores.get(attributeName).get(matcherName).get(indexName).get(indexFieldName);
+        if (this.attributeIdentityConfidenceScores.containsKey(attributeName))
+            if (this.attributeIdentityConfidenceScores.get(attributeName).containsKey(matcherName))
+                if (this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).containsKey(indexName))
+                    if (this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName))
+                        return this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).get(indexFieldName);
 
         // Calculate the match score, cache it, and return it.
-        Double attributeBaseScore = this.input().model().attributes().get(attributeName).score();
+        Double attributeIdentityConfidenceBaseScore = this.input().model().attributes().get(attributeName).score();
         Double matcherQualityScore = this.input().model().matchers().get(matcherName).quality();
         Double indexFieldQualityScore = this.input().model().indices().get(indexName).fields().get(indexFieldName).quality();
-        if (attributeBaseScore == null)
+        if (attributeIdentityConfidenceBaseScore == null)
             return null;
-        Double matchScore = calculateMatchScore(attributeBaseScore, matcherQualityScore, indexFieldQualityScore);
-        if (!this.matchScores.containsKey(attributeName))
-            this.matchScores.put(attributeName, new HashMap<>());
-        else if (!this.matchScores.get(attributeName).containsKey(matcherName))
-            this.matchScores.get(attributeName).put(matcherName, new HashMap<>());
-        else if (!this.matchScores.get(attributeName).get(matcherName).containsKey(indexName))
-            this.matchScores.get(attributeName).get(matcherName).put(indexName, new HashMap<>());
-        else if (!this.matchScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName))
-            this.matchScores.get(attributeName).get(matcherName).get(indexName).put(indexFieldName, matchScore);
-        return matchScore;
+        Double attributeIdentityConfidenceScore = calculateAttributeIdentityConfidenceScore(attributeIdentityConfidenceBaseScore, matcherQualityScore, indexFieldQualityScore);
+        if (!this.attributeIdentityConfidenceScores.containsKey(attributeName))
+            this.attributeIdentityConfidenceScores.put(attributeName, new HashMap<>());
+        else if (!this.attributeIdentityConfidenceScores.get(attributeName).containsKey(matcherName))
+            this.attributeIdentityConfidenceScores.get(attributeName).put(matcherName, new HashMap<>());
+        else if (!this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).containsKey(indexName))
+            this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).put(indexName, new HashMap<>());
+        else if (!this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName))
+            this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).put(indexFieldName, attributeIdentityConfidenceScore);
+        return attributeIdentityConfidenceScore;
     }
 
     /**
@@ -1376,7 +1382,7 @@ public class Job {
                     }
 
                     // Determine why any matching documents matched if including "_score" or "_explanation".
-                    List<Double> bestAttributeConfidenceScores = new ArrayList<>();
+                    List<Double> bestAttributeIdentityConfidenceScores = new ArrayList<>();
                     if (namedFilters && docObjNode.has("matched_queries") && docObjNode.get("matched_queries").size() > 0) {
                         ObjectNode docExpObjNode = docObjNode.putObject("_explanation");
                         ObjectNode docExpResolversObjNode = docExpObjNode.putObject("resolvers");
@@ -1393,7 +1399,7 @@ public class Job {
 
                         // Create tuple-like objects that describe which attribute values matched which
                         // index field values using which matchers and matcher parameters.
-                        Map<String, ArrayList<Double>> attributeConfidenceScores = new HashMap<>();
+                        Map<String, ArrayList<Double>> attributeIdentityConfidenceBaseScores = new HashMap<>();
                         for (String mq : matchedQueries) {
                             String[] _name = COLON.split(mq);
                             String attributeName = _name[0];
@@ -1412,13 +1418,13 @@ public class Job {
                             else
                                 matcherParamsNode = Json.ORDERED_MAPPER.readTree("{}");
 
-                            // Calculate the attribute confidence score for this match.
-                            Double matchScore = null;
+                            // Calculate the attribute identity confidence score for this match.
+                            Double attributeIdentityConfidenceScore = null;
                             if (this.includeScore) {
-                                matchScore = this.getMatchScore(attributeName, matcherName, indexName, indexFieldName);
-                                if (matchScore != null) {
-                                    attributeConfidenceScores.putIfAbsent(attributeName, new ArrayList<>());
-                                    attributeConfidenceScores.get(attributeName).add(matchScore);
+                                attributeIdentityConfidenceScore = this.getAttributeIdentityConfidenceScore(attributeName, matcherName, indexName, indexFieldName);
+                                if (attributeIdentityConfidenceScore != null) {
+                                    attributeIdentityConfidenceBaseScores.putIfAbsent(attributeName, new ArrayList<>());
+                                    attributeIdentityConfidenceBaseScores.get(attributeName).add(attributeIdentityConfidenceScore);
                                 }
                             }
 
@@ -1430,10 +1436,10 @@ public class Job {
                             docExpDetailsObjNode.put("input_matcher", matcherName);
                             docExpDetailsObjNode.putPOJO("input_matcher_params", matcherParamsNode);
                             if (this.includeScore)
-                                if (matchScore == null)
+                                if (attributeIdentityConfidenceScore == null)
                                     docExpDetailsObjNode.putNull("score");
                                 else
-                                    docExpDetailsObjNode.put("score", matchScore);
+                                    docExpDetailsObjNode.put("score", attributeIdentityConfidenceScore);
                             docExpMatchesArrNode.add(docExpDetailsObjNode);
                             expAttributes.add(attributeName);
                         }
@@ -1442,13 +1448,13 @@ public class Job {
 
                             // Deconflict multiple attribute confidence scores for the same attribute
                             // by selecting the highest score.
-                            for (String attributeName : attributeConfidenceScores.keySet()) {
-                                Double best = Collections.max(attributeConfidenceScores.get(attributeName));
-                                bestAttributeConfidenceScores.add(best);
+                            for (String attributeName : attributeIdentityConfidenceBaseScores.keySet()) {
+                                Double best = Collections.max(attributeIdentityConfidenceBaseScores.get(attributeName));
+                                bestAttributeIdentityConfidenceScores.add(best);
                             }
 
-                            // Combine the attribute confidence scores into a final document confidence score.
-                            Double documentConfidenceScore = calculateDocumentConfidenceScore(bestAttributeConfidenceScores);
+                            // Combine the attribute confidence scores into a composite identity confidence score.
+                            Double documentConfidenceScore = calculateCompositeIdentityConfidenceScore(bestAttributeIdentityConfidenceScores);
                             if (documentConfidenceScore != null)
                                 docObjNode.put("_score", documentConfidenceScore);
                         }

@@ -1084,87 +1084,77 @@ public class JobTest {
     }
 
     /**
-     * Test various calculations of the attribute confidence score.
+     * Test various calculations of the attribute identity confidence score.
      */
     @Test
-    public void testCalculateAttributeConfidenceScore() {
+    public void testCalculateAttributeIdentityConfidenceScore() {
 
-        // When all quality scores are 1.0,the output must be equal to the attribute base score
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 1.00, 1.00), 0.75, 0.0000000001);
+        // When all quality scores are 1.0,the output must be equal to the base score
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 1.00, 1.00), 0.75, 0.0000000001);
 
         // When any quality score is 0.0, the output must be 0.5
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 1.00, 0.00), 0.50, 0.0000000001);
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 0.90, 0.00), 0.50, 0.0000000001);
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 0.00, 0.00), 0.50, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 1.00, 0.00), 0.50, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 0.90, 0.00), 0.50, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 0.00, 0.00), 0.50, 0.0000000001);
 
         // The order of the quality scores must not matter
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 0.90, 0.80), 0.68, 0.0000000001);
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 0.80, 0.90), 0.68, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 0.90, 0.80), 0.68, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 0.80, 0.90), 0.68, 0.0000000001);
 
         // Any null quality scores must be omitted
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 0.90, null), 0.725, 0.0000000001);
-        Assert.assertEquals(Job.calculateMatchScore(0.75, null, 0.8), 0.70, 0.0000000001);
-        Assert.assertEquals(Job.calculateMatchScore(0.75, null, null), 0.75, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 0.90, null), 0.725, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, null, 0.8), 0.70, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, null, null), 0.75, 0.0000000001);
 
-        // When the attribute base score is null, the output must be null
-        Assert.assertNull(Job.calculateMatchScore(null, 0.9, 0.8));
-        Assert.assertNull(Job.calculateMatchScore(null, 0.9, null));
-        Assert.assertNull(Job.calculateMatchScore(null, null, 0.8));
-        Assert.assertNull(Job.calculateMatchScore(null, null, null));
+        // When the base score is null, the output must be null
+        Assert.assertNull(Job.calculateAttributeIdentityConfidenceScore(null, 0.9, 0.8));
+        Assert.assertNull(Job.calculateAttributeIdentityConfidenceScore(null, 0.9, null));
+        Assert.assertNull(Job.calculateAttributeIdentityConfidenceScore(null, null, 0.8));
+        Assert.assertNull(Job.calculateAttributeIdentityConfidenceScore(null, null, null));
 
         // Various tests
-        Assert.assertEquals(Job.calculateMatchScore(0.75, 0.625, 0.99), 0.6546875, 0.0000000001);
-        Assert.assertEquals(Job.calculateMatchScore(0.87, 0.817, 0.93), 0.7811297, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.75, 0.625, 0.99), 0.6546875, 0.0000000001);
+        Assert.assertEquals(Job.calculateAttributeIdentityConfidenceScore(0.87, 0.817, 0.93), 0.7811297, 0.0000000001);
     }
 
     /**
-     * Test various calculations of the document confidence score.
+     * Test various calculations of the composite identity confidence score.
      */
     @Test
-    public void testCalculateDocumentConfidenceScore() {
+    public void testCalculateCompositeIdentityConfidenceScore() {
 
         // Inputs of 1.0 must always produce an output of 1.0
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 1.00)), 1.00000000000, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 1.00)), 1.00000000000, 0.0000000001);
 
         // Inputs of 0.5 or null must not affect the output score
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.65, 0.75)), 0.87195121951, 0.0000000001);
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.65, 0.75, 0.50)), 0.87195121951, 0.0000000001);
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.65, 0.75, null)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.55, 0.65, 0.75)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.55, 0.65, 0.75, 0.50)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.55, 0.65, 0.75, null)), 0.87195121951, 0.0000000001);
 
         // Inputs of 0.0 must always produce an output of 0.0
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.00)), 0.00000000000, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 0.00)), 0.00000000000, 0.0000000001);
 
         // Inputs of 1.0 and 0.0 together must always produce an output of 0.5
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 1.00, 0.00)), 0.50000000000, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 1.00, 0.00)), 0.50000000000, 0.0000000001);
+
+        // Output score must be null given an empty list of input scores.
+        List<Double> scores = new ArrayList<>();
+        Assert.assertNull(Job.calculateCompositeIdentityConfidenceScore(scores));
+
+        // Output score must be null given only null input scores.
+        Double nullScore = null;
+        Assert.assertNull(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(nullScore, nullScore)));
 
         // The order of the inputs must not matter
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.55, 0.75, 0.65)), 0.87195121951, 0.0000000001);
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.65, 0.55, 0.75)), 0.87195121951, 0.0000000001);
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.65, 0.75, 0.55)), 0.87195121951, 0.0000000001);
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.65, 0.55)), 0.87195121951, 0.0000000001);
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.55, 0.65)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.55, 0.75, 0.65)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.65, 0.55, 0.75)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.65, 0.75, 0.55)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 0.65, 0.55)), 0.87195121951, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 0.55, 0.65)), 0.87195121951, 0.0000000001);
 
         // Various tests
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.95)), 0.98275862069, 0.0000000001);
-        Assert.assertEquals(Job.calculateDocumentConfidenceScore(Arrays.asList(0.75, 0.85)), 0.94444444444, 0.0000000001);
-    }
-
-    /**
-     * Document confidence scores must be null given an empty list of scores.
-     */
-    @Test
-    public void testCalculateDocumentConfidenceScoreEmptyInput() {
-        List<Double> scores = new ArrayList<>();
-        Assert.assertNull(Job.calculateDocumentConfidenceScore(scores));
-    }
-
-    /**
-     * Document confidence scores must be null given only null scores.
-     */
-    @Test
-    public void testCalculateDocumentConfidenceScoreNullInput() {
-        Double nullScore = null;
-        Assert.assertNull(Job.calculateDocumentConfidenceScore(Arrays.asList(nullScore, nullScore)));
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 0.95)), 0.98275862069, 0.0000000001);
+        Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 0.85)), 0.94444444444, 0.0000000001);
     }
 
 }
