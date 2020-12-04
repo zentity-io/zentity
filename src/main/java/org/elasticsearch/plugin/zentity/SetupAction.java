@@ -13,6 +13,8 @@ import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 import static org.elasticsearch.rest.RestRequest.Method;
@@ -49,7 +51,12 @@ public class SetupAction extends BaseRestHandler {
 
     @Inject
     public SetupAction(RestController controller) {
-        controller.registerHandler(POST, "_zentity/_setup", this);
+        controller.registerHandler(this);
+    }
+
+    @Override
+    public List<Route> routes() {
+        return Collections.singletonList(new Route(POST, "_zentity/_setup"));
     }
 
     /**

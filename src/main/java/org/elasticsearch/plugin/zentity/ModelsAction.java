@@ -26,6 +26,9 @@ import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.elasticsearch.rest.RestRequest.Method;
 import static org.elasticsearch.rest.RestRequest.Method.DELETE;
 import static org.elasticsearch.rest.RestRequest.Method.GET;
@@ -38,11 +41,18 @@ public class ModelsAction extends BaseRestHandler {
 
     @Inject
     public ModelsAction(RestController controller) {
-        controller.registerHandler(GET, "_zentity/models", this);
-        controller.registerHandler(GET, "_zentity/models/{entity_type}", this);
-        controller.registerHandler(POST, "_zentity/models/{entity_type}", this);
-        controller.registerHandler(PUT, "_zentity/models/{entity_type}", this);
-        controller.registerHandler(DELETE, "_zentity/models/{entity_type}", this);
+        controller.registerHandler(this);
+    }
+
+    @Override
+    public List<Route> routes() {
+        return Arrays.asList(
+            new Route(GET, "_zentity/models"),
+            new Route(GET, "_zentity/models/{entity_type}"),
+            new Route(POST, "_zentity/models/{entity_type}"),
+            new Route(PUT, "_zentity/models/{entity_type}"),
+            new Route(DELETE, "_zentity/models/{entity_type}")
+        );
     }
 
     /**

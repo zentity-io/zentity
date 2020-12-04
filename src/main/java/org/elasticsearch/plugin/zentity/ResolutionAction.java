@@ -13,14 +13,24 @@ import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 
 public class ResolutionAction extends BaseRestHandler {
 
     @Inject
     ResolutionAction(RestController controller) {
-        controller.registerHandler(POST, "_zentity/resolution", this);
-        controller.registerHandler(POST, "_zentity/resolution/{entity_type}", this);
+        controller.registerHandler(this);
+    }
+
+    @Override
+    public List<Route> routes() {
+        return Arrays.asList(
+            new Route(POST, "_zentity/resolution"),
+            new Route(POST, "_zentity/resolution/{entity_type}")
+        );
     }
 
     @Override
