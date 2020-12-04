@@ -1,5 +1,6 @@
 package org.elasticsearch.plugin.zentity;
 
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
@@ -63,23 +64,22 @@ public class SetupAction extends BaseRestHandler {
     public static CreateIndexResponse createIndex(NodeClient client, int numberOfShards, int numberOfReplicas) {
         // Elasticsearch 7.0.0+ removes mapping types
         Properties props = ZentityPlugin.properties();
+
+        CreateIndexRequestBuilder reqBuilder = client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+            .setSettings(Settings.builder()
+                .put("index.number_of_shards", numberOfShards)
+                .put("index.number_of_replicas", numberOfReplicas)
+            );
+
         if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
-            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
-                .setSettings(Settings.builder()
-                        .put("index.number_of_shards", numberOfShards)
-                        .put("index.number_of_replicas", numberOfReplicas)
-                )
+            return reqBuilder
                 .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
                 .get();
-        } else {
-            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
-                .setSettings(Settings.builder()
-                        .put("index.number_of_shards", numberOfShards)
-                        .put("index.number_of_replicas", numberOfReplicas)
-                )
-                .addMapping("doc", INDEX_MAPPING_ELASTICSEARCH_6, XContentType.JSON)
-                .get();
         }
+
+        return reqBuilder
+            .addMapping("doc", INDEX_MAPPING_ELASTICSEARCH_6, XContentType.JSON)
+            .get();
     }
 
     /**
@@ -101,7 +101,7 @@ public class SetupAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
 
         // Parse request
-        Boolean pretty = restRequest.paramAsBoolean("pretty", false);
+        boolean pretty = restRequest.paramAsBoolean("pretty", false);
         int numberOfShards = restRequest.paramAsInt("number_of_shards", 1);
         int numberOfReplicas = restRequest.paramAsInt("number_of_replicas", 1);
         Method method = restRequest.method();

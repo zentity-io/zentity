@@ -30,7 +30,7 @@ public class HomeAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
 
         Properties props = ZentityPlugin.properties();
-        Boolean pretty = restRequest.paramAsBoolean("pretty", false);
+        boolean pretty = restRequest.paramAsBoolean("pretty", false);
 
         return channel -> {
             XContentBuilder content = XContentFactory.jsonBuilder();
@@ -40,10 +40,12 @@ public class HomeAction extends BaseRestHandler {
             content.field("name", props.getProperty("name"));
             content.field("description", props.getProperty("description"));
             content.field("website", props.getProperty("zentity.website"));
+
             content.startObject("version");
             content.field("zentity", props.getProperty("zentity.version"));
             content.field("elasticsearch", props.getProperty("elasticsearch.version"));
             content.endObject();
+
             content.endObject();
             channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
         };

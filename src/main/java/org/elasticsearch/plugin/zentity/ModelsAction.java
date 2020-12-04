@@ -171,7 +171,7 @@ public class ModelsAction extends BaseRestHandler {
 
         // Parse request
         String entityType = restRequest.param("entity_type");
-        Boolean pretty = restRequest.paramAsBoolean("pretty", false);
+        boolean pretty = restRequest.paramAsBoolean("pretty", false);
         Method method = restRequest.method();
         String requestBody = restRequest.content().utf8ToString();
 
@@ -199,7 +199,7 @@ public class ModelsAction extends BaseRestHandler {
                     content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
-                } else if (method == GET && !entityType.equals("")) {
+                } else if (method == GET) {
                     // GET _zentity/models/{entity_type}
                     GetResponse response = getEntityModel(entityType, client);
                     XContentBuilder content = XContentFactory.jsonBuilder();
@@ -210,24 +210,20 @@ public class ModelsAction extends BaseRestHandler {
 
                 } else if (method == POST && !entityType.equals("")) {
                     // POST _zentity/models/{entity_type}
-                    if (requestBody.equals(""))
-                        throw new ValidationException("Request body cannot be empty when indexing an entity model.");
                     IndexResponse response = indexEntityModel(entityType, requestBody, client);
                     XContentBuilder content = XContentFactory.jsonBuilder();
                     if (pretty)
                         content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    response.toXContent(content, ToXContent.EMPTY_PARAMS);
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else if (method == PUT && !entityType.equals("")) {
                     // PUT _zentity/models/{entity_type}
-                    if (requestBody.equals(""))
-                        throw new ValidationException("Request body cannot be empty when updating an entity model.");
                     IndexResponse response = updateEntityModel(entityType, requestBody, client);
                     XContentBuilder content = XContentFactory.jsonBuilder();
                     if (pretty)
                         content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    response.toXContent(content, ToXContent.EMPTY_PARAMS);
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else if (method == DELETE && !entityType.equals("")) {
@@ -236,7 +232,7 @@ public class ModelsAction extends BaseRestHandler {
                     XContentBuilder content = XContentFactory.jsonBuilder();
                     if (pretty)
                         content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                    response.toXContent(content, ToXContent.EMPTY_PARAMS);
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
                 } else {
