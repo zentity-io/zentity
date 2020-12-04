@@ -11,10 +11,10 @@ import java.util.TreeMap;
 
 public class Model {
 
-    private Map<String, Attribute> attributes = new TreeMap<>();
-    private Map<String, Index> indices = new TreeMap<>();
-    private Map<String, Matcher> matchers = new TreeMap<>();
-    private Map<String, Resolver> resolvers = new TreeMap<>();
+    private final Map<String, Attribute> attributes = new TreeMap<>();
+    private final Map<String, Index> indices = new TreeMap<>();
+    private final Map<String, Matcher> matchers = new TreeMap<>();
+    private final Map<String, Resolver> resolvers = new TreeMap<>();
 
     public Model(JsonNode json) throws ValidationException, JsonProcessingException {
         this.deserialize(json);

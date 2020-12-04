@@ -7,6 +7,7 @@ import io.zentity.common.Patterns;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -15,7 +16,7 @@ import java.util.TreeSet;
 public class IndexField {
 
     public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
-            Arrays.asList("attribute")
+        Collections.singletonList("attribute")
     );
 
     private final String index;

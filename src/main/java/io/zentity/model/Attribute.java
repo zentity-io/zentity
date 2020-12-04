@@ -20,7 +20,7 @@ public class Attribute {
     );
 
     private final String name;
-    private Map<String, String> params = new TreeMap<>();
+    private final Map<String, String> params = new TreeMap<>();
     private Double score;
     private String type = "string";
 
@@ -144,18 +144,7 @@ public class Attribute {
                     // Set any params that were specified in the input, with the values serialized as strings.
                     if (!value.isObject())
                         throw new ValidationException("'attributes." + this.name + ".params' must be an object.");
-                    Iterator<Map.Entry<String, JsonNode>> paramsNode = value.fields();
-                    while (paramsNode.hasNext()) {
-                        Map.Entry<String, JsonNode> paramNode = paramsNode.next();
-                        String paramField = paramNode.getKey();
-                        JsonNode paramValue = paramNode.getValue();
-                        if (paramValue.isObject() || paramValue.isArray())
-                            this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));
-                        else if (paramValue.isNull())
-                            this.params().put(paramField, "null");
-                        else
-                            this.params().put(paramField, paramValue.asText());
-                    }
+                    this.params().putAll(Json.toStringMap(value));
                     break;
                 case "score":
                     this.score(value);

@@ -5,7 +5,7 @@ import io.zentity.common.Json;
 import io.zentity.common.Patterns;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -14,7 +14,7 @@ import java.util.TreeSet;
 public class Resolver {
 
     public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
-            Arrays.asList("attributes")
+        Collections.singletonList("attributes")
     );
 
     private final String name;

@@ -151,18 +151,7 @@ public class Matcher {
                         break;
                     if (!value.isObject())
                         throw new ValidationException("'matchers." + this.name + ".params' must be an object.");
-                    Iterator<Map.Entry<String, JsonNode>> paramsNode = value.fields();
-                    while (paramsNode.hasNext()) {
-                        Map.Entry<String, JsonNode> paramNode = paramsNode.next();
-                        String paramField = paramNode.getKey();
-                        JsonNode paramValue = paramNode.getValue();
-                        if (paramValue.isObject() || paramValue.isArray())
-                            this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));
-                        else if (paramValue.isNull())
-                            this.params().put(paramField, "null");
-                        else
-                            this.params().put(paramField, paramValue.asText());
-                    }
+                    this.params().putAll(Json.toStringMap(value));
                     break;
                 case "quality":
                     this.quality(value);
