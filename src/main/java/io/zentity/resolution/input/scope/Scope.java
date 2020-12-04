@@ -11,8 +11,8 @@ import java.util.Map;
 
 public class Scope {
 
-    private Exclude exclude = new Exclude();
-    private Include include = new Include();
+    private final Exclude exclude = new Exclude();
+    private final Include include = new Include();
 
     public Scope() {
     }

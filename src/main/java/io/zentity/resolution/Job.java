@@ -10,6 +10,7 @@ import io.zentity.common.Patterns;
 import io.zentity.model.Index;
 import io.zentity.model.Matcher;
 import io.zentity.model.Model;
+import io.zentity.model.Resolver;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.Attribute;
 import io.zentity.resolution.input.Input;
@@ -45,6 +46,9 @@ import java.util.regex.Pattern;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static io.zentity.common.Patterns.COLON;
 
+/**
+ * A {@link Job} runs the resolution work.
+ */
 public class Job {
 
     // Constants
@@ -97,9 +101,9 @@ public class Job {
     private Boolean searchRequestCache = DEFAULT_SEARCH_REQUEST_CACHE;
 
     // Job state
+    private final NodeClient client;
     private Map<String, Map<String, Map<String, Map<String, Double>>>> attributeIdentityConfidenceScores = new HashMap<>();
     private Map<String, Attribute> attributes = new TreeMap<>();
-    private NodeClient client;
     private Map<String, Set<String>> docIds = new TreeMap<>();
     private String error = null;
     private boolean failed = false;
@@ -113,7 +117,7 @@ public class Job {
         this.client = client;
     }
 
-    public static String serializeException(Exception e, boolean includeErrorTrace) {
+    private static String serializeException(Exception e, boolean includeErrorTrace) {
         List<String> errorParts = new ArrayList<>();
         if (e instanceof ElasticsearchException)
             errorParts.add("\"by\":\"elasticsearch\"");
@@ -129,29 +133,35 @@ public class Job {
         return String.join(",", errorParts);
     }
 
-    public static String serializeLoggedQuery(Input input, int _hop, int _query, String indexName, String request, String response, List<String> resolvers, TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped, List<String> termResolvers, TreeMap<String, TreeMap> termResolversFilterTree) throws JsonProcessingException {
+    /**
+     * Build a list of JSON strings to summarize a set of resolvers' attributes.
+     *
+     * @param resolverMap map of resolver names to {@link Resolver Resolvers}
+     * @param resolverNames list of resolver names to pull out from the map.
+     * @return a list of JSON string summaries.
+     */
+    private static List<String> buildResolversSummary(Map<String, Resolver> resolverMap, List<String> resolverNames) {
+        List<String> summary = new ArrayList<>();
+        for (String resolverName : resolverNames) {
+            List<String> resolversAttributes = new ArrayList<>();
+            for (String attributeName : resolverMap.get(resolverName).attributes())
+                resolversAttributes.add("\"" + attributeName + "\"");
+            summary.add("\"" + resolverName + "\":{\"attributes\":[" +  String.join(",", resolversAttributes) + "]}");
+        }
+        return summary;
+    }
+
+    private static String serializeLoggedQuery(Input input, int _hop, int _query, String indexName, String request, String response, List<String> resolvers, TreeMap<Integer, FilterTree> resolversFilterTreeGrouped, List<String> termResolvers, FilterTree termResolversFilterTree) throws JsonProcessingException {
         List<String> filtersLoggedList = new ArrayList<>();
         if (!resolvers.isEmpty() && !resolversFilterTreeGrouped.isEmpty()) {
-            List<String> attributesResolversSummary = new ArrayList<>();
-            for (String resolverName : resolvers) {
-                List<String> resolversAttributes = new ArrayList<>();
-                for (String attributeName : input.model().resolvers().get(resolverName).attributes())
-                    resolversAttributes.add("\"" + attributeName + "\"");
-                attributesResolversSummary.add("\"" + resolverName + "\":{\"attributes\":[" +  String.join(",", resolversAttributes) + "]}");
-            }
+            List<String> attributesResolversSummary = buildResolversSummary(input.model().resolvers(), resolvers);
             String attributesResolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(resolversFilterTreeGrouped);
             filtersLoggedList.add("\"attributes\":{\"tree\":" + attributesResolversFilterTreeLogged + ",\"resolvers\":{" + String.join(",", attributesResolversSummary) + "}}");
         } else {
             filtersLoggedList.add("\"attributes\":null");
         }
         if (!termResolvers.isEmpty() && !termResolversFilterTree.isEmpty()) {
-            List<String> termsResolversSummary = new ArrayList<>();
-            for (String resolverName : termResolvers) {
-                List<String> resolverAttributes = new ArrayList<>();
-                for (String attributeName : input.model().resolvers().get(resolverName).attributes())
-                    resolverAttributes.add("\"" + attributeName + "\"");
-                termsResolversSummary.add("\"" + resolverName + "\":{\"attributes\":[" +  String.join(",", resolverAttributes) + "]}");
-            }
+            List<String> termsResolversSummary = buildResolversSummary(input.model().resolvers(), termResolvers);
             String termResolversFilterTreeLogged = Json.ORDERED_MAPPER.writeValueAsString(termResolversFilterTree);
             filtersLoggedList.add("\"terms\":{\"tree\":{\"0\":" + termResolversFilterTreeLogged + "},\"resolvers\":{" + String.join(",", termsResolversSummary) + "}}");
         } else {
@@ -225,13 +235,11 @@ public class Job {
      * @param indexFieldName The name of the index field to reference in the index.
      * @return Boolean decision.
      */
-    public static boolean indexFieldHasMatcher(Model model, String indexName, String indexFieldName) {
+    private static boolean indexFieldHasMatcher(Model model, String indexName, String indexFieldName) {
         String matcherName = model.indices().get(indexName).fields().get(indexFieldName).matcher();
         if (matcherName == null)
             return false;
-        if (model.matchers().get(matcherName) == null)
-            return false;
-        return true;
+        return model.matchers().get(matcherName) != null;
     }
 
     /**
@@ -244,7 +252,7 @@ public class Job {
      * @param attributes   The values for the input attributes.
      * @return Boolean decision.
      */
-    public static boolean canQueryResolver(Model model, String indexName, String resolverName, Map<String, Attribute> attributes) {
+    private static boolean canQueryResolver(Model model, String indexName, String resolverName, Map<String, Attribute> attributes) {
 
         // Each attribute of the resolver must pass these conditions:
         for (String attributeName : model.resolvers().get(resolverName).attributes()) {
@@ -287,7 +295,7 @@ public class Job {
      * @param params         The values of the parameters (if any) to pass to the matcher.
      * @return A "bool" clause that references the desired field and value.
      */
-    public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, Map<String, String> params) throws ValidationException {
+    static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, Map<String, String> params) throws ValidationException {
         String matcherClause = matcher.clause();
         for (String variable : matcher.variables().keySet()) {
             Pattern pattern = matcher.variables().get(variable);
@@ -314,6 +322,18 @@ public class Job {
     }
 
     /**
+     * Ensure a combiner clause is supported.
+     *
+     * @param combiner The combiner clause.
+     * @throws ValidationException If the clause is invalid.
+     */
+    private static void validateCombiner(String combiner) throws ValidationException {
+        if (!combiner.equals("should") && !combiner.equals("filter")) {
+            throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
+        }
+    }
+
+    /**
      * Given an entity model, an index name, a set of attribute values, and an attribute name,
      * find all index field names that are mapped to the attribute name and populate their matcher clauses.
      *
@@ -324,9 +344,8 @@ public class Job {
      * @param combiner      Combine clauses with "should" or "filter".
      * @return
      */
-    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Attribute> attributes, String attributeName, String combiner, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
-        if (!combiner.equals("should") && !combiner.equals("filter"))
-            throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
+    private static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Attribute> attributes, String attributeName, String combiner, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
+        validateCombiner(combiner);
         List<String> indexFieldClauses = new ArrayList<>();
         for (String indexFieldName : model.indices().get(indexName).attributeIndexFieldsMap().get(attributeName).keySet()) {
 
@@ -389,11 +408,10 @@ public class Job {
      * @param indexName  The name of the index to reference in the entity model.
      * @param attributes The names and values of the input attributes.
      * @param combiner   Combine clauses with "should" or "filter".
-     * @return
+     * @return The list of attribute clauses.
      */
-    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Attribute> attributes, String combiner, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
-        if (!combiner.equals("should") && !combiner.equals("filter"))
-            throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
+    static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Attribute> attributes, String combiner, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
+        validateCombiner(combiner);
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : attributes.keySet()) {
 
@@ -422,7 +440,7 @@ public class Job {
      * @param attributes          The names and values for the input attributes.
      * @return A "bool" clause for all applicable resolvers.
      */
-    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Attribute> attributes, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
+    static String populateResolversFilterTree(Model model, String indexName, FilterTree resolversFilterTree, Map<String, Attribute> attributes, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
 
         // Construct a "filter" clause for each attribute at this level of the filter tree.
         List<String> attributeClauses = new ArrayList<>();
@@ -465,14 +483,14 @@ public class Job {
      * @param resolversSorted The attributes for each resolver. Attributes are sorted first by priority and then lexicographically.
      * @return The attributes of all applicable resolvers nested in a tree.
      */
-    public static TreeMap<String, TreeMap> makeResolversFilterTree(List<List<String>> resolversSorted) {
-        TreeMap<String, TreeMap> filterTree = new TreeMap<>();
-        filterTree.put("root", new TreeMap<>());
+    static FilterTree makeResolversFilterTree(List<List<String>> resolversSorted) {
+        FilterTree filterTree = new FilterTree();
+        filterTree.put("root", new FilterTree());
         for (List<String> resolverSorted : resolversSorted) {
-            TreeMap<String, TreeMap> current = filterTree.get("root");
+            FilterTree current = filterTree.get("root");
             for (String attributeName : resolverSorted) {
                 if (!current.containsKey(attributeName))
-                    current.put(attributeName, new TreeMap<String, TreeMap>());
+                    current.put(attributeName, new FilterTree());
                 current = current.get(attributeName);
             }
         }
@@ -488,7 +506,7 @@ public class Job {
      * @param counts    For each attribute, the number of resolvers it appears in.
      * @return For each resolver, a list of attributes sorted first by priority and then lexicographically.
      */
-    public static List<List<String>> sortResolverAttributes(Model model, List<String> resolvers, Map<String, Integer> counts) {
+    static List<List<String>> sortResolverAttributes(Model model, List<String> resolvers, Map<String, Integer> counts) {
         List<List<String>> resolversSorted = new ArrayList<>();
         for (String resolverName : resolvers) {
             List<String> resolverSorted = new ArrayList<>();
@@ -502,8 +520,7 @@ public class Job {
             TreeSet<Integer> countsKeys = new TreeSet<>(Collections.reverseOrder());
             countsKeys.addAll(attributeGroups.keySet());
             for (int count : countsKeys)
-                for (String attributeName : attributeGroups.get(count))
-                    resolverSorted.add(attributeName);
+                resolverSorted.addAll(attributeGroups.get(count));
             resolversSorted.add(resolverSorted);
         }
         return resolversSorted;
@@ -517,7 +534,7 @@ public class Job {
      * @param resolvers The names of the resolvers to reference in the entity model.
      * @return For each attribute, the number of resolvers it appears in.
      */
-    public static Map<String, Integer> countAttributesAcrossResolvers(Model model, List<String> resolvers) {
+    static Map<String, Integer> countAttributesAcrossResolvers(Model model, List<String> resolvers) {
         Map<String, Integer> counts = new TreeMap<>();
         for (String resolverName : resolvers)
             for (String attributeName : model.resolvers().get(resolverName).attributes())
@@ -756,12 +773,12 @@ public class Job {
     public static Double calculateAttributeIdentityConfidenceScore(Double attributeIdentityConfidenceBaseScore, Double matcherQualityScore, Double indexFieldQualityScore) {
         if (attributeIdentityConfidenceBaseScore == null)
             return null;
-        Double score = attributeIdentityConfidenceBaseScore;
+        double score = attributeIdentityConfidenceBaseScore;
         if (matcherQualityScore != null)
             score = ((score - 0.5) / (score - 0.0) * ((score * matcherQualityScore) - score)) + score;
         if (indexFieldQualityScore != null)
             score = ((score - 0.5) / (score - 0.0) * ((score * indexFieldQualityScore) - score)) + score;
-        if (score.isNaN())
+        if (Double.isNaN(score))
             score = 0.0;
         return score;
     }
@@ -779,11 +796,14 @@ public class Job {
     private Double getAttributeIdentityConfidenceScore(String attributeName, String matcherName, String indexName, String indexFieldName) {
 
         // Return the cached match score if it exists.
-        if (this.attributeIdentityConfidenceScores.containsKey(attributeName))
-            if (this.attributeIdentityConfidenceScores.get(attributeName).containsKey(matcherName))
-                if (this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).containsKey(indexName))
-                    if (this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName))
-                        return this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).get(indexFieldName);
+        if (
+            this.attributeIdentityConfidenceScores.containsKey(attributeName)
+            && this.attributeIdentityConfidenceScores.get(attributeName).containsKey(matcherName)
+            && this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).containsKey(indexName)
+            && this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).containsKey(indexFieldName)
+        ) {
+            return this.attributeIdentityConfidenceScores.get(attributeName).get(matcherName).get(indexName).get(indexFieldName);
+        }
 
         // Calculate the match score, cache it, and return it.
         Double attributeIdentityConfidenceBaseScore = this.input().model().attributes().get(attributeName).score();
@@ -791,7 +811,7 @@ public class Job {
         Double indexFieldQualityScore = this.input().model().indices().get(indexName).fields().get(indexFieldName).quality();
         if (attributeIdentityConfidenceBaseScore == null)
             return null;
-        Double attributeIdentityConfidenceScore = calculateAttributeIdentityConfidenceScore(attributeIdentityConfidenceBaseScore, matcherQualityScore, indexFieldQualityScore);
+        double attributeIdentityConfidenceScore = calculateAttributeIdentityConfidenceScore(attributeIdentityConfidenceBaseScore, matcherQualityScore, indexFieldQualityScore);
         if (!this.attributeIdentityConfidenceScores.containsKey(attributeName))
             this.attributeIdentityConfidenceScores.put(attributeName, new HashMap<>());
         else if (!this.attributeIdentityConfidenceScores.get(attributeName).containsKey(matcherName))
@@ -847,8 +867,8 @@ public class Job {
 
         // Prepare to collect attributes from the results of these queries as the inputs to subsequent queries.
         Map<String, Attribute> nextInputAttributes = new TreeMap<>();
-        Boolean newHits = false;
-        Boolean namedFilters = this.includeExplanation || this.includeScore;
+        boolean newHits = false;
+        boolean namedFilters = this.includeExplanation || this.includeScore;
         int _query = 0;
 
         // Construct a query for each index that maps to a resolver.
@@ -929,8 +949,8 @@ public class Job {
 
             // Construct the resolvers clause for attribute values.
             String resolversClause = "";
-            TreeMap<String, TreeMap> resolversFilterTree;
-            TreeMap<Integer, TreeMap<String, TreeMap>> resolversFilterTreeGrouped = new TreeMap<>(Collections.reverseOrder());
+            FilterTree resolversFilterTree;
+            TreeMap<Integer, FilterTree> resolversFilterTreeGrouped = new TreeMap<>(Collections.reverseOrder());
             if (!this.attributes.isEmpty()) {
 
                 // Group the resolvers by their weight level.
@@ -976,7 +996,7 @@ public class Job {
                                 List<String> parentResolverGroup = new ArrayList<>(Arrays.asList(parentResolverName));
                                 Map<String, Integer> parentCounts = countAttributesAcrossResolvers(this.input.model(), parentResolverGroup);
                                 List<List<String>> parentResolverSorted = sortResolverAttributes(this.input.model(), parentResolverGroup, parentCounts);
-                                TreeMap<String, TreeMap> parentResolverFilterTree = makeResolversFilterTree(parentResolverSorted);
+                                FilterTree parentResolverFilterTree = makeResolversFilterTree(parentResolverSorted);
                                 String parentResolverClause = populateResolversFilterTree(this.input.model(), indexName, parentResolverFilterTree, this.attributes, namedFilters, _nameIdCounter);
 
                                 // Construct a "should" clause for the above two clauses.
@@ -1001,7 +1021,7 @@ public class Job {
             // In this case, terms are not certain to be attribute values of the entity until they match,
             // unlike structured attribute search where the attributes are assumed be known.
             List<String> termResolvers = new ArrayList<>();
-            TreeMap<String, TreeMap> termResolversFilterTree = new TreeMap<>();
+            FilterTree termResolversFilterTree = new FilterTree();
             if (canQueryTerms) {
                 String termResolversClause = "";
 
@@ -1240,10 +1260,13 @@ public class Job {
                             responseDataCopyObjHits.remove("hits");
                     }
                     responseString = responseDataCopyObj.toString();
-                } else {
+                } else if (responseError instanceof ElasticsearchException) {
                     ElasticsearchException e = (ElasticsearchException) responseError;
                     String cause = Strings.toString(e.toXContent(jsonBuilder().startObject(), ToXContent.EMPTY_PARAMS).endObject());
                     responseString = "{\"error\":{\"root_cause\":[" + cause + "],\"type\":\"" + ElasticsearchException.getExceptionName(e) + "\",\"reason\":\"" + e.getMessage() + "\"},\"status\":" + e.status().getStatus() + "}";
+                } else {
+                    // should never get here
+                    responseString = "{\"error\":{\"root_cause\":[\"unknown\"],\"type\":\"" + ElasticsearchException.getExceptionName(responseError) + "\",\"reason\":\"" + responseError.getMessage() + "\"},\"status\":" + 500 + "}";
                 }
                 String logged = serializeLoggedQuery(this.input, this.hop, _query, indexName, query, responseString, resolvers, resolversFilterTreeGrouped, termResolvers, termResolversFilterTree);
                 this.queries.add(logged);
@@ -1562,4 +1585,8 @@ public class Job {
         }
     }
 
+    /**
+     * A recursive {@link TreeMap} for filtering resolvers.
+     */
+    static class FilterTree extends TreeMap<String, FilterTree> {}
 }

@@ -17,7 +17,7 @@ public class Input {
     private Map<String, Attribute> attributes = new TreeMap<>();
     private Map<String, Set<String>> ids = new TreeMap<>();
     private Model model;
-    private Scope scope = new Scope();
+    private final Scope scope = new Scope();
     private Set<Term> terms = new TreeSet<>();
 
     public Input(JsonNode json, Model model) throws ValidationException, IOException {

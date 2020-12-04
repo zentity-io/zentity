@@ -3,6 +3,7 @@ package io.zentity.resolution;
 import io.zentity.model.Matcher;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
+import io.zentity.resolution.Job.FilterTree;
 import io.zentity.resolution.input.Input;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public class JobTest {
         resolversList.add("d");
         Map<String, Integer> counts = Job.countAttributesAcrossResolvers(model, resolversList);
         List<List<String>> resolversSorted = Job.sortResolverAttributes(model, resolversList, counts);
-        TreeMap<String, TreeMap> resolversFilterTree = Job.makeResolversFilterTree(resolversSorted);
+        FilterTree resolversFilterTree = Job.makeResolversFilterTree(resolversSorted);
         String resolversClause = Job.populateResolversFilterTree(model, "index", resolversFilterTree, input.attributes(), false, new AtomicInteger());
         String expected = "{\"bool\":{\"should\":[{\"match\":{\"id\":\"1234567890\",\"fuzziness\":\"auto\"}},{\"bool\":{\"filter\":[{\"bool\":{\"should\":[{\"term\":{\"name\":\"Alice Jones\"}},{\"term\":{\"name\":\"Alice Jones-Smith\"}}]}},{\"bool\":{\"should\":[{\"match\":{\"phone\":\"555-123-4567\",\"fuzziness\":\"2\"}},{\"bool\":{\"filter\":[{\"term\":{\"street\":\"123 Main St\"}},{\"bool\":{\"should\":[{\"bool\":{\"filter\":[{\"term\":{\"city\":\"Beverly Hills\"}},{\"term\":{\"state\":\"CA\"}}]}},{\"term\":{\"zip\":\"90210\"}}]}}]}}]}}]}}]}}";
         Assert.assertEquals(resolversClause, expected);

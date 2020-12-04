@@ -18,9 +18,9 @@ import java.util.TreeSet;
 public class Attribute {
 
     private final String name;
-    private Map<String, String> params = new TreeMap<>();
-    private String type;
-    private Set<Value> values = new TreeSet<>();
+    private final Map<String, String> params = new TreeMap<>();
+    private final String type;
+    private final Set<Value> values = new TreeSet<>();
 
     public Attribute(String name, String type, JsonNode json) throws ValidationException, JsonProcessingException {
         validateName(name);
@@ -165,17 +165,7 @@ public class Attribute {
         }
 
         // Set any params that were specified in the input, with the values serialized as strings.
-        while (paramsNode.hasNext()) {
-            Map.Entry<String, JsonNode> paramNode = paramsNode.next();
-            String paramField = paramNode.getKey();
-            JsonNode paramValue = paramNode.getValue();
-            if (paramValue.isObject() || paramValue.isArray())
-                this.params().put(paramField, Json.MAPPER.writeValueAsString(paramValue));
-            else if (paramValue.isNull())
-                this.params().put(paramField, "null");
-            else
-                this.params().put(paramField, paramValue.asText());
-        }
+        this.params().putAll(Json.toStringMap(paramsNode));
     }
 
     public void deserialize(String json) throws ValidationException, IOException {
