@@ -20,7 +20,7 @@
         <jackson.core.version>2.10.4</jackson.core.version>
         <jackson.databind.version>2.10.4</jackson.databind.version>
         <jdk.version>1.11</jdk.version>
-        <log4j.version>2.11.1</log4j.version>
+        <log4j.version>2.13.2</log4j.version>
         <commons-io.version>2.8.0</commons-io.version>
         <!-- maven plugin versions -->
         <maven.assembly.version>2.6</maven.assembly.version>
