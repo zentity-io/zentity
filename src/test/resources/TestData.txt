@@ -1,80 +1,80 @@
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a0" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a0" }}
 {"field_a": "a_00", "field_b": "b_00", "field_c": "c_00", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "1999-12-31T23:59:57.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a1" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a1" }}
 {"field_a": "a 02", "field_b": "b_03", "field_c": "c_03", "field_d": "d_00", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "1999-12-31T23:59:59.999", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a2" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a2" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_10", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a3" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a3" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2000-01-01T00:00:02.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a4" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a4" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_10", "field_d": "d_01", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:03.999", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a5" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a5" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a6" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a6" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_10", "field_d": "d_02", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a7" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a7" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_11", "field_d": "d_02", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a8" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a8" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_10", "field_d": "d_03", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_a", "_id": "a9" }}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "a9" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_11", "field_d": "d_03", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b0" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b0" }}
 {"field_a": "a_00", "field_b": "b 01", "field_c": "c_01", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b1" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b1" }}
 {"field_a": "a_04", "field_b": "b_03", "field_c": "c 03", "field_d": "d_00", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2000-01-01T00:00:03.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b2" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b2" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_10", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:04.001", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b3" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b3" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2000-01-01T00:00:02.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b4" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b4" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_10", "field_d": "d_01", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:06.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b5" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b5" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b6" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b6" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_10", "field_d": "d_02", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b7" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b7" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_11", "field_d": "d_02", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b8" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b8" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_10", "field_d": "d_03", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_b", "_id": "b9" }}
+{ "index" : { "_index": "zentity_test_index_b", "_id": "b9" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_11", "field_d": "d_03", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c0" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c0" }}
 {"field_a": "a_02", "field_b": "b_01", "field_c": "c 01", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:01.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c1" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c1" }}
 {"field_a": "a 04", "field_b": "b_05", "field_c": "c_05", "field_d": "d_00", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2000-01-01T00:00:02.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c2" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c2" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_10", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:04.999", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c3" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c3" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2000-01-01T00:00:03.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c4" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c4" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_10", "field_d": "d_01", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:03.500", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c5" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c5" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c6" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c6" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_10", "field_d": "d_02", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c7" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c7" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_11", "field_d": "d_02", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c8" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c8" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_10", "field_d": "d_03", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_c", "_id": "c9" }}
+{ "index" : { "_index": "zentity_test_index_c", "_id": "c9" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_11", "field_d": "d_03", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d0" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d0" }}
 {"field_a": "a_02", "field_b": "b_01", "field_c": "c 01", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d1" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d1" }}
 {"field_a": "a 04", "field_b": "b_05", "field_c": "c_05", "field_d": "d_00", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2000-01-01T00:00:00.001", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d2" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d2" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_10", "field_d": "d_00", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:00:00.002", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d3" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d3" }}
 {"field_a": "a_10", "field_b": "b_10", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2000-01-01T00:00:02.500", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d4" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d4" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_10", "field_d": "d_01", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2000-01-01T00:01:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d5" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d5" }}
 {"field_a": "a_10", "field_b": "b_11", "field_c": "c_11", "field_d": "d_01", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d6" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d6" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_10", "field_d": "d_02", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d7" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d7" }}
 {"field_a": "a_11", "field_b": "b_10", "field_c": "c_11", "field_d": "d_02", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d8" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d8" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_10", "field_d": "d_03", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
-{ "index" : { "_index": ".zentity_test_index_d", "_id": "d9" }}
+{ "index" : { "_index": "zentity_test_index_d", "_id": "d9" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_11", "field_d": "d_03", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}

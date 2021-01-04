@@ -14,7 +14,7 @@ import org.elasticsearch.rest.RestHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Supplier;
@@ -69,12 +69,11 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
             SettingsFilter settingsFilter,
             IndexNameExpressionResolver indexNameExpressionResolver,
             Supplier<DiscoveryNodes> nodesInCluster) {
-        List<RestHandler> handlers = new ArrayList<RestHandler>() {{
-            new HomeAction(restController);
-            new ModelsAction(restController);
-            new ResolutionAction(restController);
-            new SetupAction(restController);
-        }};
-        return handlers;
+        return Arrays.asList(
+                new HomeAction(),
+                new ModelsAction(),
+                new ResolutionAction(),
+                new SetupAction()
+        );
     }
 }

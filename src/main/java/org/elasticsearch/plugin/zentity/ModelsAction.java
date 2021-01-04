@@ -14,7 +14,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -22,9 +21,10 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
-import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
+
+import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method;
 import static org.elasticsearch.rest.RestRequest.Method.DELETE;
@@ -36,13 +36,15 @@ public class ModelsAction extends BaseRestHandler {
 
     public static final String INDEX_NAME = ".zentity-models";
 
-    @Inject
-    public ModelsAction(RestController controller) {
-        controller.registerHandler(GET, "_zentity/models", this);
-        controller.registerHandler(GET, "_zentity/models/{entity_type}", this);
-        controller.registerHandler(POST, "_zentity/models/{entity_type}", this);
-        controller.registerHandler(PUT, "_zentity/models/{entity_type}", this);
-        controller.registerHandler(DELETE, "_zentity/models/{entity_type}", this);
+    @Override
+    public List<Route> routes() {
+        return List.of(
+                new Route(GET, "_zentity/models"),
+                new Route(GET, "_zentity/models/{entity_type}"),
+                new Route(POST, "_zentity/models/{entity_type}"),
+                new Route(PUT, "_zentity/models/{entity_type}"),
+                new Route(DELETE, "_zentity/models/{entity_type}")
+        );
     }
 
     /**

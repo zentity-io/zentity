@@ -165,7 +165,7 @@
     }
   },
   "indices": {
-    ".zentity_test_index_a": {
+    "zentity_test_index_a": {
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",
@@ -245,7 +245,7 @@
         }
       }
     },
-    ".zentity_test_index_b": {
+    "zentity_test_index_b": {
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",
@@ -324,7 +324,7 @@
         }
       }
     },
-    ".zentity_test_index_c": {
+    "zentity_test_index_c": {
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",
@@ -400,7 +400,7 @@
         }
       }
     },
-    ".zentity_test_index_d": {
+    "zentity_test_index_d": {
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",

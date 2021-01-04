@@ -72,7 +72,7 @@
     }
   },
   "indices": {
-    ".zentity_test_index_a": {
+    "zentity_test_index_a": {
       "fields": {
         "field_a.clean": {
           "attribute": "attribute_a",
