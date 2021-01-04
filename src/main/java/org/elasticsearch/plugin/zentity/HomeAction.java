@@ -1,24 +1,26 @@
 package org.elasticsearch.plugin.zentity;
 
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
-import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import java.util.List;
 import java.util.Properties;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
+
 public class HomeAction extends BaseRestHandler {
 
-    @Inject
-    public HomeAction(RestController controller) {
-        controller.registerHandler(GET, "_zentity", this);
+    @Override
+    public List<Route> routes() {
+        return List.of(
+                new Route(GET, "_zentity")
+        );
     }
 
     @Override

@@ -25,7 +25,7 @@
     }
   },
   "indices": {
-    ".zentity_test_index_arrays": {
+    "zentity_test_index_arrays": {
       "fields": {
         "string": {
           "attribute": "string",

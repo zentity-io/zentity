@@ -39,7 +39,7 @@ public class JobIT extends AbstractITCase {
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -49,7 +49,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"a_00\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -68,7 +68,7 @@ public class JobIT extends AbstractITCase {
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -85,18 +85,18 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"a_00\", \"1999-12-31T23:59:57.0000\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
 
     private final StringEntity TEST_PAYLOAD_JOB_IDS = new StringEntity("{\n" +
             "  \"ids\": {\n" +
-            "    \".zentity_test_index_a\": [ \"a0\" ]\n" +
+            "    \"zentity_test_index_a\": [ \"a0\" ]\n" +
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -107,11 +107,11 @@ public class JobIT extends AbstractITCase {
             "    \"attribute_a\": [ \"a_00\" ]\n" +
             "  },\n" +
             "  \"ids\": {\n" +
-            "    \".zentity_test_index_a\": [ \"a6\" ]\n" +
+            "    \"zentity_test_index_a\": [ \"a6\" ]\n" +
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -119,12 +119,12 @@ public class JobIT extends AbstractITCase {
 
     private final StringEntity TEST_PAYLOAD_JOB_TERMS_IDS = new StringEntity("{\n" +
             "  \"ids\": {\n" +
-            "    \".zentity_test_index_a\": [ \"a6\" ]\n" +
+            "    \"zentity_test_index_a\": [ \"a6\" ]\n" +
             "  },\n" +
             "  \"terms\": [ \"a_00\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -145,7 +145,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_boolean\": [ true ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -154,7 +154,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"true\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -192,7 +192,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_boolean\": [ false ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -201,7 +201,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"false\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -210,7 +210,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -219,7 +219,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"3.141592653589793\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -228,7 +228,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_double\": [ -3.141592653589793 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -237,7 +237,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"-3.141592653589793\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -246,7 +246,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_float\": [ 1.0 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -255,7 +255,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"1.0\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -264,7 +264,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_float\": [ -1.0 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -273,7 +273,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"-1.0\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -282,7 +282,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_integer\": [ 1 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -291,7 +291,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"1\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -300,7 +300,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_integer\": [ -1 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -309,7 +309,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"-1\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -318,7 +318,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_long\": [ 922337203685477 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -327,7 +327,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"922337203685477\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -336,7 +336,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_long\": [ -922337203685477 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -345,7 +345,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"-922337203685477\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -354,7 +354,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_string\": [ \"a\" ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -363,7 +363,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"a\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -372,7 +372,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_type_string\": [ \"b\" ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -381,7 +381,7 @@ public class JobIT extends AbstractITCase {
             "  \"terms\": [ \"b\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -390,7 +390,7 @@ public class JobIT extends AbstractITCase {
             "  \"attributes\": { \"attribute_object\": [ \"a\" ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ], \"resolvers\": [ \"resolver_object\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_object\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -404,7 +404,7 @@ public class JobIT extends AbstractITCase {
             "      \"attributes\": { \"attribute_a\":[ \"a_11\" ], \"attribute_c\": [ \"c_03\" ] }\n" +
             "    },\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -417,7 +417,7 @@ public class JobIT extends AbstractITCase {
             "      \"attributes\": { \"attribute_a\":[ \"a_11\" ], \"attribute_c\": [ \"c_03\" ] }\n" +
             "    },\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -430,7 +430,7 @@ public class JobIT extends AbstractITCase {
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\", \".zentity_test_index_d\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -441,7 +441,7 @@ public class JobIT extends AbstractITCase {
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\", \".zentity_test_index_d\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -457,7 +457,7 @@ public class JobIT extends AbstractITCase {
             "    },\n" +
             "    \"include\": {\n" +
             "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\", \".zentity_test_index_d\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -471,7 +471,7 @@ public class JobIT extends AbstractITCase {
             "    },\n" +
             "    \"include\": {\n" +
             "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \".zentity_test_index_a\", \".zentity_test_index_b\", \".zentity_test_index_c\", \".zentity_test_index_d\" ],\n" +
+            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
             "  }\n" +
@@ -484,7 +484,7 @@ public class JobIT extends AbstractITCase {
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"indices\": [ \".zentity_test_index_a\" ]\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
             "    }\n" +
             "  }\n" +
             "}", ContentType.APPLICATION_JSON);
@@ -511,13 +511,13 @@ public class JobIT extends AbstractITCase {
     private void destroyTestIndices(int testResourceSet) throws IOException {
         switch (testResourceSet) {
             case TEST_RESOURCES_ARRAYS:
-                client.performRequest(new Request("DELETE", ".zentity_test_index_arrays"));
+                client.performRequest(new Request("DELETE", "zentity_test_index_arrays"));
                 break;
             default:
-                client.performRequest(new Request("DELETE", ".zentity_test_index_a"));
-                client.performRequest(new Request("DELETE", ".zentity_test_index_b"));
-                client.performRequest(new Request("DELETE", ".zentity_test_index_c"));
-                client.performRequest(new Request("DELETE", ".zentity_test_index_d"));
+                client.performRequest(new Request("DELETE", "zentity_test_index_a"));
+                client.performRequest(new Request("DELETE", "zentity_test_index_b"));
+                client.performRequest(new Request("DELETE", "zentity_test_index_c"));
+                client.performRequest(new Request("DELETE", "zentity_test_index_d"));
                 break;
         }
     }
@@ -636,21 +636,21 @@ public class JobIT extends AbstractITCase {
         // Create indices
         switch (testResourceSet) {
             case TEST_RESOURCES_ARRAYS:
-                Request putTestIndexArrays = new Request("PUT", ".zentity_test_index_arrays");
+                Request putTestIndexArrays = new Request("PUT", "zentity_test_index_arrays");
                 putTestIndexArrays.setEntity(testIndex);
                 client.performRequest(putTestIndexArrays);
                 break;
             default:
-                Request putTestIndexA = new Request("PUT", ".zentity_test_index_a");
+                Request putTestIndexA = new Request("PUT", "zentity_test_index_a");
                 putTestIndexA.setEntity(testIndex);
                 client.performRequest(putTestIndexA);
-                Request putTestIndexB = new Request("PUT", ".zentity_test_index_b");
+                Request putTestIndexB = new Request("PUT", "zentity_test_index_b");
                 putTestIndexB.setEntity(testIndex);
                 client.performRequest(putTestIndexB);
-                Request putTestIndexC = new Request("PUT", ".zentity_test_index_c");
+                Request putTestIndexC = new Request("PUT", "zentity_test_index_c");
                 putTestIndexC.setEntity(testIndex);
                 client.performRequest(putTestIndexC);
-                Request putTestIndexD = new Request("PUT", ".zentity_test_index_d");
+                Request putTestIndexD = new Request("PUT", "zentity_test_index_d");
                 putTestIndexD.setEntity(testIndex);
                 client.performRequest(putTestIndexD);
                 break;
@@ -1235,7 +1235,7 @@ public class JobIT extends AbstractITCase {
             To demonstrate, compare this query (below) with the test indices, data, and entity models on Elasticsearch
             versions 6.7.1 and 7.0.0:
 
-            GET .zentity_test_index_d/_search
+            GET zentity_test_index_d/_search
             {
               "query": {
                 "bool": {
@@ -1316,7 +1316,7 @@ public class JobIT extends AbstractITCase {
             To demonstrate, compare this query (below) with the test indices, data, and entity models on Elasticsearch
             versions 6.7.1 and 7.0.0:
 
-            GET .zentity_test_index_d/_search
+            GET zentity_test_index_d/_search
             {
               "query": {
                 "bool": {
@@ -1597,9 +1597,9 @@ public class JobIT extends AbstractITCase {
                 assertEquals(response.getStatusLine().getStatusCode(), 500);
                 JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
                 assertEquals(json.get("error").get("by").asText(), "elasticsearch");
-                assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.ParsingException");
-                assertEquals(json.get("error").get("reason").asText(), "no [query] registered for [example_malformed_query]");
-                assertEquals(json.get("error").get("stack_trace").asText().startsWith("ParsingException[no [query] registered for [example_malformed_query]]"), true);
+                assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.xcontent.XContentParseException");
+                assertEquals(json.get("error").get("reason").asText(), "[1:967] [bool] failed to parse field [filter]");
+                assertEquals(json.get("error").get("stack_trace").asText().contains("unknown field [example_malformed_query]"), true);
                 assertEquals(json.get("hits").get("total").asInt(), 2);
                 Set<String> docsExpected = new TreeSet<>();
                 docsExpected.add("a2,0");
@@ -1620,8 +1620,7 @@ public class JobIT extends AbstractITCase {
                 assertEquals(response.getStatusLine().getStatusCode(), 500);
                 JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
                 assertEquals(json.get("error").get("by").asText(), "elasticsearch");
-                assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.ParsingException");
-                assertEquals(json.get("error").get("reason").asText(), "no [query] registered for [example_malformed_query]");
+                assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.xcontent.XContentParseException");
                 assertEquals(json.get("error").get("stack_trace"), null);
                 assertEquals(json.get("queries").isMissingNode(), false);
                 assertEquals(json.get("hits").get("total").asInt(), 2);

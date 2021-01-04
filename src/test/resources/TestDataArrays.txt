@@ -1,4 +1,4 @@
-{ "index" : { "_index" : ".zentity_test_index_arrays", "_id" : "1" }}
+{ "index" : { "_index" : "zentity_test_index_arrays", "_id" : "1" }}
 { "string" : "abc", "array_1": [ "111" ], "array_2" : ["222",null,"222"], "array_3" : [],"array_4" : [ "222", "333", "444" ]}
-{ "index" : { "_index" : ".zentity_test_index_arrays", "_id" : "2" }}
+{ "index" : { "_index" : "zentity_test_index_arrays", "_id" : "2" }}
 { "string" : "xyz", "array_1": [ "444" ], "array_2" : null, "array_4" : [ "555" ]}

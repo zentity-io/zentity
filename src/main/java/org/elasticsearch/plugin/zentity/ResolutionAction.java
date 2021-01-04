@@ -6,21 +6,24 @@ import io.zentity.resolution.Job;
 import io.zentity.resolution.input.Input;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
-import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import java.util.List;
+
 import static org.elasticsearch.rest.RestRequest.Method.POST;
+
 
 public class ResolutionAction extends BaseRestHandler {
 
-    @Inject
-    ResolutionAction(RestController controller) {
-        controller.registerHandler(POST, "_zentity/resolution", this);
-        controller.registerHandler(POST, "_zentity/resolution/{entity_type}", this);
+    @Override
+    public List<Route> routes() {
+        return List.of(
+                new Route(POST, "_zentity/resolution"),
+                new Route(POST, "_zentity/resolution/{entity_type}")
+        );
     }
 
     @Override
