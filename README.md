@@ -31,7 +31,7 @@ Once you have installed Elasticsearch, you can install zentity from a remote URL
 
 Example:
 
-`elasticsearch-plugin install https://zentity.io/releases/zentity-1.6.1-elasticsearch-7.8.0.zip`
+`elasticsearch-plugin install https://zentity.io/releases/zentity-1.6.1-elasticsearch-7.10.1.zip`
 
 Read the [installation](https://zentity.io/docs/installation) docs for more details.
 
