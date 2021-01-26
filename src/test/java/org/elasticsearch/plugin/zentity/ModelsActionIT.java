@@ -17,6 +17,8 @@ import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ModelsActionIT extends AbstractITCase {
 
@@ -223,4 +225,31 @@ public class ModelsActionIT extends AbstractITCase {
         }
     }
 
+    @Test
+    public void testCannotCreateInvalidEntityType() throws Exception {
+        ByteArrayEntity testEntityModelA = new ByteArrayEntity(readFile("TestEntityModelA.json"), ContentType.APPLICATION_JSON);
+        Request request = new Request("POST", "_zentity/models/_anInvalidType");
+        request.setEntity(testEntityModelA);
+
+        try {
+            client().performRequest(request);
+            fail("expected failure");
+        } catch (ResponseException ex) {
+            Response response = ex.getResponse();
+            assertEquals(400, response.getStatusLine().getStatusCode());
+
+            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+
+            assertEquals(400, json.get("status").asInt());
+
+            assertTrue("response has error field", json.has("error"));
+            JsonNode errorJson = json.get("error");
+
+            assertTrue("error has type field", errorJson.has("type"));
+            assertEquals("validation_exception", errorJson.get("type").textValue());
+
+            assertTrue("error has reason field", errorJson.has("reason"));
+            assertTrue(errorJson.get("reason").textValue().contains("Invalid entity type [_anInvalidType]"));
+        }
+    }
 }
