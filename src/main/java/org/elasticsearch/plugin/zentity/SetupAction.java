@@ -1,5 +1,6 @@
 package org.elasticsearch.plugin.zentity;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.settings.Settings;
@@ -10,7 +11,9 @@ import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.action.RestActionListener;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
@@ -59,38 +62,40 @@ public class SetupAction extends BaseRestHandler {
      * @param client           The client that will communicate with Elasticsearch.
      * @param numberOfShards   The value of index.number_of_shards.
      * @param numberOfReplicas The value of index.number_of_replicas.
+     * @param listener         Action to perform after index creation request completes.
      * @return
      */
-    public static CreateIndexResponse createIndex(NodeClient client, int numberOfShards, int numberOfReplicas) {
+    public static void createIndex(NodeClient client, int numberOfShards, int numberOfReplicas, ActionListener<CreateIndexResponse> listener) {
         // Elasticsearch 7.0.0+ removes mapping types
         Properties props = ZentityPlugin.properties();
         if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
-            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+            client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
                 .setSettings(Settings.builder()
                         .put("index.number_of_shards", numberOfShards)
                         .put("index.number_of_replicas", numberOfReplicas)
                 )
                 .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
-                .get();
+                .execute(listener);
         } else {
-            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+            client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
                 .setSettings(Settings.builder()
                         .put("index.number_of_shards", numberOfShards)
                         .put("index.number_of_replicas", numberOfReplicas)
                 )
                 .addMapping("doc", INDEX_MAPPING_ELASTICSEARCH_6, XContentType.JSON)
-                .get();
+                .execute(listener);
         }
     }
 
     /**
      * Create the .zentity-models index using the default index settings.
      *
-     * @param client The client that will communicate with Elasticsearch.
+     * @param client   The client that will communicate with Elasticsearch.
+     * @param listener Action to perform after index creation request completes.
      * @return
      */
-    public static CreateIndexResponse createIndex(NodeClient client) {
-        return createIndex(client, DEFAULT_NUMBER_OF_SHARDS, DEFAULT_NUMBER_OF_REPLICAS);
+    public static void createIndex(NodeClient client, ActionListener<CreateIndexResponse> listener) {
+         createIndex(client, DEFAULT_NUMBER_OF_SHARDS, DEFAULT_NUMBER_OF_REPLICAS, listener);
     }
 
     @Override
@@ -110,13 +115,17 @@ public class SetupAction extends BaseRestHandler {
         return channel -> {
             try {
                 if (method == POST) {
+                    createIndex(client, numberOfShards, numberOfReplicas, new RestActionListener<>(channel) {
 
-                    createIndex(client, numberOfShards, numberOfReplicas);
-                    XContentBuilder content = XContentFactory.jsonBuilder();
-                    if (pretty)
-                        content.prettyPrint();
-                    content.startObject().field("acknowledged", true).endObject();
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                        @Override
+                        protected void processResponse(CreateIndexResponse createIndexResponse) throws IOException {
+                            XContentBuilder content = XContentFactory.jsonBuilder();
+                            if (pretty)
+                                content.prettyPrint();
+                            content.startObject().field("acknowledged", true).endObject();
+                            channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                        }
+                    });
 
                 } else {
                     throw new NotImplementedException("Method and endpoint not implemented.");

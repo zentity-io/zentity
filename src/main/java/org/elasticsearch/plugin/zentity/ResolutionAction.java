@@ -10,6 +10,7 @@ import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.action.RestActionListener;
 
 import java.util.List;
 
@@ -79,18 +80,6 @@ public class ResolutionAction extends BaseRestHandler {
                 if (body == null || body.equals(""))
                     throw new ValidationException("Request body is missing.");
 
-                // Parse and validate the job input.
-                Input input;
-                if (entityType == null || entityType.equals("")) {
-                    input = new Input(body);
-                } else {
-                    GetResponse getResponse = ModelsAction.getEntityModel(entityType, client);
-                    if (!getResponse.isExists())
-                        throw new NotFoundException("Entity type '" + entityType + "' not found.");
-                    String model = getResponse.getSourceAsString();
-                    input = new Input(body, new Model(model));
-                }
-
                 // Prepare the entity resolution job.
                 Job job = new Job(client);
                 job.includeAttributes(includeAttributes);
@@ -107,7 +96,6 @@ public class ResolutionAction extends BaseRestHandler {
                 job.maxTimePerQuery(maxTimePerQuery);
                 job.pretty(pretty);
                 job.profile(profile);
-                job.input(input);
 
                 // Optional search parameters
                 job.searchAllowPartialSearchResults(searchAllowPartialSearchResults);
@@ -117,17 +105,44 @@ public class ResolutionAction extends BaseRestHandler {
                 job.searchPreference(searchPreference);
                 job.searchRequestCache(searchRequestCache);
 
-                // Run the entity resolution job.
-                String response = job.run();
-                if (job.failed())
-                    channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", response));
-                else
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
+                // Parse and validate the job input.
+                if (entityType == null || entityType.equals("")) {
+
+                    // TODO: Duplicate of code below. Determine best way to use this code once.
+                    Input input = new Input(body);
+                    job.input(input);
+
+                    // Run the entity resolution job.
+                    String jobResponse = job.run();
+                    if (job.failed())
+                        channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
+                    else
+                        channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
+                } else {
+                    ModelsAction.getEntityModel(entityType, client, new RestActionListener<>(channel)  {
+
+                        @Override
+                        protected void processResponse(GetResponse getResponse) throws Exception {
+                            if (!getResponse.isExists())
+                                throw new NotFoundException("Entity type '" + entityType + "' not found.");
+                            String model = getResponse.getSourceAsString();
+
+                            // TODO: Duplicate of code above. Determine best way to use this code once.
+                            Input input = new Input(body, new Model(model));
+                            job.input(input);
+
+                            // Run the entity resolution job.
+                            String jobResponse = job.run();
+                            if (job.failed())
+                                channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
+                            else
+                                channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
+                        }
+                    });
+                }
 
             } catch (ValidationException e) {
                 channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
-            } catch (NotFoundException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_FOUND, e));
             }
         };
     }
