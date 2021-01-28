@@ -4,13 +4,15 @@ import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.Job;
 import io.zentity.resolution.input.Input;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.rest.action.RestActionListener;
 
 import java.util.List;
 
@@ -18,6 +20,8 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 
 
 public class ResolutionAction extends BaseRestHandler {
+
+    private static final Logger logger = LogManager.getLogger(ResolutionAction.class);
 
     @Override
     public List<Route> routes() {
@@ -119,30 +123,44 @@ public class ResolutionAction extends BaseRestHandler {
                     else
                         channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
                 } else {
-                    ModelsAction.getEntityModel(entityType, client, new RestActionListener<>(channel)  {
+                    ModelsAction.getEntityModel(entityType, client, new ActionListener<>()  {
 
                         @Override
-                        protected void processResponse(GetResponse getResponse) throws Exception {
-                            if (!getResponse.isExists())
-                                throw new NotFoundException("Entity type '" + entityType + "' not found.");
-                            String model = getResponse.getSourceAsString();
+                        public void onResponse(GetResponse response) {
+                            try {
+                                if (!response.isExists())
+                                    throw new NotFoundException("Entity type '" + entityType + "' not found.");
+                                String model = response.getSourceAsString();
 
-                            // TODO: Duplicate of code above. Determine best way to use this code once.
-                            Input input = new Input(body, new Model(model));
-                            job.input(input);
+                                // TODO: Duplicate of code above. Determine best way to use this code once.
+                                Input input = new Input(body, new Model(model));
+                                job.input(input);
 
-                            // Run the entity resolution job.
-                            String jobResponse = job.run();
-                            if (job.failed())
-                                channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
-                            else
-                                channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
+                                // Run the entity resolution job.
+                                String jobResponse = job.run();
+                                if (job.failed())
+                                    channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
+                                else
+                                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
+
+                            } catch (Exception e){
+
+                                // An error occurred when running the entity resolution job.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when retrieving the entity model.
+                            ZentityPlugin.sendResponseError(channel, logger, e);
                         }
                     });
                 }
 
-            } catch (ValidationException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
+            } catch (Exception e) {
+                ZentityPlugin.sendResponseError(channel, logger, e);
             }
         };
     }
