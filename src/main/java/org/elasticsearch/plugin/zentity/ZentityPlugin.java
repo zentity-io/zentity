@@ -1,5 +1,6 @@
 package org.elasticsearch.plugin.zentity;
 
+import io.zentity.common.Json;
 import io.zentity.model.ValidationException;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -113,7 +114,7 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
             // Since BytesRestResponse throws IOException, build this response object as a string
             // to handle any IOException that find its way here.
             logger.catching(ee);
-            String message = "{\"error\":{\"root_cause\":[{\"type\":\"exception\",\"reason\":\"" + ee.getMessage() + "\"}],\"type\":\"exception\",\"reason\":\"" + ee.getMessage() + "\"},\"status\":500}";
+            String message = "{\"error\":{\"root_cause\":[{\"type\":\"exception\",\"reason\":" + Json.quoteString(ee.getMessage()) + "}],\"type\":\"exception\",\"reason\":" + Json.quoteString(ee.getMessage()) + "},\"status\":500}";
             channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, message));
         }
     }
