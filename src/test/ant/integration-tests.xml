@@ -118,6 +118,8 @@
             <echo>Starting up external cluster...</echo>
 
             <chmod file="@{home}/bin/elasticsearch" perm="ugo+rx"/>
+            <chmod file="@{home}/config/jvm.options" perm="ugo+rw"/>
+            <echo file="@{home}/config/jvm.options" append="true">-ea</echo>
             <run-script script="@{home}/bin/elasticsearch"
                         spawn="@{spawn}">
                 <nested>
