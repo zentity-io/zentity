@@ -17,6 +17,7 @@ import io.zentity.resolution.input.Term;
 import io.zentity.resolution.input.value.StringValue;
 import io.zentity.resolution.input.value.Value;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -829,7 +831,20 @@ public class Job {
             searchRequestBuilder.setRequestCache(this.searchRequestCache);
         if (this.maxTimePerQuery != null)
             searchRequestBuilder.setTimeout(TimeValue.parseTimeValue(this.maxTimePerQuery, "timeout"));
-        return searchRequestBuilder.execute().actionGet();
+        CompletableFuture cf = new CompletableFuture<SearchResponse>();
+        searchRequestBuilder.execute(new ActionListener<>() {
+
+            @Override
+            public void onResponse(SearchResponse response) {
+                cf.complete(response);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                cf.completeExceptionally(e);
+            }
+        });
+        return (SearchResponse) cf.join();
     }
 
     /**
