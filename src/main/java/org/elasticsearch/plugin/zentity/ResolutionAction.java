@@ -9,11 +9,9 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.BytesRestResponse;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.*;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method.POST;
@@ -34,6 +32,21 @@ public class ResolutionAction extends BaseRestHandler {
     @Override
     public String getName() {
         return "zentity_resolution_action";
+    }
+
+    /**
+     * Run a fully configured resolution job and return the response.
+     *
+     * @param channel The REST channel to return the response through.
+     * @param job     The fully configured resolution job to run.
+     * @throws IOException
+     */
+    public static void runJob(RestChannel channel, Job job) throws IOException {
+        String jobResponse = job.run();
+        if (job.failed())
+            channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
+        else
+            channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
     }
 
     @Override
@@ -112,16 +125,11 @@ public class ResolutionAction extends BaseRestHandler {
                 // Parse and validate the job input.
                 if (entityType == null || entityType.equals("")) {
 
-                    // TODO: Duplicate of code below. Determine best way to use this code once.
+                    // Run the entity resolution job using the input from the request body.
                     Input input = new Input(body);
                     job.input(input);
+                    runJob(channel, job);
 
-                    // Run the entity resolution job.
-                    String jobResponse = job.run();
-                    if (job.failed())
-                        channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
-                    else
-                        channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
                 } else {
                     ModelsAction.getEntityModel(entityType, client, new ActionListener<>()  {
 
@@ -130,20 +138,14 @@ public class ResolutionAction extends BaseRestHandler {
                             try {
                                 if (!response.isExists())
                                     throw new NotFoundException("Entity type '" + entityType + "' not found.");
-                                String model = response.getSourceAsString();
 
-                                // TODO: Duplicate of code above. Determine best way to use this code once.
+                                // Run the entity resolution job using the input from the retrieved entity model.
+                                String model = response.getSourceAsString();
                                 Input input = new Input(body, new Model(model));
                                 job.input(input);
+                                runJob(channel, job);
 
-                                // Run the entity resolution job.
-                                String jobResponse = job.run();
-                                if (job.failed())
-                                    channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
-                                else
-                                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
-
-                            } catch (Exception e){
+                            } catch (Exception e) {
 
                                 // An error occurred when running the entity resolution job.
                                 ZentityPlugin.sendResponseError(channel, logger, e);
