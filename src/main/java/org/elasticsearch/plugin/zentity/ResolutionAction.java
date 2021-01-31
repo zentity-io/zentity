@@ -11,7 +11,6 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.rest.*;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method.POST;
@@ -39,14 +38,31 @@ public class ResolutionAction extends BaseRestHandler {
      *
      * @param channel The REST channel to return the response through.
      * @param job     The fully configured resolution job to run.
-     * @throws IOException
      */
-    public static void runJob(RestChannel channel, Job job) throws IOException {
-        String jobResponse = job.run();
-        if (job.failed())
-            channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResponse));
-        else
-            channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResponse));
+    public static void runJob(RestChannel channel, Job job) {
+        job.run(new ActionListener<String>() {
+
+            @Override
+            public void onResponse(String response) {
+                try {
+                    if (job.failed())
+                        channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", response));
+                    else
+                        channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
+                } catch (Exception e) {
+
+                    // An error occurred when running the entity resolution job.
+                    ZentityPlugin.sendResponseError(channel, logger, e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when running the entity resolution job.
+                ZentityPlugin.sendResponseError(channel, logger, e);
+            }
+        });
     }
 
     @Override
