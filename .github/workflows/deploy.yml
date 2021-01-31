@@ -36,7 +36,7 @@ jobs:
         with:
           regex_pattern: "(?<=^zentity-).*"
           regex_flags: "i"
-          search_string: "${{ steps.get_tag.outputs.release_tag }}"
+          search_string: "${{ steps.get_tag.outputs.tag }}"
 
       # Create the release.
       # Uses: https://github.com/actions/create-release
