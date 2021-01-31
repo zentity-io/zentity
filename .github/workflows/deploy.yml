@@ -36,7 +36,7 @@ jobs:
         with:
           regex_pattern: "(?<=^zentity-).*"
           regex_flags: "i"
-          search_string: ${{ needs.create_release.outputs.release_tag }}
+          search_string: "${{ steps.get_tag.outputs.release_tag }}"
 
       # Create the release.
       # Uses: https://github.com/actions/create-release
@@ -50,7 +50,7 @@ jobs:
           release_name: ${{ github.ref }}
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') || contains(github.ref, 'experimental') }}
-          body: "Releasing zentity-${{ needs.create_release.outputs.release_tag }}"
+          body: "Releasing zentity-${{ steps.get_zentity_version.outputs.first_match }}"
 
   build_and_upload_artifacts:
     name: Build and Upload Artifacts
