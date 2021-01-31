@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "zentity-*.*.*"
-      - "zentity-*.*.*-rc*"
+      - "zentity-*.*.*-*"
 
 jobs:
   create_release:
