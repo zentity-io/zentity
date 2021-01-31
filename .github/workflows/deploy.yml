@@ -26,7 +26,7 @@ jobs:
       # Get the release tag.
       - name: Get release tag
         id: get_tag
-        run: echo ::set-output name=tag::${ GITHUB_REF#refs/*/ }
+        run: echo ::set-output name=tag::${{ GITHUB_REF#refs/*/ }}
 
       # Get the zentity version by excluding the zentity- prefix in the release tag.
       # Uses: https://github.com/AsasInnab/regex-action
