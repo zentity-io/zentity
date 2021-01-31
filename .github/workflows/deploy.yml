@@ -104,7 +104,7 @@ jobs:
       - name: Build and test
         env:
           ELASTICSEARCH_VERSION: ${{ matrix.elasticsearch }}
-        run: mvn --batch-mode clean install -Delasticsearch.version=$ELASTICSEARCH_VERSION --file pom.xml
+        run: mvn --batch-mode clean install -Dzentity.version=$ZENTITY_VERSION -Delasticsearch.version=$ELASTICSEARCH_VERSION --file pom.xml
 
       # Set the artifact name using the given versions of zentity and Elasticsearch.
       - name: Set artifact name
