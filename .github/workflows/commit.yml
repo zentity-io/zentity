@@ -1,8 +1,17 @@
 # Build and test zentity for each supported version of Elasticsearch whenever pushing a commit or submitting a pull request.
 name: Commit
 on:
-  - push
-  - pull_request
+  on:
+    push:
+      branches:
+        - '**'
+      tags-ignore:
+        - '**'
+    pull_request:
+      branches:
+        - '**'
+      tags-ignore:
+        - '**'
 
 jobs:
   build:
