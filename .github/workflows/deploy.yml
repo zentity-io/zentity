@@ -1,0 +1,116 @@
+# Build, test, and deploy zentity for each supported version of Elasticsearch whenever pushing a release tag.
+name: Deploy
+on:
+  push:
+    tags:
+      - "*.*.*"
+      - "*.*.*-rc*"
+
+jobs:
+  create_release:
+    name: Create Release
+
+    # Use the latest LTS OS.
+    runs-on: ubuntu-20.04
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_tag: ${{ steps.extract_tag.outputs.tag }}
+    steps:
+
+      # Checkout the repository.
+      # Uses: https://github.com/actions/checkout
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Get the release tag
+      - name: Extract release tag
+        id: extract_tag
+        run: echo ::set-output name=tag::${ GITHUB_REF#refs/*/ }
+
+      # Create the release.
+      # Uses: https://github.com/actions/create-release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') || contains(github.ref, 'experimental') }}
+          body: "Releasing zentity-${{ needs.create_release.outputs.release_tag }}"
+
+  build_and_upload_artifacts:
+    name: Build and Upload Artifacts
+    needs: create_release
+
+    # Use the latest LTS OS.
+    runs-on: ubuntu-20.04
+
+    # Set the zentity version as the value of the release tag.
+    env:
+      ZENTITY_VERSION: ${{ needs.create_release.outputs.release_tag }}
+    strategy:
+
+      # Build and test zentity for each version of Elasticsearch that its APIs support.
+      matrix:
+        elasticsearch:
+          - 7.10.2
+          - 7.10.1
+          - 7.10.0
+          - 7.9.3
+          - 7.9.2
+          - 7.8.1
+          - 7.8.0
+          - 7.7.1
+          - 7.7.0
+    steps:
+
+      # Checkout the repository.
+      # Uses: https://github.com/actions/checkout
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Configure the JDK.
+      # Uses: https://github.com/actions/setup-java
+      # Elasticsearch JVM support matrix: https://www.elastic.co/support/matrix#matrix_jvm
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      # Cache Maven packages.
+      # Uses: https://github.com/actions/cache
+      - name: Cache packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # Build and test zentity for a given version of Elasticsearch.
+      - name: Build and test
+        env:
+          ELASTICSEARCH_VERSION: ${{ matrix.elasticsearch }}
+        run: mvn --batch-mode clean install -Delasticsearch.version=${ ELASTICSEARCH_VERSION } --file pom.xml
+
+      # Set the artifact name using the given versions of zentity and Elasticsearch.
+      - name: Set artifact name
+        id: set_artifact_name
+        env:
+          ELASTICSEARCH_VERSION: ${{ matrix.elasticsearch }}
+        run: echo ::set-output name=name::zentity-${ ZENTITY_VERSION }-elasticsearch-${ ELASTICSEARCH_VERSION }.zip
+
+      # Upload the release asset to: https://github.com/zentity-io/zentity/releases
+      # Uses: https://github.com/actions/upload-release-asset
+      - name: Upload release asset
+        id: upload_release_asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./target/releases/${{ steps.set_artifact_name.outputs.name }}
+          asset_name: ${{ steps.set_artifact_name.outputs.name }}
+          asset_content_type: application/zip
