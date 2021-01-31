@@ -3,8 +3,8 @@ name: Deploy
 on:
   push:
     tags:
-      - "*.*.*"
-      - "*.*.*-rc*"
+      - "zentity-*.*.*"
+      - "zentity-*.*.*-rc*"
 
 jobs:
   create_release:
@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
-      release_tag: ${{ steps.extract_tag.outputs.tag }}
+      release_tag: ${{ steps.get_tag.outputs.tag }}
+      zentity_version: ${{ steps.get_zentity_version.outputs.first_match }}
     steps:
 
       # Checkout the repository.
@@ -22,10 +23,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Get the release tag
-      - name: Extract release tag
-        id: extract_tag
+      # Get the release tag.
+      - name: Get release tag
+        id: get_tag
         run: echo ::set-output name=tag::${ GITHUB_REF#refs/*/ }
+
+      # Get the zentity version by excluding the zentity- prefix in the release tag.
+      # Uses: https://github.com/AsasInnab/regex-action
+      - name: Get zentity version
+        id: get_zentity_version
+        uses: AsasInnab/regex-action@v1
+        with:
+          regex_pattern: "(?<=^zentity-).*"
+          regex_flags: "i"
+          search_string: ${{ needs.create_release.outputs.release_tag }}
 
       # Create the release.
       # Uses: https://github.com/actions/create-release
@@ -50,7 +61,7 @@ jobs:
 
     # Set the zentity version as the value of the release tag.
     env:
-      ZENTITY_VERSION: ${{ needs.create_release.outputs.release_tag }}
+      ZENTITY_VERSION: ${{ needs.create_release.outputs.zentity_version }}
     strategy:
 
       # Build and test zentity for each version of Elasticsearch that its APIs support.
