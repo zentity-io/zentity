@@ -9,7 +9,7 @@ import org.elasticsearch.client.ResponseException;
 
 public class SetupActionIT extends AbstractITCase {
 
-    private void destroyTestResources() throws Exception {
+    public static void destroyTestResources() throws Exception {
         try {
             client.performRequest(new Request("DELETE", ModelsAction.INDEX_NAME));
         } catch (ResponseException e) {
