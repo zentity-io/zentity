@@ -56,4 +56,4 @@ jobs:
       - name: Build and test
         env:
           ELASTICSEARCH_VERSION: ${{ matrix.elasticsearch }}
-        run: mvn --batch-mode clean install "-Delasticsearch.version=${ ELASTICSEARCH_VERSION }" --file pom.xml
+        run: mvn --batch-mode clean install "-Delasticsearch.version=$ELASTICSEARCH_VERSION" --file pom.xml

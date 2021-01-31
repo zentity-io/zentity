@@ -93,14 +93,14 @@ jobs:
       - name: Build and test
         env:
           ELASTICSEARCH_VERSION: ${{ matrix.elasticsearch }}
-        run: mvn --batch-mode clean install -Delasticsearch.version=${ ELASTICSEARCH_VERSION } --file pom.xml
+        run: mvn --batch-mode clean install -Delasticsearch.version=$ELASTICSEARCH_VERSION --file pom.xml
 
       # Set the artifact name using the given versions of zentity and Elasticsearch.
       - name: Set artifact name
         id: set_artifact_name
         env:
           ELASTICSEARCH_VERSION: ${{ matrix.elasticsearch }}
-        run: echo ::set-output name=name::zentity-${ ZENTITY_VERSION }-elasticsearch-${ ELASTICSEARCH_VERSION }.zip
+        run: echo ::set-output name=name::zentity-$ZENTITY_VERSION-elasticsearch-$ELASTICSEARCH_VERSION.zip
 
       # Upload the release asset to: https://github.com/zentity-io/zentity/releases
       # Uses: https://github.com/actions/upload-release-asset
