@@ -6,6 +6,8 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
@@ -24,9 +26,16 @@ public abstract class AbstractITCase {
     public final static String SERVICE_NAME = "es01";
     public final static int SERVICE_PORT = 9400;
 
-    // Create a singleton docker-compose cluster for all test classes.
-    private static final DockerComposeContainer cluster;
-    static {
+    // A docker-compose cluster used for all test cases in the test class.
+    private static DockerComposeContainer cluster;
+
+    // Client that communicates with the docker-compose cluster.
+    private RestClient client;
+
+    @BeforeClass
+    public static void setup() {
+
+        // Create and start the test cluster
         Path path = Paths.get(System.getenv("BUILD_DIRECTORY"), "test-classes", "docker-compose.yml");
         cluster = new DockerComposeContainer(new File(path.toString()))
                 .withEnv("BUILD_DIRECTORY", System.getenv("BUILD_DIRECTORY"))
@@ -39,15 +48,26 @@ public abstract class AbstractITCase {
         cluster.start();
     }
 
-    // Client that communicates with the docker-compose cluster.
-    private RestClient client;
+    @AfterClass
+    public static void tearDown() {
+        // Stop the test cluster if it was created.
+        if (cluster != null)
+            cluster.stop();
+    }
+
+    /**
+     * Create the client if it doesn't exist, and then return it.
+     *
+     * @return The client.
+     * @throws IOException
+     */
     public RestClient client() throws IOException {
         if (this.client == null) {
             try {
 
                 // Create a new client.
-                String host = this.cluster.getServiceHost(SERVICE_NAME, SERVICE_PORT);
-                Integer port = this.cluster.getServicePort(SERVICE_NAME, SERVICE_PORT);
+                String host = cluster.getServiceHost(SERVICE_NAME, SERVICE_PORT);
+                Integer port = cluster.getServicePort(SERVICE_NAME, SERVICE_PORT);
                 this.client = RestClient.builder(new HttpHost(host, port)).build();
 
                 // Verify if the client can establish a connection to the cluster.
@@ -65,6 +85,6 @@ public abstract class AbstractITCase {
                 }
             }
         }
-        return this.client;
+        return client;
     }
 }
