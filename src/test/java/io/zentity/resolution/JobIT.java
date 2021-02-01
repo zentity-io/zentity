@@ -12,12 +12,15 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.plugin.zentity.ZentityPlugin;
 import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.junit.Assert.*;
 
 public class JobIT extends AbstractITCase {
 
@@ -511,35 +514,35 @@ public class JobIT extends AbstractITCase {
     private void destroyTestIndices(int testResourceSet) throws IOException {
         switch (testResourceSet) {
             case TEST_RESOURCES_ARRAYS:
-                client.performRequest(new Request("DELETE", "zentity_test_index_arrays"));
+                client().performRequest(new Request("DELETE", "zentity_test_index_arrays"));
                 break;
             default:
-                client.performRequest(new Request("DELETE", "zentity_test_index_a"));
-                client.performRequest(new Request("DELETE", "zentity_test_index_b"));
-                client.performRequest(new Request("DELETE", "zentity_test_index_c"));
-                client.performRequest(new Request("DELETE", "zentity_test_index_d"));
+                client().performRequest(new Request("DELETE", "zentity_test_index_a"));
+                client().performRequest(new Request("DELETE", "zentity_test_index_b"));
+                client().performRequest(new Request("DELETE", "zentity_test_index_c"));
+                client().performRequest(new Request("DELETE", "zentity_test_index_d"));
                 break;
         }
     }
 
     private void destroyTestEntityModelA() throws IOException {
-        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_a"));
+        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_a"));
     }
 
     private void destroyTestEntityModelB() throws IOException {
-        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_b"));
+        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_b"));
     }
 
     private void destroyTestEntityModelArrays() throws IOException {
-        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_arrays"));
+        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_arrays"));
     }
 
     private void destroyTestEntityModelElasticsearchError() throws IOException {
-        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_elasticsearch_error"));
+        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_elasticsearch_error"));
     }
 
     private void destroyTestEntityModelZentityError() throws IOException {
-        client.performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_zentity_error"));
+        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_zentity_error"));
     }
 
     private void destroyTestResources(int testResourceSet) throws IOException {
@@ -568,7 +571,7 @@ public class JobIT extends AbstractITCase {
         testEntityModelA = new ByteArrayEntity(readFile("TestEntityModelA.json"), ContentType.APPLICATION_JSON);
         Request postModelA = new Request("POST", "_zentity/models/zentity_test_entity_a");
         postModelA.setEntity(testEntityModelA);
-        client.performRequest(postModelA);
+        client().performRequest(postModelA);
     }
 
     private void prepareTestEntityModelB() throws Exception {
@@ -576,7 +579,7 @@ public class JobIT extends AbstractITCase {
         testEntityModelB = new ByteArrayEntity(readFile("TestEntityModelB.json"), ContentType.APPLICATION_JSON);
         Request postModelB = new Request("POST", "_zentity/models/zentity_test_entity_b");
         postModelB.setEntity(testEntityModelB);
-        client.performRequest(postModelB);
+        client().performRequest(postModelB);
     }
 
     private void prepareTestEntityModelArrays() throws Exception {
@@ -584,7 +587,7 @@ public class JobIT extends AbstractITCase {
         testEntityModelArrays = new ByteArrayEntity(readFile("TestEntityModelArrays.json"), ContentType.APPLICATION_JSON);
         Request postModelArrays = new Request("POST", "_zentity/models/zentity_test_entity_arrays");
         postModelArrays.setEntity(testEntityModelArrays);
-        client.performRequest(postModelArrays);
+        client().performRequest(postModelArrays);
     }
 
     private void prepareTestEntityModelElasticsearchError() throws Exception {
@@ -592,7 +595,7 @@ public class JobIT extends AbstractITCase {
         testEntityModelElasticsearchError = new ByteArrayEntity(readFile("TestEntityModelElasticsearchError.json"), ContentType.APPLICATION_JSON);
         Request postModelElasticsearchError = new Request("POST", "_zentity/models/zentity_test_entity_elasticsearch_error");
         postModelElasticsearchError.setEntity(testEntityModelElasticsearchError);
-        client.performRequest(postModelElasticsearchError);
+        client().performRequest(postModelElasticsearchError);
     }
 
     private void prepareTestEntityModelZentityError() throws Exception {
@@ -600,7 +603,7 @@ public class JobIT extends AbstractITCase {
         testEntityModelZentityError = new ByteArrayEntity(readFile("TestEntityModelZentityError.json"), ContentType.APPLICATION_JSON);
         Request postModelZentityError = new Request("POST", "_zentity/models/zentity_test_entity_zentity_error");
         postModelZentityError.setEntity(testEntityModelZentityError);
-        client.performRequest(postModelZentityError);
+        client().performRequest(postModelZentityError);
     }
 
     private void prepareTestIndices(int testResourceSet) throws Exception {
@@ -638,21 +641,21 @@ public class JobIT extends AbstractITCase {
             case TEST_RESOURCES_ARRAYS:
                 Request putTestIndexArrays = new Request("PUT", "zentity_test_index_arrays");
                 putTestIndexArrays.setEntity(testIndex);
-                client.performRequest(putTestIndexArrays);
+                client().performRequest(putTestIndexArrays);
                 break;
             default:
                 Request putTestIndexA = new Request("PUT", "zentity_test_index_a");
                 putTestIndexA.setEntity(testIndex);
-                client.performRequest(putTestIndexA);
+                client().performRequest(putTestIndexA);
                 Request putTestIndexB = new Request("PUT", "zentity_test_index_b");
                 putTestIndexB.setEntity(testIndex);
-                client.performRequest(putTestIndexB);
+                client().performRequest(putTestIndexB);
                 Request putTestIndexC = new Request("PUT", "zentity_test_index_c");
                 putTestIndexC.setEntity(testIndex);
-                client.performRequest(putTestIndexC);
+                client().performRequest(putTestIndexC);
                 Request putTestIndexD = new Request("PUT", "zentity_test_index_d");
                 putTestIndexD.setEntity(testIndex);
-                client.performRequest(putTestIndexD);
+                client().performRequest(putTestIndexD);
                 break;
         }
 
@@ -661,7 +664,7 @@ public class JobIT extends AbstractITCase {
         Request postBulk = new Request("POST", "_bulk");
         postBulk.addParameter("refresh", "true");
         postBulk.setEntity(testData);
-        client.performRequest(postBulk);
+        client().performRequest(postBulk);
     }
 
     private void prepareTestResources(int testResourceSet) throws Exception {
@@ -695,6 +698,7 @@ public class JobIT extends AbstractITCase {
         return docsActual;
     }
 
+    @Test
     public void testJobNoScope() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -702,7 +706,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_NO_SCOPE);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 40);
             JsonPointer pathAttributes = JsonPointer.compile("/_attributes");
@@ -718,6 +722,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobAttributes() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -725,7 +730,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_ATTRIBUTES);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 6);
             Set<String> docsExpected = new TreeSet<>();
@@ -741,6 +746,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobTerms() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -748,7 +754,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_TERMS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 6);
             Set<String> docsExpected = new TreeSet<>();
@@ -764,6 +770,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobExplanation() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -776,7 +783,7 @@ public class JobIT extends AbstractITCase {
             postResolution.addParameter("max_hops", "1");
             postResolution.addParameter("max_docs_per_query", "2");
             postResolution.setEntity(TEST_PAYLOAD_JOB_EXPLANATION);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 3);
             Set<String> docsExpected = new TreeSet<>();
@@ -804,6 +811,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobExplanationTerms() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -816,7 +824,7 @@ public class JobIT extends AbstractITCase {
             postResolution.addParameter("max_hops", "1");
             postResolution.addParameter("max_docs_per_query", "2");
             postResolution.setEntity(TEST_PAYLOAD_JOB_EXPLANATION_TERMS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 3);
             Set<String> docsExpected = new TreeSet<>();
@@ -844,6 +852,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobIds() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -851,7 +860,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_IDS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 6);
             Set<String> docsExpected = new TreeSet<>();
@@ -867,6 +876,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobAttributesIds() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -874,7 +884,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_ATTRIBUTES_IDS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 30);
             Set<String> docsExpected = new TreeSet<>();
@@ -914,6 +924,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobTermsIds() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -921,7 +932,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_TERMS_IDS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 30);
             Set<String> docsExpected = new TreeSet<>();
@@ -961,6 +972,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobMaxHopsAndDocs() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -970,7 +982,7 @@ public class JobIT extends AbstractITCase {
             postResolution.addParameter("max_hops", "2");
             postResolution.addParameter("max_docs_per_query", "2");
             postResolution.setEntity(TEST_PAYLOAD_JOB_MAX_HOPS_AND_DOCS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 20);
             Set<String> docsExpected = new TreeSet<>();
@@ -1000,6 +1012,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobDataTypes() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1023,7 +1036,7 @@ public class JobIT extends AbstractITCase {
             // Boolean true
             Request q1 = new Request("POST", endpoint);
             q1.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE);
-            Response r1 = client.performRequest(q1);
+            Response r1 = client().performRequest(q1);
             JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
             assertEquals(j1.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j1));
@@ -1031,7 +1044,7 @@ public class JobIT extends AbstractITCase {
             // Boolean true
             Request q1t = new Request("POST", endpoint);
             q1t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE_TERMS);
-            Response r1t = client.performRequest(q1t);
+            Response r1t = client().performRequest(q1t);
             JsonNode j1t = Json.MAPPER.readTree(r1t.getEntity().getContent());
             assertEquals(j1t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j1t));
@@ -1039,7 +1052,7 @@ public class JobIT extends AbstractITCase {
             // Boolean false
             Request q2 = new Request("POST", endpoint);
             q2.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE);
-            Response r2 = client.performRequest(q2);
+            Response r2 = client().performRequest(q2);
             JsonNode j2 = Json.MAPPER.readTree(r2.getEntity().getContent());
             assertEquals(j2.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j2));
@@ -1047,7 +1060,7 @@ public class JobIT extends AbstractITCase {
             // Boolean false
             Request q2t = new Request("POST", endpoint);
             q2t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE_TERMS);
-            Response r2t = client.performRequest(q2t);
+            Response r2t = client().performRequest(q2t);
             JsonNode j2t = Json.MAPPER.readTree(r2t.getEntity().getContent());
             assertEquals(j2t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j2t));
@@ -1055,7 +1068,7 @@ public class JobIT extends AbstractITCase {
             // Double positive
             Request q3 = new Request("POST", endpoint);
             q3.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE);
-            Response r3 = client.performRequest(q3);
+            Response r3 = client().performRequest(q3);
             JsonNode j3 = Json.MAPPER.readTree(r3.getEntity().getContent());
             assertEquals(j3.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j3));
@@ -1063,7 +1076,7 @@ public class JobIT extends AbstractITCase {
             // Double positive
             Request q3t = new Request("POST", endpoint);
             q3t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE_TERMS);
-            Response r3t = client.performRequest(q3t);
+            Response r3t = client().performRequest(q3t);
             JsonNode j3t = Json.MAPPER.readTree(r3t.getEntity().getContent());
             assertEquals(j3t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j3t));
@@ -1071,7 +1084,7 @@ public class JobIT extends AbstractITCase {
             // Double negative
             Request q4 = new Request("POST", endpoint);
             q4.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE);
-            Response r4 = client.performRequest(q4);
+            Response r4 = client().performRequest(q4);
             JsonNode j4 = Json.MAPPER.readTree(r4.getEntity().getContent());
             assertEquals(j4.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j4));
@@ -1079,7 +1092,7 @@ public class JobIT extends AbstractITCase {
             // Double negative
             Request q4t = new Request("POST", endpoint);
             q4t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE_TERMS);
-            Response r4t = client.performRequest(q4t);
+            Response r4t = client().performRequest(q4t);
             JsonNode j4t = Json.MAPPER.readTree(r4t.getEntity().getContent());
             assertEquals(j4t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j4t));
@@ -1087,7 +1100,7 @@ public class JobIT extends AbstractITCase {
             // Float positive
             Request q5 = new Request("POST", endpoint);
             q5.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE);
-            Response r5 = client.performRequest(q5);
+            Response r5 = client().performRequest(q5);
             JsonNode j5 = Json.MAPPER.readTree(r5.getEntity().getContent());
             assertEquals(j5.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j5));
@@ -1095,7 +1108,7 @@ public class JobIT extends AbstractITCase {
             // Float positive
             Request q5t = new Request("POST", endpoint);
             q5t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE_TERMS);
-            Response r5t = client.performRequest(q5t);
+            Response r5t = client().performRequest(q5t);
             JsonNode j5t = Json.MAPPER.readTree(r5t.getEntity().getContent());
             assertEquals(j5t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j5t));
@@ -1103,7 +1116,7 @@ public class JobIT extends AbstractITCase {
             // Float negative
             Request q6 = new Request("POST", endpoint);
             q6.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE);
-            Response r6 = client.performRequest(q6);
+            Response r6 = client().performRequest(q6);
             JsonNode j6 = Json.MAPPER.readTree(r6.getEntity().getContent());
             assertEquals(j6.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j6));
@@ -1111,7 +1124,7 @@ public class JobIT extends AbstractITCase {
             // Float negative
             Request q6t = new Request("POST", endpoint);
             q6t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE_TERMS);
-            Response r6t = client.performRequest(q6t);
+            Response r6t = client().performRequest(q6t);
             JsonNode j6t = Json.MAPPER.readTree(r6t.getEntity().getContent());
             assertEquals(j6t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j6t));
@@ -1119,7 +1132,7 @@ public class JobIT extends AbstractITCase {
             // Integer positive
             Request q7 = new Request("POST", endpoint);
             q7.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE);
-            Response r7 = client.performRequest(q7);
+            Response r7 = client().performRequest(q7);
             JsonNode j7 = Json.MAPPER.readTree(r7.getEntity().getContent());
             assertEquals(j7.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j7));
@@ -1127,7 +1140,7 @@ public class JobIT extends AbstractITCase {
             // Integer positive
             Request q7t = new Request("POST", endpoint);
             q7t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE_TERMS);
-            Response r7t = client.performRequest(q7t);
+            Response r7t = client().performRequest(q7t);
             JsonNode j7t = Json.MAPPER.readTree(r7t.getEntity().getContent());
             assertEquals(j7t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j7t));
@@ -1135,7 +1148,7 @@ public class JobIT extends AbstractITCase {
             // Integer negative
             Request q8 = new Request("POST", endpoint);
             q8.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE);
-            Response r8 = client.performRequest(q8);
+            Response r8 = client().performRequest(q8);
             JsonNode j8 = Json.MAPPER.readTree(r8.getEntity().getContent());
             assertEquals(j8.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j8));
@@ -1143,7 +1156,7 @@ public class JobIT extends AbstractITCase {
             // Integer negative
             Request q8t = new Request("POST", endpoint);
             q8t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE_TERMS);
-            Response r8t = client.performRequest(q8t);
+            Response r8t = client().performRequest(q8t);
             JsonNode j8t = Json.MAPPER.readTree(r8t.getEntity().getContent());
             assertEquals(j8t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j8t));
@@ -1151,7 +1164,7 @@ public class JobIT extends AbstractITCase {
             // Long positive
             Request q9 = new Request("POST", endpoint);
             q9.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE);
-            Response r9 = client.performRequest(q9);
+            Response r9 = client().performRequest(q9);
             JsonNode j9 = Json.MAPPER.readTree(r9.getEntity().getContent());
             assertEquals(j9.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j9));
@@ -1159,7 +1172,7 @@ public class JobIT extends AbstractITCase {
             // Long positive
             Request q9t = new Request("POST", endpoint);
             q9t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE_TERMS);
-            Response r9t = client.performRequest(q9t);
+            Response r9t = client().performRequest(q9t);
             JsonNode j9t = Json.MAPPER.readTree(r9t.getEntity().getContent());
             assertEquals(j9t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j9t));
@@ -1167,7 +1180,7 @@ public class JobIT extends AbstractITCase {
             // Long negative
             Request q10 = new Request("POST", endpoint);
             q10.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE);
-            Response r10 = client.performRequest(q10);
+            Response r10 = client().performRequest(q10);
             JsonNode j10 = Json.MAPPER.readTree(r10.getEntity().getContent());
             assertEquals(j10.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j10));
@@ -1175,7 +1188,7 @@ public class JobIT extends AbstractITCase {
             // Long negative
             Request q10t = new Request("POST", endpoint);
             q10t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE_TERMS);
-            Response r10t = client.performRequest(q10t);
+            Response r10t = client().performRequest(q10t);
             JsonNode j10t = Json.MAPPER.readTree(r10t.getEntity().getContent());
             assertEquals(j10t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j10t));
@@ -1183,7 +1196,7 @@ public class JobIT extends AbstractITCase {
             // String A
             Request q11 = new Request("POST", endpoint);
             q11.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A);
-            Response r11 = client.performRequest(q11);
+            Response r11 = client().performRequest(q11);
             JsonNode j11 = Json.MAPPER.readTree(r11.getEntity().getContent());
             assertEquals(j11.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j11));
@@ -1191,7 +1204,7 @@ public class JobIT extends AbstractITCase {
             // String A
             Request q11t = new Request("POST", endpoint);
             q11t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A_TERMS);
-            Response r11t = client.performRequest(q11t);
+            Response r11t = client().performRequest(q11t);
             JsonNode j11t = Json.MAPPER.readTree(r11t.getEntity().getContent());
             assertEquals(j11t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j11t));
@@ -1199,7 +1212,7 @@ public class JobIT extends AbstractITCase {
             // String B
             Request q12 = new Request("POST", endpoint);
             q12.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B);
-            Response r12 = client.performRequest(q12);
+            Response r12 = client().performRequest(q12);
             JsonNode j12 = Json.MAPPER.readTree(r12.getEntity().getContent());
             assertEquals(j12.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j12));
@@ -1207,7 +1220,7 @@ public class JobIT extends AbstractITCase {
             // String B
             Request q12t = new Request("POST", endpoint);
             q12t.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B_TERMS);
-            Response r12t = client.performRequest(q12t);
+            Response r12t = client().performRequest(q12t);
             JsonNode j12t = Json.MAPPER.readTree(r12t.getEntity().getContent());
             assertEquals(j12t.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedB, getActual(j12t));
@@ -1217,6 +1230,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobDataTypesDate() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1226,7 +1240,7 @@ public class JobIT extends AbstractITCase {
             postResolution.addParameter("max_hops", "2");
             postResolution.addParameter("max_docs_per_query", "2");
             postResolution.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_DATE);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
 
             /*
@@ -1298,6 +1312,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobDataTypesDateTerm() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1307,7 +1322,7 @@ public class JobIT extends AbstractITCase {
             postResolution.addParameter("max_hops", "2");
             postResolution.addParameter("max_docs_per_query", "2");
             postResolution.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_DATE_TERMS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
 
             /*
@@ -1379,6 +1394,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobObject() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1394,7 +1410,7 @@ public class JobIT extends AbstractITCase {
             // Boolean true
             Request q1 = new Request("POST", endpoint);
             q1.setEntity(TEST_PAYLOAD_JOB_OBJECT);
-            Response r1 = client.performRequest(q1);
+            Response r1 = client().performRequest(q1);
             JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
             assertEquals(j1.get("hits").get("total").asInt(), 5);
             assertEquals(docsExpectedA, getActual(j1));
@@ -1404,6 +1420,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScopeExcludeAttributes() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1411,7 +1428,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 16);
             Set<String> docsExpected = new TreeSet<>();
@@ -1437,6 +1454,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScopeExcludeAttributesTerms() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1444,7 +1462,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES_TERMS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 16);
             Set<String> docsExpected = new TreeSet<>();
@@ -1470,6 +1488,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScopeIncludeAttributes() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1477,7 +1496,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 8);
             Set<String> docsExpected = new TreeSet<>();
@@ -1495,6 +1514,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScopeIncludeAttributesTerms() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1502,7 +1522,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES_TERMS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 8);
             Set<String> docsExpected = new TreeSet<>();
@@ -1520,6 +1540,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScopeExcludeAndIncludeAttributes() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1527,7 +1548,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 4);
             Set<String> docsExpected = new TreeSet<>();
@@ -1541,6 +1562,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScopeExcludeAndIncludeAttributesTerms() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1548,7 +1570,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_a";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES_TERMS);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 4);
             Set<String> docsExpected = new TreeSet<>();
@@ -1562,6 +1584,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobResolverWeight() throws Exception {
         int testResourceSet = TEST_RESOURCES_B;
         prepareTestResources(testResourceSet);
@@ -1569,7 +1592,7 @@ public class JobIT extends AbstractITCase {
             String endpoint = "_zentity/resolution/zentity_test_entity_b";
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_RESOLVER_WEIGHT);
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 4);
             Set<String> docsExpected = new TreeSet<>();
@@ -1583,6 +1606,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobElasticsearchError() throws Exception {
         int testResourceSet = TEST_RESOURCES_ELASTICSEARCH_ERROR;
         prepareTestResources(testResourceSet);
@@ -1591,7 +1615,7 @@ public class JobIT extends AbstractITCase {
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_ERROR);
             try {
-                client.performRequest(postResolution);
+                client().performRequest(postResolution);
             } catch (ResponseException e) {
                 Response response = e.getResponse();
                 assertEquals(response.getStatusLine().getStatusCode(), 500);
@@ -1614,7 +1638,7 @@ public class JobIT extends AbstractITCase {
             postResolutionQueriesNoTrace.addParameter("queries", "true");
             postResolutionQueriesNoTrace.setEntity(TEST_PAYLOAD_JOB_ERROR);
             try {
-                client.performRequest(postResolutionQueriesNoTrace);
+                client().performRequest(postResolutionQueriesNoTrace);
             } catch (ResponseException e) {
                 Response response = e.getResponse();
                 assertEquals(response.getStatusLine().getStatusCode(), 500);
@@ -1634,6 +1658,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobZentityError() throws Exception {
         int testResourceSet = TEST_RESOURCES_ZENTITY_ERROR;
         prepareTestResources(testResourceSet);
@@ -1642,7 +1667,7 @@ public class JobIT extends AbstractITCase {
             Request postResolution = new Request("POST", endpoint);
             postResolution.setEntity(TEST_PAYLOAD_JOB_ERROR);
             try {
-                client.performRequest(postResolution);
+                client().performRequest(postResolution);
             } catch (ResponseException e) {
                 Response response = e.getResponse();
                 assertEquals(response.getStatusLine().getStatusCode(), 500);
@@ -1661,7 +1686,7 @@ public class JobIT extends AbstractITCase {
             postResolutionQueriesNoTrace.addParameter("queries", "true");
             postResolutionQueriesNoTrace.setEntity(TEST_PAYLOAD_JOB_ERROR);
             try {
-                client.performRequest(postResolutionQueriesNoTrace);
+                client().performRequest(postResolutionQueriesNoTrace);
             } catch (ResponseException e) {
                 Response response = e.getResponse();
                 assertEquals(response.getStatusLine().getStatusCode(), 500);
@@ -1678,6 +1703,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobArrays() throws Exception {
         int testResourceSet = TEST_RESOURCES_ARRAYS;
         prepareTestResources(testResourceSet);
@@ -1690,7 +1716,7 @@ public class JobIT extends AbstractITCase {
             Request q1 = new Request("POST", endpoint);
             q1.addParameter("_explanation", "true");
             q1.setEntity(TEST_PAYLOAD_JOB_ARRAYS);
-            Response r1 = client.performRequest(q1);
+            Response r1 = client().performRequest(q1);
             JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
             assertEquals(j1.get("hits").get("total").asInt(), 2);
             assertEquals(docsExpectedArrays, getActual(j1));
@@ -1717,6 +1743,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobSearchParams() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1732,7 +1759,7 @@ public class JobIT extends AbstractITCase {
             postResolution.addParameter("search.max_concurrent_shard_requests", "5");
             postResolution.addParameter("search.pre_filter_shard_size", "5");
             postResolution.addParameter("search.request_cache", "true");
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 6);
             Set<String> docsExpected = new TreeSet<>();
@@ -1754,7 +1781,7 @@ public class JobIT extends AbstractITCase {
             postResolution2.setEntity(TEST_PAYLOAD_JOB_ATTRIBUTES);
             postResolution2.addParameter("_seq_no_primary_term", "false");
             postResolution2.addParameter("_version", "false");
-            Response response2 = client.performRequest(postResolution2);
+            Response response2 = client().performRequest(postResolution2);
             JsonNode json2 = Json.MAPPER.readTree(response2.getEntity().getContent());
             assertEquals(json2.get("hits").get("total").asInt(), 6);
             Set<String> docsExpected2 = new TreeSet<>();
@@ -1775,6 +1802,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScore() throws Exception {
         int testResourceSet = TEST_RESOURCES_A;
         prepareTestResources(testResourceSet);
@@ -1786,40 +1814,40 @@ public class JobIT extends AbstractITCase {
             postResolution.addParameter("_score", "true");
             postResolution.addParameter("max_docs_per_query", "1");
             postResolution.addParameter("max_hops", "3");
-            Response response = client.performRequest(postResolution);
+            Response response = client().performRequest(postResolution);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("hits").get("total").asInt(), 14);
             for (JsonNode doc : json.get("hits").get("hits")) {
                 switch (doc.get("_id").textValue()) {
                     case "a0":
                     case "b0":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.794, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.794, 0.0000000001);
                         break;
                     case "a1":
                     case "b1":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.5, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.5, 0.0000000001);
                         break;
                     case "c0":
                     case "d0":
                     case "c2":
                     case "d2":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.0, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.0, 0.0000000001);
                         break;
                     case "a2":
                     case "b2":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.8426393720609059, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.8426393720609059, 0.0000000001);
                         break;
                     case "c1":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9356979368877253, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.9356979368877253, 0.0000000001);
                         break;
                     case "d1":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9262128928820453, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.9262128928820453, 0.0000000001);
                         break;
                     case "a3":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9684567702655289, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.9684567702655289, 0.0000000001);
                         break;
                     case "b3":
-                        Assert.assertEquals(doc.get("_score").doubleValue(), 0.9680814702469515, 0.0000000001);
+                        assertEquals(doc.get("_score").doubleValue(), 0.9680814702469515, 0.0000000001);
                         break;
                     default:
                         Assert.fail();

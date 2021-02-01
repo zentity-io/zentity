@@ -16,7 +16,7 @@
         <zentity.website>https://zentity.io</zentity.website>
         <zentity.version>1.6.1</zentity.version>
         <!-- dependency versions -->
-        <elasticsearch.version>7.10.2</elasticsearch.version>
+        <elasticsearch.version>7.7.0</elasticsearch.version>
         <jackson.core.version>2.10.4</jackson.core.version>
         <jackson.databind.version>2.10.4</jackson.databind.version>
         <jdk.version>1.11</jdk.version>
@@ -55,8 +55,8 @@
         </dependency>
         <!-- test infrastructure -->
         <dependency>
-            <groupId>org.elasticsearch.test</groupId>
-            <artifactId>framework</artifactId>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
             <version>${elasticsearch.version}</version>
             <scope>test</scope>
         </dependency>
@@ -70,6 +70,12 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.15.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -117,6 +123,11 @@
                 <artifactId>junit4-maven-plugin</artifactId>
                 <version>${maven.junit.version}</version>
                 <configuration>
+                    <environmentVariables>
+                        <BUILD_DIRECTORY>${project.build.directory}</BUILD_DIRECTORY>
+                        <ELASTICSEARCH_VERSION>${elasticsearch.version}</ELASTICSEARCH_VERSION>
+                        <ZENTITY_VERSION>${zentity.version}</ZENTITY_VERSION>
+                    </environmentVariables>
                     <assertions enableSystemAssertions="false">
                         <enable/>
                     </assertions>
@@ -157,46 +168,6 @@
                             <excludes>
                                 <exclude>**/*$*</exclude>
                             </excludes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
-                <executions>
-                    <!-- start up external cluster -->
-                    <execution>
-                        <id>integ-setup</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipIntegTests}</skip>
-                            <target>
-                                <ant antfile="src/test/ant/integration-tests.xml"
-                                     target="start-external-cluster-with-plugin">
-                                    <property name="elasticsearch.version" value="${elasticsearch.version}"/>
-                                </ant>
-                            </target>
-                        </configuration>
-                    </execution>
-                    <!-- shut down external cluster -->
-                    <execution>
-                        <id>integ-teardown</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipIntegTests}</skip>
-                            <target>
-                                <ant antfile="src/test/ant/integration-tests.xml" target="stop-external-cluster">
-                                    <property name="elasticsearch.version" value="${elasticsearch.version}"/>
-                                </ant>
-                            </target>
                         </configuration>
                     </execution>
                 </executions>
