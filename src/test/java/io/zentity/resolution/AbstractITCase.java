@@ -6,43 +6,65 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.test.ESTestCase;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assume.assumeThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
-public abstract class AbstractITCase extends ESTestCase {
-    protected final static int HTTP_TEST_PORT = 9400;
-    protected static RestClient client;
+public abstract class AbstractITCase {
 
-    @BeforeClass
-    public static void startRestClient() throws IOException {
-        client = RestClient.builder(new HttpHost("localhost", HTTP_TEST_PORT)).build();
-        try {
-            Response response = client.performRequest(new Request("GET", "/"));
-            JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
-            assertTrue(json.get("tagline").textValue().equals("You Know, for Search"));
-        } catch (IOException e) {
-            // If we have an exception here, let's ignore the test
-            assumeThat("Integration tests are skipped", e.getMessage(), not(containsString("Connection refused")));
-            fail("Something wrong is happening. REST Client seemed to raise an exception.");
-            if (client != null) {
-                client.close();
-                client = null;
-            }
-        }
+    public final static String SERVICE_NAME = "es01";
+    public final static int SERVICE_PORT = 9400;
+
+    // Create a singleton docker-compose cluster for all test classes.
+    private static final DockerComposeContainer cluster;
+    static {
+        Path path = Paths.get(System.getenv("BUILD_DIRECTORY"), "test-classes", "docker-compose.yml");
+        cluster = new DockerComposeContainer(new File(path.toString()))
+                .withEnv("BUILD_DIRECTORY", System.getenv("BUILD_DIRECTORY"))
+                .withEnv("ELASTICSEARCH_VERSION", System.getenv("ELASTICSEARCH_VERSION"))
+                .withEnv("ZENTITY_VERSION", System.getenv("ZENTITY_VERSION"))
+                .withExposedService(SERVICE_NAME, SERVICE_PORT,
+                        Wait.forHttp("/_cat/health")
+                                .forStatusCode(200)
+                                .withReadTimeout(Duration.ofSeconds(60)));
+        cluster.start();
     }
 
-    @AfterClass
-    public static void stopRestClient() throws IOException {
-        if (client != null) {
-            client.close();
-            client = null;
+    // Client that communicates with the docker-compose cluster.
+    private RestClient client;
+    public RestClient client() throws IOException {
+        if (this.client == null) {
+            try {
+
+                // Create a new client.
+                String host = this.cluster.getServiceHost(SERVICE_NAME, SERVICE_PORT);
+                Integer port = this.cluster.getServicePort(SERVICE_NAME, SERVICE_PORT);
+                this.client = RestClient.builder(new HttpHost(host, port)).build();
+
+                // Verify if the client can establish a connection to the cluster.
+                Response response = this.client.performRequest(new Request("GET", "/"));
+                JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+                assertTrue(json.get("tagline").textValue().equals("You Know, for Search"));
+            } catch (IOException e) {
+
+                // If we have an exception here, let's ignore the test
+                assumeFalse("Integration tests are skipped", e.getMessage().contains("Connection refused"));
+                fail("Something wrong is happening. REST Client seemed to raise an exception: " + e.getMessage());
+                if (client != null) {
+                    client.close();
+                    client = null;
+                }
+            }
         }
+        return this.client;
     }
 }
