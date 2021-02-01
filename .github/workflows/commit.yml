@@ -5,12 +5,14 @@ on:
     branches:
       - '**'
     tags-ignore:
-      - '**'
+      - "zentity-*.*.*"
+      - "zentity-*.*.*-*"
   pull_request:
     branches:
       - '**'
     tags-ignore:
-      - '**'
+      - "zentity-*.*.*"
+      - "zentity-*.*.*-*"
 
 jobs:
   build:
