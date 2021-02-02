@@ -6,23 +6,27 @@ import io.zentity.resolution.AbstractITCase;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class SetupActionIT extends AbstractITCase {
 
     public static void destroyTestResources() throws Exception {
         try {
-            client.performRequest(new Request("DELETE", ModelsAction.INDEX_NAME));
+            client().performRequest(new Request("DELETE", ModelsAction.INDEX_NAME));
         } catch (ResponseException e) {
             // Destroy the test index if it already exists, otherwise continue.
         }
     }
 
+    @Test
     public void testSetupDefault() throws Exception {
         destroyTestResources();
         try {
 
             // Run setup with default settings
-            Response setupResponse = client.performRequest(new Request("POST", "_zentity/_setup"));
+            Response setupResponse = client().performRequest(new Request("POST", "_zentity/_setup"));
             JsonNode setupJson = Json.MAPPER.readTree(setupResponse.getEntity().getContent());
 
             // The response should be { "acknowledged": true }
@@ -30,20 +34,20 @@ public class SetupActionIT extends AbstractITCase {
             assertTrue(acknowledged.isBoolean() && acknowledged.asBoolean());
 
             // Get the index settings and mapping
-            Response getIndexResponse = client.performRequest(new Request("GET", ModelsAction.INDEX_NAME));
+            Response getIndexResponse = client().performRequest(new Request("GET", ModelsAction.INDEX_NAME));
             JsonNode getIndexJson = Json.MAPPER.readTree(getIndexResponse.getEntity().getContent());
 
             // Verify if the mapping matches the default mapping
             JsonNode mappingJson = getIndexJson.get(ModelsAction.INDEX_NAME).get("mappings");
             assertEquals(mappingJson.get("dynamic").asText(), "strict");
             assertEquals(mappingJson.get("properties").get("attributes").get("type").asText(), "object");
-            assertEquals(mappingJson.get("properties").get("attributes").get("enabled").booleanValue(), false);
+            assertFalse(mappingJson.get("properties").get("attributes").get("enabled").booleanValue());
             assertEquals(mappingJson.get("properties").get("resolvers").get("type").asText(), "object");
-            assertEquals(mappingJson.get("properties").get("resolvers").get("enabled").booleanValue(), false);
+            assertFalse(mappingJson.get("properties").get("resolvers").get("enabled").booleanValue());
             assertEquals(mappingJson.get("properties").get("matchers").get("type").asText(), "object");
-            assertEquals(mappingJson.get("properties").get("matchers").get("enabled").booleanValue(), false);
+            assertFalse(mappingJson.get("properties").get("matchers").get("enabled").booleanValue());
             assertEquals(mappingJson.get("properties").get("indices").get("type").asText(), "object");
-            assertEquals(mappingJson.get("properties").get("indices").get("enabled").booleanValue(), false);
+            assertFalse(mappingJson.get("properties").get("indices").get("enabled").booleanValue());
 
             // Verify if the settings match the default settings
             JsonNode settingsJson = getIndexJson.get(ModelsAction.INDEX_NAME).get("settings");
@@ -55,12 +59,13 @@ public class SetupActionIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testSetupCustom() throws Exception {
         destroyTestResources();
         try {
 
             // Run setup with custom settings
-            Response setupResponse = client.performRequest(new Request("POST", "_zentity/_setup?number_of_shards=2&number_of_replicas=2"));
+            Response setupResponse = client().performRequest(new Request("POST", "_zentity/_setup?number_of_shards=2&number_of_replicas=2"));
             JsonNode setupJson = Json.MAPPER.readTree(setupResponse.getEntity().getContent());
 
             // The response should be { "acknowledged": true }
@@ -68,7 +73,7 @@ public class SetupActionIT extends AbstractITCase {
             assertTrue(acknowledged.isBoolean() && acknowledged.asBoolean());
 
             // Get the index settings and mapping
-            Response getIndexResponse = client.performRequest(new Request("GET", ModelsAction.INDEX_NAME));
+            Response getIndexResponse = client().performRequest(new Request("GET", ModelsAction.INDEX_NAME));
             JsonNode getIndexJson = Json.MAPPER.readTree(getIndexResponse.getEntity().getContent());
 
             // Verify if the settings match the default settings
@@ -81,12 +86,13 @@ public class SetupActionIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testSetupDeconflict() throws Exception {
         destroyTestResources();
         try {
 
             // Run setup with default settings
-            Response setupDefaultResponse = client.performRequest(new Request("POST", "_zentity/_setup"));
+            Response setupDefaultResponse = client().performRequest(new Request("POST", "_zentity/_setup"));
             JsonNode setupDefaultJson = Json.MAPPER.readTree(setupDefaultResponse.getEntity().getContent());
 
             // The response should be { "acknowledged": true }
@@ -95,7 +101,7 @@ public class SetupActionIT extends AbstractITCase {
 
             // Run setup again with custom settings
             try {
-                client.performRequest(new Request("POST", "_zentity/_setup?number_of_shards=2&number_of_replicas=2"));
+                client().performRequest(new Request("POST", "_zentity/_setup?number_of_shards=2&number_of_replicas=2"));
             } catch (ResponseException e) {
 
                 // The response should be an error
@@ -105,7 +111,7 @@ public class SetupActionIT extends AbstractITCase {
             }
 
             // Get the index settings and mapping
-            Response getIndexResponse = client.performRequest(new Request("GET", ModelsAction.INDEX_NAME));
+            Response getIndexResponse = client().performRequest(new Request("GET", ModelsAction.INDEX_NAME));
             JsonNode getIndexJson = Json.MAPPER.readTree(getIndexResponse.getEntity().getContent());
 
             // Verify if the settings match the default settings and not the custom settings

@@ -15,12 +15,15 @@ import org.elasticsearch.plugin.zentity.ZentityPlugin;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.junit.Assert.*;
 
 public class JobIT extends AbstractITCase {
 
@@ -505,42 +508,14 @@ public class JobIT extends AbstractITCase {
         return IOUtils.toByteArray(stream);
     }
 
-    private void destroyTestIndices(int testResourceSet) throws IOException {
-        switch (testResourceSet) {
-            case TEST_RESOURCES_ARRAYS:
-                client().performRequest(new Request("DELETE", "zentity_test_index_arrays"));
-                break;
-            default:
-                client().performRequest(new Request("DELETE", "zentity_test_index_a"));
-                client().performRequest(new Request("DELETE", "zentity_test_index_b"));
-                client().performRequest(new Request("DELETE", "zentity_test_index_c"));
-                client().performRequest(new Request("DELETE", "zentity_test_index_d"));
-                break;
-        }
-    }
-
-    private void destroyTestEntityModelA() throws IOException {
-        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_a"));
-    }
-
-    private void destroyTestEntityModelB() throws IOException {
-        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_b"));
-    }
-
-    private void destroyTestEntityModelArrays() throws IOException {
-        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_arrays"));
     public static void destroyTestIndices() throws IOException {
-        client.performRequest(new Request("DELETE", "zentity_test_index_*"));
+        client().performRequest(new Request("DELETE", "zentity_test_index_*"));
     }
 
-    private void destroyTestEntityModelElasticsearchError() throws IOException {
-        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_elasticsearch_error"));
     public static void destroyTestEntityModels() throws IOException {
-        client.performRequest(new Request("DELETE", ModelsAction.INDEX_NAME));
+        client().performRequest(new Request("DELETE", ModelsAction.INDEX_NAME));
     }
 
-    private void destroyTestEntityModelZentityError() throws IOException {
-        client().performRequest(new Request("DELETE", "_zentity/models/zentity_test_entity_zentity_error"));
     public static void destroyTestResources() throws IOException {
         destroyTestIndices();
         destroyTestEntityModels();
@@ -669,23 +644,25 @@ public class JobIT extends AbstractITCase {
         destroyTestResources();
     }
 
+    @Test
     public void testJobNoScope() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
         postResolution.setEntity(TEST_PAYLOAD_JOB_NO_SCOPE);
-        Response response = client.performRequest(postResolution);
+        Response response = client().performRequest(postResolution);
         JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
         assertEquals(json.get("hits").get("total").asInt(), 40);
         JsonPointer pathAttributes = JsonPointer.compile("/_attributes");
         JsonPointer pathNull = JsonPointer.compile("/_attributes/attribute_type_string_null");
         JsonPointer pathUnused = JsonPointer.compile("/_attributes/attribute_type_string_unused");
         for (JsonNode doc : json.get("hits").get("hits")) {
-            assertEquals(doc.at(pathAttributes).isMissingNode(), false);
-            assertEquals(doc.at(pathNull).isMissingNode(), true);
-            assertEquals(doc.at(pathUnused).isMissingNode(), true);
+            assertFalse(doc.at(pathAttributes).isMissingNode());
+            assertTrue(doc.at(pathNull).isMissingNode());
+            assertTrue(doc.at(pathUnused).isMissingNode());
         }
     }
 
+    @Test
     public void testJobAttributes() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -703,6 +680,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobTerms() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -720,6 +698,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobExplanation() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -754,6 +733,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobExplanationTerms() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -788,6 +768,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobIds() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -805,6 +786,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobAttributesIds() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -846,6 +828,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobTermsIds() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -887,6 +870,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobMaxHopsAndDocs() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -920,6 +904,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobDataTypes() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
 
@@ -1130,6 +1115,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpectedB, getActual(j12t));
     }
 
+    @Test
     public void testJobDataTypesDate() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
         Request postResolution = new Request("POST", endpoint);
@@ -1205,6 +1191,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobDataTypesDateTerm() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a?max_hops=2&max_docs_per_query=2";
         Request postResolution = new Request("POST", endpoint);
@@ -1280,6 +1267,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobObject() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Set<String> docsExpectedA = new TreeSet<>();
@@ -1298,6 +1286,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpectedA, getActual(j1));
     }
 
+    @Test
     public void testJobScopeExcludeAttributes() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -1325,6 +1314,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobScopeExcludeAttributesTerms() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -1352,6 +1342,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobScopeIncludeAttributes() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -1371,6 +1362,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobScopeIncludeAttributesTerms() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -1390,6 +1382,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobScopeExcludeAndIncludeAttributes() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -1405,6 +1398,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobScopeExcludeAndIncludeAttributesTerms() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -1420,6 +1414,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobResolverWeight() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_b";
         Request postResolution = new Request("POST", endpoint);
@@ -1435,6 +1430,7 @@ public class JobIT extends AbstractITCase {
         assertEquals(docsExpected, getActual(json));
     }
 
+    @Test
     public void testJobElasticsearchError() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_elasticsearch_error";
         Request postResolution = new Request("POST", endpoint);
@@ -1448,7 +1444,7 @@ public class JobIT extends AbstractITCase {
             assertEquals(json.get("error").get("by").asText(), "elasticsearch");
             assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.xcontent.XContentParseException");
             assertEquals(json.get("error").get("reason").asText(), "[1:967] [bool] failed to parse field [filter]");
-            assertEquals(json.get("error").get("stack_trace").asText().contains("unknown field [example_malformed_query]"), true);
+            assertTrue(json.get("error").get("stack_trace").asText().contains("unknown field [example_malformed_query]"));
             assertEquals(json.get("hits").get("total").asInt(), 2);
             Set<String> docsExpected = new TreeSet<>();
             docsExpected.add("a2,0");
@@ -1470,8 +1466,8 @@ public class JobIT extends AbstractITCase {
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("error").get("by").asText(), "elasticsearch");
             assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.xcontent.XContentParseException");
-            assertEquals(json.get("error").get("stack_trace"), null);
-            assertEquals(json.get("queries").isMissingNode(), false);
+            assertNull(json.get("error").get("stack_trace"));
+            assertFalse(json.get("queries").isMissingNode());
             assertEquals(json.get("hits").get("total").asInt(), 2);
             Set<String> docsExpected = new TreeSet<>();
             docsExpected.add("a2,0");
@@ -1480,6 +1476,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobZentityError() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_zentity_error";
         Request postResolution = new Request("POST", endpoint);
@@ -1493,7 +1490,7 @@ public class JobIT extends AbstractITCase {
             assertEquals(json.get("error").get("by").asText(), "zentity");
             assertEquals(json.get("error").get("type").asText(), "io.zentity.model.ValidationException");
             assertEquals(json.get("error").get("reason").asText(), "Expected 'number' attribute data type.");
-            assertEquals(json.get("error").get("stack_trace").asText().startsWith("io.zentity.model.ValidationException: Expected 'number' attribute data type."), true);
+            assertTrue(json.get("error").get("stack_trace").asText().startsWith("io.zentity.model.ValidationException: Expected 'number' attribute data type."));
             assertEquals(json.get("hits").get("total").asInt(), 0);
         }
 
@@ -1512,12 +1509,13 @@ public class JobIT extends AbstractITCase {
             assertEquals(json.get("error").get("by").asText(), "zentity");
             assertEquals(json.get("error").get("type").asText(), "io.zentity.model.ValidationException");
             assertEquals(json.get("error").get("reason").asText(), "Expected 'number' attribute data type.");
-            assertEquals(json.get("error").get("stack_trace"), null);
-            assertEquals(json.get("queries").isMissingNode(), false);
+            assertNull(json.get("error").get("stack_trace"));
+            assertFalse(json.get("queries").isMissingNode());
             assertEquals(json.get("hits").get("total").asInt(), 0);
         }
     }
 
+    @Test
     public void testJobArrays() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_arrays";
         Set<String> docsExpectedArrays = new TreeSet<>();
@@ -1550,6 +1548,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobSearchParams() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
@@ -1602,6 +1601,7 @@ public class JobIT extends AbstractITCase {
         }
     }
 
+    @Test
     public void testJobScore() throws Exception {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);

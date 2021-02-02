@@ -924,7 +924,7 @@ public class ResolutionActionTest {
     public void testValidScopeExcludeIndicesTypeArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(validScopeIndicesTypeArray));
         Input input = new Input(requestBody);
-        Assert.assertTrue(!input.model().indices().containsKey("index_name_a"));
+        Assert.assertFalse(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
     }
@@ -951,7 +951,7 @@ public class ResolutionActionTest {
     public void testValidScopeExcludeIndicesTypeString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeIndices(validScopeIndicesTypeString));
         Input input = new Input(requestBody);
-        Assert.assertTrue(!input.model().indices().containsKey("index_name_a"));
+        Assert.assertFalse(input.model().indices().containsKey("index_name_a"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_b"));
         Assert.assertTrue(input.model().indices().containsKey("index_name_c"));
     }
@@ -1023,8 +1023,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(validScopeIndicesTypeArray));
         Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
-        Assert.assertTrue(!input.model().indices().containsKey("index_name_b"));
-        Assert.assertTrue(!input.model().indices().containsKey("index_name_c"));
+        Assert.assertFalse(input.model().indices().containsKey("index_name_b"));
+        Assert.assertFalse(input.model().indices().containsKey("index_name_c"));
     }
 
     @Test
@@ -1050,8 +1050,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeIndices(validScopeIndicesTypeString));
         Input input = new Input(requestBody);
         Assert.assertTrue(input.model().indices().containsKey("index_name_a"));
-        Assert.assertTrue(!input.model().indices().containsKey("index_name_b"));
-        Assert.assertTrue(!input.model().indices().containsKey("index_name_c"));
+        Assert.assertFalse(input.model().indices().containsKey("index_name_b"));
+        Assert.assertFalse(input.model().indices().containsKey("index_name_c"));
     }
 
     @Test(expected = ValidationException.class)
@@ -1120,7 +1120,7 @@ public class ResolutionActionTest {
     public void testValidScopeExcludeResolversTypeArray() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(validScopeResolversTypeArray));
         Input input = new Input(requestBody);
-        Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_a"));
+        Assert.assertFalse(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
     }
@@ -1147,7 +1147,7 @@ public class ResolutionActionTest {
     public void testValidScopeExcludeResolversTypeString() throws Exception {
         JsonNode requestBody = parseRequestBody(inputScopeExcludeResolvers(validScopeResolversTypeString));
         Input input = new Input(requestBody);
-        Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_a"));
+        Assert.assertFalse(input.model().resolvers().containsKey("resolver_name_a"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_b"));
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_c"));
     }
@@ -1219,8 +1219,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(validScopeResolversTypeArray));
         Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
-        Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_b"));
-        Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_c"));
+        Assert.assertFalse(input.model().resolvers().containsKey("resolver_name_b"));
+        Assert.assertFalse(input.model().resolvers().containsKey("resolver_name_c"));
     }
 
     @Test
@@ -1246,8 +1246,8 @@ public class ResolutionActionTest {
         JsonNode requestBody = parseRequestBody(inputScopeIncludeResolvers(validScopeResolversTypeString));
         Input input = new Input(requestBody);
         Assert.assertTrue(input.model().resolvers().containsKey("resolver_name_a"));
-        Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_b"));
-        Assert.assertTrue(!input.model().resolvers().containsKey("resolver_name_c"));
+        Assert.assertFalse(input.model().resolvers().containsKey("resolver_name_b"));
+        Assert.assertFalse(input.model().resolvers().containsKey("resolver_name_c"));
     }
 
     @Test(expected = ValidationException.class)
