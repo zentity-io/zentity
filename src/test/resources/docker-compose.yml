@@ -15,7 +15,7 @@ services:
       - http.port=9400
       - transport.tcp.port=9500
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # TODO: Append -ea to ES_JAVA_OPTS after merging with async feature branch
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
     ulimits:
       memlock:
         soft: -1
@@ -42,7 +42,7 @@ services:
       - http.port=9400
       - transport.tcp.port=9500
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # TODO: Append -ea to ES_JAVA_OPTS after merging with async feature branch
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
     ulimits:
       memlock:
         soft: -1
@@ -67,7 +67,7 @@ services:
       - http.port=9400
       - transport.tcp.port=9500
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # TODO: Append -ea to ES_JAVA_OPTS after merging with async feature branch
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
     ulimits:
       memlock:
         soft: -1
