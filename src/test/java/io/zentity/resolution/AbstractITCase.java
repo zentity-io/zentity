@@ -32,7 +32,7 @@ public abstract class AbstractITCase {
     private static RestClient client;
 
     @BeforeClass
-    public static void setup() throws IOException {
+    public static void setup() throws Exception {
         createCluster();
         createClient();
     }
@@ -73,6 +73,12 @@ public abstract class AbstractITCase {
      * Create the client if it doesn't exist.
      */
     public static void createClient() throws IOException {
+
+        // The client configuration depends on the cluster implementation,
+        // so create the cluster first if it hasn't already been created.
+        if (cluster == null)
+            createCluster();
+      
         try {
 
             // Create the client.
@@ -109,7 +115,9 @@ public abstract class AbstractITCase {
      *
      * @return The client.
      */
-    public RestClient client() {
+    public static RestClient client() throws IOException {
+        if (client == null)
+            createClient();
         return client;
     }
 }

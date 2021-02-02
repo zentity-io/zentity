@@ -2,16 +2,16 @@ package org.elasticsearch.plugin.zentity;
 
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchSecurityException;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
-import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -19,10 +19,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.BytesRestResponse;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.*;
 
 import java.util.List;
 
@@ -34,6 +31,7 @@ import static org.elasticsearch.rest.RestRequest.Method.PUT;
 
 public class ModelsAction extends BaseRestHandler {
 
+    private static final Logger logger = LogManager.getLogger(ModelsAction.class);
     public static final String INDEX_NAME = ".zentity-models";
 
     @Override
@@ -48,42 +46,171 @@ public class ModelsAction extends BaseRestHandler {
     }
 
     /**
+     * Create the .zentity-models index.
+     *
+     * @param client     The client that will communicate with Elasticsearch.
+     * @param onComplete The action to perform after the index creation request completes.
+     */
+    public static void createIndex(NodeClient client, ActionListener<ActionResponse> onComplete) {
+        SetupAction.createIndex(client, new ActionListener<>() {
+
+            @Override
+            public void onResponse(CreateIndexResponse response) {
+                try {
+
+                    // The index was created successfully.
+                    onComplete.onResponse(response);
+                } catch (Exception e) {
+
+                    // An unexpected error occurred when returning the response.
+                    onComplete.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when creating the index.
+                if (e instanceof ElasticsearchSecurityException) {
+
+                    // The error was a security exception.
+                    // Log the error message as it was received from Elasticsearch.
+                    logger.debug(e.getMessage());
+
+                    // Return a more descriptive error message for the user.
+                    onComplete.onFailure(new ForbiddenException("The '" + INDEX_NAME + "' index does not exist and cannot be created. This action requires the 'create_index' privilege for the '" + INDEX_NAME + "' index. An authorized user can create the '" + INDEX_NAME + "' index using the Setup API: POST _zentity/_setup"));
+                } else {
+
+                    // The error was unexpected.
+                    onComplete.onFailure(e);
+                }
+            }
+        });
+    }
+
+    /**
      * Check if the .zentity-models index exists, and if it doesn't, then create it.
      *
-     * @param client The client that will communicate with Elasticsearch.
-     * @throws ForbiddenException
+     * @param client     The client that will communicate with Elasticsearch.
+     * @param onComplete The action to perform after the index creation request completes.
      */
-    public static void ensureIndex(NodeClient client) throws ForbiddenException {
-        try {
-            IndicesExistsRequestBuilder request = client.admin().indices().prepareExists(INDEX_NAME);
-            IndicesExistsResponse response = request.get();
-            if (!response.isExists())
-                SetupAction.createIndex(client);
-        } catch (ElasticsearchSecurityException se) {
-            throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
-        }
+    public static void ensureIndex(NodeClient client, ActionListener<ActionResponse> onComplete) {
+
+        // Check if the .zentity-model index exists.
+        client.admin().indices().prepareExists(INDEX_NAME).execute(new ActionListener<>() {
+
+            @Override
+            public void onResponse(IndicesExistsResponse response) {
+                if (!response.isExists()) {
+
+                    // The index does not exist. Create it.
+                    createIndex(client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(ActionResponse response) {
+
+                            // Successfully created the index.
+                            onComplete.onResponse(response);
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when creating the index.
+                            onComplete.onFailure(e);
+                        }
+                    });
+                } else {
+
+                    // The index already exists.
+                    onComplete.onResponse(response);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when checking if the index exists.
+                if (e instanceof ElasticsearchSecurityException) {
+
+                    // The error was a security exception.
+                    // Log the error message as it was received from Elasticsearch.
+                    logger.debug(e.getMessage());
+
+                    // Return a more descriptive error message for the user.
+                    onComplete.onFailure(new ForbiddenException("Unable to verify if the '" + INDEX_NAME + "' index exists. This action requires the 'view_index_metadata' privilege for the '" + INDEX_NAME + "' index. Your role does not have this privilege."));
+                } else {
+
+                    // The error was unexpected.
+                    onComplete.onFailure(e);
+                }
+            }
+        });
     }
 
     /**
      * Retrieve all entity models.
      *
-     * @param client The client that will communicate with Elasticsearch.
-     * @return The response from Elasticsearch.
-     * @throws ForbiddenException
+     * @param client     The client that will communicate with Elasticsearch.
+     * @param onComplete The action to perform after the search request completes.
      */
-    public static SearchResponse getEntityModels(NodeClient client) throws ForbiddenException {
-        SearchRequestBuilder request = client.prepareSearch(INDEX_NAME);
-        request.setSize(10000);
-        try {
-            return request.get();
-        } catch (IndexNotFoundException e) {
-            try {
-                SetupAction.createIndex(client);
-            } catch (ElasticsearchSecurityException se) {
-                throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
+    public static void getEntityModels(NodeClient client, ActionListener<SearchResponse> onComplete) {
+
+        // Retrieve entity models from the .zentity-models index.
+        client.prepareSearch(INDEX_NAME).setSize(10000).execute(new ActionListener<>() {
+
+            @Override
+            public void onResponse(SearchResponse response) {
+
+                // Successfully retrieved the entity models.
+                onComplete.onResponse(response);
             }
-            return request.get();
-        }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when retrieving the entity models.
+                if (e instanceof IndexNotFoundException) {
+
+                    // The .zentity-models index does not exist.
+                    // Log the error message as it was received from Elasticsearch.
+                    logger.debug(e.getMessage());
+
+                    // Attempt to create the .zentity-models index.
+                    createIndex(client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(ActionResponse response) {
+
+                            // Successfully created the .zentity-models index.
+                            // Attempt to retrieve the entity models again.
+                            getEntityModels(client, onComplete);
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when creating the .zentity-models index.
+                            onComplete.onFailure(e);
+                        }
+                    });
+
+                } else if (e.getClass() == ElasticsearchSecurityException.class) {
+
+                    // The error was a security exception.
+                    // Log the error message as it was received from Elasticsearch.
+                    logger.debug(e.getMessage());
+
+                    // Return a more descriptive error message for the user.
+                    onComplete.onFailure(new ForbiddenException("Unable to retrieve the entity models. This action requires the 'read' privilege for the '" + INDEX_NAME + "' index. Your role does not have this privilege."));
+
+                } else {
+
+                    // The error was unexpected.
+                    onComplete.onFailure(e);
+                }
+            }
+        });
     }
 
     /**
@@ -91,21 +218,65 @@ public class ModelsAction extends BaseRestHandler {
      *
      * @param entityType The entity type.
      * @param client     The client that will communicate with Elasticsearch.
-     * @return The response from Elasticsearch.
-     * @throws ForbiddenException
+     * @param onComplete The action to perform after the get request completes.
      */
-    public static GetResponse getEntityModel(String entityType, NodeClient client) throws ForbiddenException {
-        GetRequestBuilder request = client.prepareGet(INDEX_NAME, "doc", entityType);
-        try {
-            return request.get();
-        } catch (IndexNotFoundException e) {
-            try {
-                SetupAction.createIndex(client);
-            } catch (ElasticsearchSecurityException se) {
-                throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
+    public static void getEntityModel(String entityType, NodeClient client, ActionListener<GetResponse> onComplete) {
+
+        // Retrieve one entity model from the .zentity-models index.
+        client.prepareGet(INDEX_NAME, "doc", entityType).execute(new ActionListener<>() {
+
+            @Override
+            public void onResponse(GetResponse response) {
+
+                // Successfully retrieved the entity model.
+                onComplete.onResponse(response);
             }
-            return request.get();
-        }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when retrieving the entity model.
+                if (e instanceof IndexNotFoundException) {
+
+                    // The .zentity-models index does not exist.
+                    // Log the error message as it was received from Elasticsearch.
+                    logger.debug(e.getMessage());
+
+                    // Attempt to create the .zentity-models index.
+                    createIndex(client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(ActionResponse response) {
+
+                            // Successfully created the .zentity-models index.
+                            // Attempt to retrieve the entity model again.
+                            getEntityModel(entityType, client, onComplete);
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when creating the .zentity-models index.
+                            onComplete.onFailure(e);
+                        }
+                    });
+
+                } else if (e.getClass() == ElasticsearchSecurityException.class) {
+
+                    // The error was a security exception.
+                    // Log the error message as it was received from Elasticsearch.
+                    logger.debug(e.getMessage());
+
+                    // Return a more descriptive error message for the user.
+                    onComplete.onFailure(new ForbiddenException("Unable to retrieve the entity model. This action requires the 'read' privilege for the '" + INDEX_NAME + "' index. Your role does not have this privilege."));
+
+                } else {
+
+                    // The error was unexpected.
+                    onComplete.onFailure(e);
+                }
+            }
+        });
     }
 
     /**
@@ -114,14 +285,35 @@ public class ModelsAction extends BaseRestHandler {
      * @param entityType  The entity type.
      * @param requestBody The request body.
      * @param client      The client that will communicate with Elasticsearch.
-     * @return The response from Elasticsearch.
-     * @throws ForbiddenException
+     * @param onComplete  The action to perform after indexing the entity model.
      */
-    public static IndexResponse indexEntityModel(String entityType, String requestBody, NodeClient client) throws ForbiddenException {
-        ensureIndex(client);
-        IndexRequestBuilder request = client.prepareIndex(INDEX_NAME, "doc", entityType);
-        request.setSource(requestBody, XContentType.JSON).setCreate(true).setRefreshPolicy("wait_for");
-        return request.get();
+    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) {
+        ensureIndex(client, new ActionListener<>() {
+
+            @Override
+            public void onResponse(ActionResponse actionResponse) {
+                try {
+
+                    // Index the entity model.
+                    client.prepareIndex(INDEX_NAME, "doc", entityType)
+                            .setSource(requestBody, XContentType.JSON)
+                            .setCreate(true)
+                            .setRefreshPolicy("wait_for")
+                            .execute(onComplete);
+                } catch (Exception e) {
+
+                    // An error occurred when indexing the entity model.
+                    onComplete.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when ensuring that the '.zentity-models' index existed.
+                onComplete.onFailure(e);
+            }
+        });
     }
 
     /**
@@ -130,37 +322,69 @@ public class ModelsAction extends BaseRestHandler {
      * @param entityType  The entity type.
      * @param requestBody The request body.
      * @param client      The client that will communicate with Elasticsearch.
-     * @return The response from Elasticsearch.
-     * @throws ForbiddenException
+     * @param onComplete  The action to perform after updating the entity model.
      */
-    public static IndexResponse updateEntityModel(String entityType, String requestBody, NodeClient client) throws ForbiddenException {
-        ensureIndex(client);
-        IndexRequestBuilder request = client.prepareIndex(INDEX_NAME, "doc", entityType);
-        request.setSource(requestBody, XContentType.JSON).setCreate(false).setRefreshPolicy("wait_for");
-        return request.get();
+    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) {
+        ensureIndex(client, new ActionListener<>() {
+
+            @Override
+            public void onResponse(ActionResponse actionResponse) {
+                try {
+
+                    // Update the entity model.
+                    client.prepareIndex(INDEX_NAME, "doc", entityType)
+                            .setSource(requestBody, XContentType.JSON)
+                            .setCreate(false)
+                            .setRefreshPolicy("wait_for")
+                            .execute(onComplete);
+                } catch (Exception e) {
+
+                    // An error occurred when updating the entity model.
+                    onComplete.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when ensuring that the '.zentity-models' index existed.
+                onComplete.onFailure(e);
+            }
+        });
     }
 
     /**
      * Delete one entity model by its type.
      *
-     * @param entityType The entity type.
-     * @param client     The client that will communicate with Elasticsearch.
-     * @return The response from Elasticsearch.
-     * @throws ForbiddenException
+     * @param entityType  The entity type.
+     * @param client      The client that will communicate with Elasticsearch.
+     * @param onComplete  The action to perform after deleting the entity model.
      */
-    private static DeleteResponse deleteEntityModel(String entityType, NodeClient client) throws ForbiddenException {
-        DeleteRequestBuilder request = client.prepareDelete(INDEX_NAME, "doc", entityType);
-        request.setRefreshPolicy("wait_for");
-        try {
-            return request.get();
-        } catch (IndexNotFoundException e) {
-            try {
-                SetupAction.createIndex(client);
-            } catch (ElasticsearchSecurityException se) {
-                throw new ForbiddenException("The .zentity-models index does not exist and you do not have the 'create_index' privilege. An authorized user must create the index by submitting: POST _zentity/_setup");
+    public static void deleteEntityModel(String entityType, NodeClient client, ActionListener<DeleteResponse> onComplete) {
+        ensureIndex(client, new ActionListener<>() {
+
+            @Override
+            public void onResponse(ActionResponse actionResponse) {
+                try {
+
+                    // Delete the entity model.
+                    client.prepareDelete(INDEX_NAME, "doc", entityType)
+                            .setRefreshPolicy("wait_for")
+                            .execute(onComplete);
+                } catch (Exception e) {
+
+                    // An error occurred when deleting the entity model.
+                    onComplete.onFailure(e);
+                }
             }
-            return request.get();
-        }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when ensuring that the '.zentity-models' index existed.
+                onComplete.onFailure(e);
+            }
+        });
     }
 
     @Override
@@ -184,8 +408,12 @@ public class ModelsAction extends BaseRestHandler {
                 if (method == POST || method == PUT) {
 
                     // Parse the request body.
-                    if (requestBody == null || requestBody.equals(""))
-                        throw new ValidationException("Request body is missing.");
+                    if (requestBody == null || requestBody.equals("")) {
+                        if (method == POST)
+                            throw new ValidationException("Request body cannot be empty when indexing an entity model.");
+                        else
+                            throw new ValidationException("Request body cannot be empty when updating an entity model.");
+                    }
 
                     // Parse and validate the entity model.
                     new Model(requestBody);
@@ -193,64 +421,196 @@ public class ModelsAction extends BaseRestHandler {
 
                 // Handle request
                 if (method == GET && (entityType == null || entityType.equals(""))) {
-                    // GET _zentity/models
-                    SearchResponse response = getEntityModels(client);
-                    XContentBuilder content = XContentFactory.jsonBuilder();
-                    if (pretty)
-                        content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
 
-                } else if (method == GET && !entityType.equals("")) {
+                    // GET _zentity/models
+                    getEntityModels(client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(SearchResponse response) {
+                            try {
+
+                                // The entity models were retrieved. Send the response.
+                                XContentBuilder content = XContentFactory.jsonBuilder();
+                                if (pretty)
+                                    content.prettyPrint();
+                                response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                                ZentityPlugin.sendResponse(channel, content);
+                            } catch (Exception e) {
+
+                                // An error occurred when sending the response.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when retrieving the entity models.
+                            ZentityPlugin.sendResponseError(channel, logger, e);
+                        }
+                    });
+
+                } else if (method == GET) {
+
                     // GET _zentity/models/{entity_type}
-                    GetResponse response = getEntityModel(entityType, client);
-                    XContentBuilder content = XContentFactory.jsonBuilder();
-                    if (pretty)
-                        content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                    getEntityModel(entityType, client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(GetResponse response) {
+                            try {
+
+                                // The entity model was retrieved. Send the response.
+                                XContentBuilder content = XContentFactory.jsonBuilder();
+                                if (pretty)
+                                    content.prettyPrint();
+                                response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                                ZentityPlugin.sendResponse(channel, content);
+                            } catch (Exception e) {
+
+                                // An error occurred when sending the response.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            // An error occurred when retrieving the entity model.
+                            ZentityPlugin.sendResponseError(channel, logger, e);
+                        }
+                    });
 
                 } else if (method == POST && !entityType.equals("")) {
+
                     // POST _zentity/models/{entity_type}
-                    if (requestBody.equals(""))
-                        throw new ValidationException("Request body cannot be empty when indexing an entity model.");
-                    IndexResponse response = indexEntityModel(entityType, requestBody, client);
-                    XContentBuilder content = XContentFactory.jsonBuilder();
-                    if (pretty)
-                        content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                    indexEntityModel(entityType, requestBody, client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(IndexResponse response) {
+                            try {
+
+                                // The entity model was indexed. Send the response.
+                                XContentBuilder content = XContentFactory.jsonBuilder();
+                                if (pretty)
+                                    content.prettyPrint();
+                                response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                                ZentityPlugin.sendResponse(channel, content);
+                            } catch (Exception e) {
+
+                                // An error occurred when sending the response.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when indexing the entity model.
+                            if (e.getClass() == ElasticsearchSecurityException.class) {
+
+                                // The error was a security exception.
+                                // Log the error message as it was received from Elasticsearch.
+                                logger.debug(e.getMessage());
+
+                                // Return a more descriptive error message for the user.
+                                ZentityPlugin.sendResponseError(channel, logger, new ForbiddenException("Unable to index the entity model. This action requires the 'write' privilege for the '" + INDEX_NAME + "' index. Your role does not have this privilege."));
+                            } else {
+
+                                // The error was unexpected.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+                    });
 
                 } else if (method == PUT && !entityType.equals("")) {
+
                     // PUT _zentity/models/{entity_type}
-                    if (requestBody.equals(""))
-                        throw new ValidationException("Request body cannot be empty when updating an entity model.");
-                    IndexResponse response = updateEntityModel(entityType, requestBody, client);
-                    XContentBuilder content = XContentFactory.jsonBuilder();
-                    if (pretty)
-                        content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                    updateEntityModel(entityType, requestBody, client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(IndexResponse response) {
+                            try {
+
+                                // The entity model was updated. Send the response.
+                                XContentBuilder content = XContentFactory.jsonBuilder();
+                                if (pretty)
+                                    content.prettyPrint();
+                                response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                                ZentityPlugin.sendResponse(channel, content);
+                            } catch (Exception e) {
+
+                                // An error occurred when sending the response.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when updating the entity model.
+                            if (e.getClass() == ElasticsearchSecurityException.class) {
+
+                                // The error was a security exception.
+                                // Log the error message as it was received from Elasticsearch.
+                                logger.debug(e.getMessage());
+
+                                // Return a more descriptive error message for the user.
+                                ZentityPlugin.sendResponseError(channel, logger, new ForbiddenException("Unable to update the entity model. This action requires the 'write' privilege for the '" + INDEX_NAME + "' index. Your role does not have this privilege."));
+                            } else {
+
+                                // The error was unexpected.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+                    });
 
                 } else if (method == DELETE && !entityType.equals("")) {
+
                     // DELETE _zentity/models/{entity_type}
-                    DeleteResponse response = deleteEntityModel(entityType, client);
-                    XContentBuilder content = XContentFactory.jsonBuilder();
-                    if (pretty)
-                        content.prettyPrint();
-                    content = response.toXContent(content, ToXContent.EMPTY_PARAMS);
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                    deleteEntityModel(entityType, client, new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(DeleteResponse response) {
+                            try {
+
+                                // The entity model was deleted. Send the response.
+                                XContentBuilder content = XContentFactory.jsonBuilder();
+                                if (pretty)
+                                    content.prettyPrint();
+                                response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                                ZentityPlugin.sendResponse(channel, content);
+                            } catch (Exception e) {
+
+                                // An error occurred when sending the response.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when deleting the entity model.
+                            if (e.getClass() == ElasticsearchSecurityException.class) {
+
+                                // The error was a security exception.
+                                // Log the error message as it was received from Elasticsearch.
+                                logger.debug(e.getMessage());
+
+                                // Return a more descriptive error message for the user.
+                                ZentityPlugin.sendResponseError(channel, logger, new ForbiddenException("Unable to delete the entity model. This action requires the 'write' privilege for the '" + INDEX_NAME + "' index. Your role does not have this privilege."));
+                            } else {
+
+                                // The error was unexpected.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+                    });
 
                 } else {
                     throw new NotImplementedException("Method and endpoint not implemented.");
                 }
 
-            } catch (ValidationException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
-            } catch (ForbiddenException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.FORBIDDEN, e));
-            } catch (NotImplementedException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_IMPLEMENTED, e));
+            } catch (Exception e) {
+                ZentityPlugin.sendResponseError(channel, logger, e);
             }
         };
     }

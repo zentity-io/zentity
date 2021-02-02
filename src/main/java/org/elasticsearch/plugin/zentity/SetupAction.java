@@ -1,5 +1,9 @@
 package org.elasticsearch.plugin.zentity;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ElasticsearchSecurityException;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.settings.Settings;
@@ -18,6 +22,8 @@ import static org.elasticsearch.rest.RestRequest.Method;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 
 public class SetupAction extends BaseRestHandler {
+
+    private static final Logger logger = LogManager.getLogger(SetupAction.class);
 
     public static final int DEFAULT_NUMBER_OF_SHARDS = 1;
     public static final int DEFAULT_NUMBER_OF_REPLICAS = 1;
@@ -59,38 +65,39 @@ public class SetupAction extends BaseRestHandler {
      * @param client           The client that will communicate with Elasticsearch.
      * @param numberOfShards   The value of index.number_of_shards.
      * @param numberOfReplicas The value of index.number_of_replicas.
+     * @param onComplete       Action to perform after index creation request completes.
      * @return
      */
-    public static CreateIndexResponse createIndex(NodeClient client, int numberOfShards, int numberOfReplicas) {
+    public static void createIndex(NodeClient client, int numberOfShards, int numberOfReplicas, ActionListener<CreateIndexResponse> onComplete) {
         // Elasticsearch 7.0.0+ removes mapping types
         Properties props = ZentityPlugin.properties();
         if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
-            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+            client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
                 .setSettings(Settings.builder()
                         .put("index.number_of_shards", numberOfShards)
                         .put("index.number_of_replicas", numberOfReplicas)
                 )
                 .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
-                .get();
+                .execute(onComplete);
         } else {
-            return client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+            client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
                 .setSettings(Settings.builder()
                         .put("index.number_of_shards", numberOfShards)
                         .put("index.number_of_replicas", numberOfReplicas)
                 )
                 .addMapping("doc", INDEX_MAPPING_ELASTICSEARCH_6, XContentType.JSON)
-                .get();
+                .execute(onComplete);
         }
     }
 
     /**
-     * Create the .zentity-models index using the default index settings.
+     * Create the .zentity-models index using the default settings.
      *
-     * @param client The client that will communicate with Elasticsearch.
-     * @return
+     * @param client     The client that will communicate with Elasticsearch.
+     * @param onComplete The action to perform after the index creation request completes.
      */
-    public static CreateIndexResponse createIndex(NodeClient client) {
-        return createIndex(client, DEFAULT_NUMBER_OF_SHARDS, DEFAULT_NUMBER_OF_REPLICAS);
+    public static void createIndex(NodeClient client, ActionListener<CreateIndexResponse> onComplete) {
+        createIndex(client, DEFAULT_NUMBER_OF_SHARDS, DEFAULT_NUMBER_OF_REPLICAS, onComplete);
     }
 
     @Override
@@ -103,20 +110,51 @@ public class SetupAction extends BaseRestHandler {
 
         // Parse request
         Boolean pretty = restRequest.paramAsBoolean("pretty", false);
-        int numberOfShards = restRequest.paramAsInt("number_of_shards", 1);
-        int numberOfReplicas = restRequest.paramAsInt("number_of_replicas", 1);
+        int numberOfShards = restRequest.paramAsInt("number_of_shards", DEFAULT_NUMBER_OF_SHARDS);
+        int numberOfReplicas = restRequest.paramAsInt("number_of_replicas", DEFAULT_NUMBER_OF_REPLICAS);
         Method method = restRequest.method();
 
         return channel -> {
             try {
                 if (method == POST) {
+                    createIndex(client, numberOfShards, numberOfReplicas, new ActionListener<>() {
 
-                    createIndex(client, numberOfShards, numberOfReplicas);
-                    XContentBuilder content = XContentFactory.jsonBuilder();
-                    if (pretty)
-                        content.prettyPrint();
-                    content.startObject().field("acknowledged", true).endObject();
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                        @Override
+                        public void onResponse(CreateIndexResponse response) {
+                            try {
+
+                                // The .zentity-models index was created. Send the response.
+                                XContentBuilder content = XContentFactory.jsonBuilder();
+                                if (pretty)
+                                    content.prettyPrint();
+                                content.startObject().field("acknowledged", true).endObject();
+                                channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                            } catch (Exception e) {
+
+                                // An error occurred when sending the response.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when creating the .zentity-models index.
+                            if (e.getClass() == ElasticsearchSecurityException.class) {
+
+                                // The error was a security exception.
+                                // Log the error message as it was received from Elasticsearch.
+                                logger.debug(e.getMessage());
+
+                                // Return a more descriptive error message for the user.
+                                ZentityPlugin.sendResponseError(channel, logger, new ForbiddenException("The '" + ModelsAction.INDEX_NAME + "' index cannot be created. This action requires the 'create_index' privilege for the '" + ModelsAction.INDEX_NAME + "' index. Your role does not have this privilege."));
+                            } else {
+
+                                // The error was unexpected.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+                    });
 
                 } else {
                     throw new NotImplementedException("Method and endpoint not implemented.");

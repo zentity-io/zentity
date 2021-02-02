@@ -278,21 +278,21 @@ public class AttributeTest {
     @Test
     public void testValidSerializeTypeBooleanNullable() throws Exception {
         Value value = Value.create("boolean", jsonValue("{\"value\":null}"));
-        Assert.assertEquals(value.value(), null);
+        Assert.assertNull(value.value());
         Assert.assertEquals(value.serialized(), "null");
     }
 
     @Test
     public void testValidSerializeTypeNumberNullable() throws Exception {
         Value value = Value.create("number", jsonValue("{\"value\":null}"));
-        Assert.assertEquals(value.value(), null);
+        Assert.assertNull(value.value());
         Assert.assertEquals(value.serialized(), "null");
     }
 
     @Test
     public void testValidSerializeTypeStringNullable() throws Exception {
         Value value = Value.create("string", jsonValue("{\"value\":null}"));
-        Assert.assertEquals(value.value(), null);
+        Assert.assertNull(value.value());
         Assert.assertEquals(value.serialized(), "null");
     }
 }

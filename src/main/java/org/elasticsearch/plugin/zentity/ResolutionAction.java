@@ -4,12 +4,12 @@ import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.Job;
 import io.zentity.resolution.input.Input;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.BytesRestResponse;
-import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.*;
 
 import java.util.List;
 
@@ -17,6 +17,8 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 
 
 public class ResolutionAction extends BaseRestHandler {
+
+    private static final Logger logger = LogManager.getLogger(ResolutionAction.class);
 
     @Override
     public List<Route> routes() {
@@ -29,6 +31,38 @@ public class ResolutionAction extends BaseRestHandler {
     @Override
     public String getName() {
         return "zentity_resolution_action";
+    }
+
+    /**
+     * Run a fully configured resolution job and return the response.
+     *
+     * @param channel The REST channel to return the response through.
+     * @param job     The fully configured resolution job to run.
+     */
+    public static void runJob(RestChannel channel, Job job) {
+        job.run(new ActionListener<String>() {
+
+            @Override
+            public void onResponse(String response) {
+                try {
+                    if (job.failed())
+                        channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", response));
+                    else
+                        channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
+                } catch (Exception e) {
+
+                    // An error occurred when running the entity resolution job.
+                    ZentityPlugin.sendResponseError(channel, logger, e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // An error occurred when running the entity resolution job.
+                ZentityPlugin.sendResponseError(channel, logger, e);
+            }
+        });
     }
 
     @Override
@@ -79,18 +113,6 @@ public class ResolutionAction extends BaseRestHandler {
                 if (body == null || body.equals(""))
                     throw new ValidationException("Request body is missing.");
 
-                // Parse and validate the job input.
-                Input input;
-                if (entityType == null || entityType.equals("")) {
-                    input = new Input(body);
-                } else {
-                    GetResponse getResponse = ModelsAction.getEntityModel(entityType, client);
-                    if (!getResponse.isExists())
-                        throw new NotFoundException("Entity type '" + entityType + "' not found.");
-                    String model = getResponse.getSourceAsString();
-                    input = new Input(body, new Model(model));
-                }
-
                 // Prepare the entity resolution job.
                 Job job = new Job(client);
                 job.includeAttributes(includeAttributes);
@@ -107,7 +129,6 @@ public class ResolutionAction extends BaseRestHandler {
                 job.maxTimePerQuery(maxTimePerQuery);
                 job.pretty(pretty);
                 job.profile(profile);
-                job.input(input);
 
                 // Optional search parameters
                 job.searchAllowPartialSearchResults(searchAllowPartialSearchResults);
@@ -117,17 +138,47 @@ public class ResolutionAction extends BaseRestHandler {
                 job.searchPreference(searchPreference);
                 job.searchRequestCache(searchRequestCache);
 
-                // Run the entity resolution job.
-                String response = job.run();
-                if (job.failed())
-                    channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", response));
-                else
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", response));
+                // Parse and validate the job input.
+                if (entityType == null || entityType.equals("")) {
 
-            } catch (ValidationException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.BAD_REQUEST, e));
-            } catch (NotFoundException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_FOUND, e));
+                    // Run the entity resolution job using the input from the request body.
+                    Input input = new Input(body);
+                    job.input(input);
+                    runJob(channel, job);
+
+                } else {
+                    ModelsAction.getEntityModel(entityType, client, new ActionListener<>()  {
+
+                        @Override
+                        public void onResponse(GetResponse response) {
+                            try {
+                                if (!response.isExists())
+                                    throw new NotFoundException("Entity type '" + entityType + "' not found.");
+
+                                // Run the entity resolution job using the input from the retrieved entity model.
+                                String model = response.getSourceAsString();
+                                Input input = new Input(body, new Model(model));
+                                job.input(input);
+                                runJob(channel, job);
+
+                            } catch (Exception e) {
+
+                                // An error occurred when running the entity resolution job.
+                                ZentityPlugin.sendResponseError(channel, logger, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                            // An error occurred when retrieving the entity model.
+                            ZentityPlugin.sendResponseError(channel, logger, e);
+                        }
+                    });
+                }
+
+            } catch (Exception e) {
+                ZentityPlugin.sendResponseError(channel, logger, e);
             }
         };
     }
