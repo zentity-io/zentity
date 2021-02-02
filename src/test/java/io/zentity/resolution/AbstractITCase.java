@@ -78,7 +78,7 @@ public abstract class AbstractITCase {
         // so create the cluster first if it hasn't already been created.
         if (cluster == null)
             createCluster();
-
+      
         try {
 
             // Create the client.
