@@ -23,7 +23,7 @@ import java.util.TreeSet;
 
 import static org.junit.Assert.*;
 
-public class JobIT extends AbstractITCase {
+public class ResolutionActionIT extends AbstractIT {
 
     public static final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
@@ -502,7 +502,7 @@ public class JobIT extends AbstractITCase {
             "}", ContentType.APPLICATION_JSON);
 
     public static byte[] readFile(String filename) throws IOException {
-        InputStream stream = JobIT.class.getResourceAsStream("/" + filename);
+        InputStream stream = ResolutionActionIT.class.getResourceAsStream("/" + filename);
         return IOUtils.toByteArray(stream);
     }
 

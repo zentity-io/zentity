@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class SetupActionIT extends AbstractITCase {
+public class SetupActionIT extends AbstractIT {
 
     public static void destroyTestResources() throws Exception {
         try {

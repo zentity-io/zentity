@@ -8,6 +8,7 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
@@ -20,7 +21,8 @@ import java.time.Duration;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeFalse;
 
-public abstract class AbstractITCase {
+@Ignore("Base class")
+public abstract class AbstractIT {
 
     public final static String SERVICE_NAME = "es01";
     public final static int SERVICE_PORT = 9400;

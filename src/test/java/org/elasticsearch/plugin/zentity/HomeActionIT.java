@@ -11,7 +11,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
-public class HomeActionIT extends AbstractITCase {
+public class HomeActionIT extends AbstractIT {
 
     @Test
     public void testHomeAction() throws Exception {

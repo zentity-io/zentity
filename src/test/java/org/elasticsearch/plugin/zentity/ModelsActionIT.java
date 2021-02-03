@@ -17,7 +17,7 @@ import java.io.InputStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class ModelsActionIT extends AbstractITCase {
+public class ModelsActionIT extends AbstractIT {
 
     public static void destroyTestResources() throws Exception {
         try {

@@ -11,7 +11,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
-public class ZentityPluginIT extends AbstractITCase {
+public class ZentityPluginIT extends AbstractIT {
 
     @Test
     public void testPluginIsLoaded() throws Exception {

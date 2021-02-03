@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class ResolutionActionTest {
+public class InputTest {
 
     // Valid input
     private static final String validAttributeArray = "\"attribute_array\":[\"abc\"]";
