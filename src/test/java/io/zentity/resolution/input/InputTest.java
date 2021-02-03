@@ -1,4 +1,4 @@
-package io.zentity.resolution;
+package io.zentity.resolution.input;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
