@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/zentity-io/zentity.svg?branch=master)](https://travis-ci.org/zentity-io/zentity)
+[![Build Status](https://github.com/zentity-io/zentity/workflows/Commit/badge.svg?branch=master)](https://github.com/zentity-io/zentity/actions)
 
 # zentity
 
