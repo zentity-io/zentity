@@ -1,4 +1,4 @@
-package io.zentity.resolution;
+package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,8 +10,6 @@ import org.apache.http.entity.StringEntity;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.plugin.zentity.ModelsAction;
-import org.elasticsearch.plugin.zentity.ZentityPlugin;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

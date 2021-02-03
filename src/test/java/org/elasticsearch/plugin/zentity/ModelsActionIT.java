@@ -3,7 +3,6 @@ package org.elasticsearch.plugin.zentity;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import io.zentity.model.*;
-import io.zentity.resolution.AbstractITCase;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;

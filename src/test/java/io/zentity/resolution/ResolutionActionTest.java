@@ -1,4 +1,4 @@
-package org.elasticsearch.plugin.zentity;
+package io.zentity.resolution;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
