@@ -88,6 +88,7 @@ public class Matcher {
     }
 
     private void validateName(String value) throws ValidationException {
+        Model.validateStrictName(value);
         if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'matchers' field has a matcher with an empty name.");
     }

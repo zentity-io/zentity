@@ -63,6 +63,7 @@ public class Attribute {
     }
 
     private void validateName(String value) throws ValidationException {
+        Model.validateStrictName(value);
         if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'attributes' has an attribute with empty name.");
     }

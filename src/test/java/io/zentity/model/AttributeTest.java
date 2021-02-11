@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 
 public class AttributeTest {
 
@@ -31,6 +32,67 @@ public class AttributeTest {
     @Test(expected = ValidationException.class)
     public void testInvalidNameEmpty() throws Exception {
         new Attribute(" ", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsAsterisk() throws Exception {
+        new Attribute("selectivemploymentax*", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsHash() throws Exception {
+        new Attribute("c#ke", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsColon() throws Exception {
+        new Attribute("p:psi", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithUnderscore() throws Exception {
+        new Attribute("_fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithDash() throws Exception {
+        new Attribute("-fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithPlus() throws Exception {
+        new Attribute("+fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsTooLong() throws Exception {
+        new Attribute(String.join("", Collections.nCopies(100, "sprite")), VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsDot() throws Exception {
+        new Attribute(".", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsDotDot() throws Exception {
+        new Attribute("..", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsNotLowercase() throws Exception {
+        new Attribute("MELLO_yello", VALID_OBJECT);
+    }
+
+    @Test
+    public void testValidNames() throws Exception {
+        new Attribute("hello", VALID_OBJECT);
+        new Attribute(".hello", VALID_OBJECT);
+        new Attribute("..hello", VALID_OBJECT);
+        new Attribute("hello_world", VALID_OBJECT);
+        new Attribute("hello-world", VALID_OBJECT);
+        new Attribute("hello+world", VALID_OBJECT);
+        new Attribute("您好", VALID_OBJECT);
     }
 
     ////  "attributes".ATTRIBUTE_NAME."score"  /////////////////////////////////////////////////////////////////////////
