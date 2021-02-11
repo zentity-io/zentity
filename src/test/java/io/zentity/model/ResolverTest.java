@@ -2,6 +2,8 @@ package io.zentity.model;
 
 import org.junit.Test;
 
+import java.util.Collections;
+
 public class ResolverTest {
 
     public final static String VALID_OBJECT = "{\"attributes\":[\"attribute_a\"]}";
@@ -27,6 +29,67 @@ public class ResolverTest {
     @Test(expected = ValidationException.class)
     public void testInvalidNameEmpty() throws Exception {
         new Resolver(" ", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsAsterisk() throws Exception {
+        new Resolver("selectivemploymentax*", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsHash() throws Exception {
+        new Resolver("c#ke", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsColon() throws Exception {
+        new Resolver("p:psi", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithUnderscore() throws Exception {
+        new Resolver("_fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithDash() throws Exception {
+        new Resolver("-fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithPlus() throws Exception {
+        new Resolver("+fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsTooLong() throws Exception {
+        new Resolver(String.join("", Collections.nCopies(100, "sprite")), VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsDot() throws Exception {
+        new Resolver(".", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsDotDot() throws Exception {
+        new Resolver("..", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsNotLowercase() throws Exception {
+        new Resolver("MELLO_yello", VALID_OBJECT);
+    }
+
+    @Test
+    public void testValidNames() throws Exception {
+        new Resolver("hello", VALID_OBJECT);
+        new Resolver(".hello", VALID_OBJECT);
+        new Resolver("..hello", VALID_OBJECT);
+        new Resolver("hello_world", VALID_OBJECT);
+        new Resolver("hello-world", VALID_OBJECT);
+        new Resolver("hello+world", VALID_OBJECT);
+        new Resolver("您好", VALID_OBJECT);
     }
 
     ////  "resolvers".RESOLVER_NAME."attributes"  //////////////////////////////////////////////////////////////////////

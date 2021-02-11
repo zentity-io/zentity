@@ -248,7 +248,7 @@ public class ModelsActionIT extends AbstractIT {
             assertEquals("validation_exception", errorJson.get("type").textValue());
 
             assertTrue("error has reason field", errorJson.has("reason"));
-            assertTrue(errorJson.get("reason").textValue().contains("Invalid entity type [_anInvalidType]"));
+            assertTrue(errorJson.get("reason").textValue().contains("Invalid name [_anInvalidType]"));
         }
     }
 }

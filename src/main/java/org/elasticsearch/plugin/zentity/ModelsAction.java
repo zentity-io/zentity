@@ -4,7 +4,6 @@ import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionResponse;
@@ -15,7 +14,6 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -24,11 +22,7 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.function.BiFunction;
 
 import static org.elasticsearch.rest.RestRequest.Method;
 import static org.elasticsearch.rest.RestRequest.Method.DELETE;
@@ -37,57 +31,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 import static org.elasticsearch.rest.RestRequest.Method.PUT;
 
 public class ModelsAction extends BaseRestHandler {
-    public static final int MAX_ENTITY_TYPE_BYTES = 255;
 
-    /**
-     * Check if an entity type meets the name requirements, as specified by the Elasticsearch index
-     * naming requirements.
-     *
-     * @param entityType The entity type.
-     * @return an optional ValidationException if the type is not in a valid format.
-     * @see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.10/indices-create-index.html#indices-create-api-path-params">Elasticsearch Index Name Requirements</a>
-     * @see org.elasticsearch.cluster.metadata.MetadataCreateIndexService#validateIndexOrAliasName
-     */
-    public static Optional<Exception> validateEntityType(String entityType) {
-        BiFunction<String, String, ValidationException> errorConstructor = (name, description) -> {
-            String message = "Invalid entity type [" + name + "], " + description;
-            return new ValidationException(message);
-        };
-
-        Exception ex = null;
-        if (!Strings.validFileName(entityType)) {
-            ex = errorConstructor.apply(entityType, "must not contain the following characters " + Strings.INVALID_FILENAME_CHARS);
-        }
-        if (entityType.contains("#")) {
-            ex = errorConstructor.apply(entityType, "must not contain '#'");
-        }
-        if (entityType.contains(":")) {
-            ex = errorConstructor.apply(entityType, "must not contain ':'");
-        }
-        if (entityType.charAt(0) == '_' || entityType.charAt(0) == '-' || entityType.charAt(0) == '+') {
-            ex = errorConstructor.apply(entityType, "must not start with '_', '-', or '+'");
-        }
-        int byteCount = 0;
-        try {
-            byteCount = entityType.getBytes("UTF-8").length;
-        } catch (UnsupportedEncodingException e) {
-            // UTF-8 should always be supported, but rethrow this if it is not for some reason
-            ex = new ElasticsearchException("Unable to determine length of entity type", e);
-        }
-
-        if (byteCount > MAX_ENTITY_TYPE_BYTES) {
-            ex = errorConstructor.apply(entityType, "entity type is too long, (" + byteCount + " > " + MAX_ENTITY_TYPE_BYTES + ")");
-        }
-        if (entityType.equals(".") || entityType.equals("..")) {
-            ex = errorConstructor.apply(entityType, "must not be '.' or '..'");
-        }
-
-        if (!entityType.toLowerCase(Locale.ROOT).equals(entityType)) {
-            ex = errorConstructor.apply(entityType, "must be lowercase");
-        }
-
-        return Optional.ofNullable(ex);
-    }
 
     private static final Logger logger = LogManager.getLogger(ModelsAction.class);
     public static final String INDEX_NAME = ".zentity-models";
@@ -345,12 +289,8 @@ public class ModelsAction extends BaseRestHandler {
      * @param client      The client that will communicate with Elasticsearch.
      * @param onComplete  The action to perform after indexing the entity model.
      */
-    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) {
-        Optional<Exception> validationExOpt = validateEntityType(entityType);
-        if (validationExOpt.isPresent()) {
-            onComplete.onFailure(validationExOpt.get());
-            return;
-        }
+    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) throws ValidationException {
+        Model.validateStrictName(entityType);
         ensureIndex(client, new ActionListener<>() {
 
             @Override
@@ -387,12 +327,8 @@ public class ModelsAction extends BaseRestHandler {
      * @param client      The client that will communicate with Elasticsearch.
      * @param onComplete  The action to perform after updating the entity model.
      */
-    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) {
-        Optional<Exception> validationExOpt = validateEntityType(entityType);
-        if (validationExOpt.isPresent()) {
-            onComplete.onFailure(validationExOpt.get());
-            return;
-        }
+    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) throws ValidationException {
+        Model.validateStrictName(entityType);
         ensureIndex(client, new ActionListener<>() {
 
             @Override

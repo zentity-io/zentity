@@ -2,6 +2,8 @@ package io.zentity.model;
 
 import org.junit.Test;
 
+import java.util.Collections;
+
 public class MatcherTest {
 
     public final static String VALID_OBJECT = "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}}}";
@@ -24,6 +26,67 @@ public class MatcherTest {
     @Test(expected = ValidationException.class)
     public void testInvalidNameEmpty() throws Exception {
         new Matcher(" ", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsAsterisk() throws Exception {
+        new Matcher("selectivemploymentax*", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsHash() throws Exception {
+        new Matcher("c#ke", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameContainsColon() throws Exception {
+        new Matcher("p:psi", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithUnderscore() throws Exception {
+        new Matcher("_fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithDash() throws Exception {
+        new Matcher("-fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsWithPlus() throws Exception {
+        new Matcher("+fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameStartsTooLong() throws Exception {
+        new Matcher(String.join("", Collections.nCopies(100, "sprite")), VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsDot() throws Exception {
+        new Matcher(".", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsDotDot() throws Exception {
+        new Matcher("..", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameIsNotLowercase() throws Exception {
+        new Matcher("MELLO_yello", VALID_OBJECT);
+    }
+
+    @Test
+    public void testValidNames() throws Exception {
+        new Matcher("hello", VALID_OBJECT);
+        new Matcher(".hello", VALID_OBJECT);
+        new Matcher("..hello", VALID_OBJECT);
+        new Matcher("hello_world", VALID_OBJECT);
+        new Matcher("hello-world", VALID_OBJECT);
+        new Matcher("hello+world", VALID_OBJECT);
+        new Matcher("您好", VALID_OBJECT);
     }
 
     ////  "matchers".MATCHER_NAME."clause"  ////////////////////////////////////////////////////////////////////////////
