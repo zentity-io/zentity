@@ -219,6 +219,7 @@ public class Input {
 
     /**
      * Parse and validate the entity model from the 'model' field of the request body.
+     * The model must be runnable, meaning there are no missing fields required for resolution.
      *
      * @param requestBody The request body.
      * @return The parsed "model" field from the request body, or an object from ".zentity-models" index.
@@ -231,7 +232,7 @@ public class Input {
         JsonNode model = requestBody.get("model");
         if (!model.isObject())
             throw new ValidationException("Entity model must be an object.");
-        return new Model(model.toString());
+        return new Model(model.toString(), true);
     }
 
     /**
@@ -259,7 +260,7 @@ public class Input {
         if (!object.isObject())
             throw new ValidationException("'" + field + "' must be an object.");
         if (object.size() == 0)
-            throw new ValidationException("'" + field + "' is empty.");
+            throw new ValidationException("'" + field + "' must not be empty.");
 
     }
 

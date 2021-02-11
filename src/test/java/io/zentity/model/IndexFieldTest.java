@@ -4,7 +4,7 @@ import org.junit.Test;
 
 public class IndexFieldTest {
 
-    public final static String VALID_OBJECT = "{\"attribute\":\"foo\",\"matcher\":\"bar\"}";
+    public final static String VALID_OBJECT = "{\"attribute\":\"foo\",\"matcher\":\"bar\",\"quality\":1.0}";
 
     ////  "indices".INDEX_NAME."fields"  ///////////////////////////////////////////////////////////////////////////////
 
@@ -15,7 +15,7 @@ public class IndexFieldTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidUnexpectedField() throws Exception {
-        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"matcher\":\"bar\",\"foo\":\"bar\"}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"matcher\":\"bar\",\"quality\":1.0,\"foo\":\"bar\"}");
     }
 
     ////  "indices".INDEX_NAME."fields".INDEX_FIELD_NAME  //////////////////////////////////////////////////////////////
@@ -69,9 +69,22 @@ public class IndexFieldTest {
 
     ////  "indices".INDEX_NAME."fields".INDEX_FIELD_NAME."matcher"  ////////////////////////////////////////////////////
 
+    /**
+     * Valid because matchers are optional for index fields.
+     * See: https://zentity.io/docs/advanced-usage/payload-attributes/
+     */
     @Test
     public void testValidMatcherMissing() throws Exception {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\"}");
+    }
+
+    /**
+     * Valid because matchers are optional for index fields.
+     * See: https://zentity.io/docs/advanced-usage/payload-attributes/
+     */
+    @Test
+    public void testValidMatcherTypeNull() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"matcher\":null}");
     }
 
     @Test(expected = ValidationException.class)
@@ -111,6 +124,22 @@ public class IndexFieldTest {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0.0}");
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0.5}");
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":1.0}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":null}");
+    }
+
+    /**
+     * Valid because the "quality" field is optional.
+     */
+    @Test
+    public void testValidQualityMissing() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\"}");
+    }
+
+    /**
+     * Valid because the "quality" field is optional.
+     */
+    @Test
+    public void testValidQualityTypeNull() throws Exception {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":null}");
     }
 
