@@ -21,6 +21,7 @@ public class Index {
     private final String name;
     private Map<String, IndexField> fields;
     private Map<String, Map<String, IndexField>> attributeIndexFieldsMap = new TreeMap<>();
+    private boolean validateRunnable = false;
 
     public Index(String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -31,6 +32,20 @@ public class Index {
     public Index(String name, String json) throws ValidationException, IOException {
         validateName(name);
         this.name = name;
+        this.deserialize(json);
+    }
+
+    public Index(String name, JsonNode json, boolean validateRunnable) throws ValidationException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
+        this.deserialize(json);
+    }
+
+    public Index(String name, String json, boolean validateRunnable) throws ValidationException, IOException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
 
@@ -69,24 +84,30 @@ public class Index {
     private void validateField(String fieldName, JsonNode fieldObject) throws ValidationException {
         if (fieldName.equals(""))
             throw new ValidationException("'indices." + this.name + ".fields' has a field with an empty name.");
-        if (!fieldObject.isObject())
-            throw new ValidationException("'indices." + this.name + ".fields." + fieldName + "' must be an object.");
-        if (fieldObject.size() == 0)
-            throw new ValidationException("'indices." + this.name + ".fields." + fieldName + "' must not be empty.");
     }
 
     private void validateFields(JsonNode value) throws ValidationException {
         if (!value.isObject())
             throw new ValidationException("'indices." + this.name + ".fields' must be an object.");
-        if (value.size() == 0)
-            throw new ValidationException("'indices." + this.name + ".fields' must not be empty.");
+        if (this.validateRunnable) {
+            if (value.size() == 0) {
+                // Clarifying "in the entity model" because this exception likely will appear only for resolution requests,
+                // and the user might think that the message is referring to the input instead of the entity model.
+                throw new ValidationException("'indices." + this.name + ".fields' must not be empty in the entity model.");
+            }
+        }
     }
 
     private void validateObject(JsonNode object) throws ValidationException {
         if (!object.isObject())
             throw new ValidationException("'indices." + this.name + "' must be an object.");
-        if (object.size() == 0)
-            throw new ValidationException("'indices." + this.name + "' is empty.");
+        if (this.validateRunnable) {
+            if (object.size() == 0) {
+                // Clarifying "in the entity model" because this exception likely will appear only for resolution requests,
+                // and the user might think that the message is referring to the input instead of the entity model.
+                throw new ValidationException("'indices." + this.name + "' must not be empty in the entity model.");
+            }
+        }
     }
 
     /**

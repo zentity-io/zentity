@@ -24,6 +24,7 @@ public class Matcher {
     private String clause;
     private Map<String, String> params = new TreeMap<>();
     private Double quality;
+    private boolean validateRunnable = false;
     private Map<String, Pattern> variables = new TreeMap<>();
 
     public Matcher(String name, JsonNode json) throws ValidationException, JsonProcessingException {
@@ -35,6 +36,20 @@ public class Matcher {
     public Matcher(String name, String json) throws ValidationException, IOException {
         validateName(name);
         this.name = name;
+        this.deserialize(json);
+    }
+
+    public Matcher(String name, JsonNode json, boolean validateRunnable) throws ValidationException, JsonProcessingException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
+        this.deserialize(json);
+    }
+
+    public Matcher(String name, String json, boolean validateRunnable) throws ValidationException, IOException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
 
@@ -96,14 +111,19 @@ public class Matcher {
         if (!value.isObject())
             throw new ValidationException("'matchers." + this.name + ".clause' must be an object.");
         if (value.size() == 0)
-            throw new ValidationException("'matchers." + this.name + ".clause' is empty.");
+            throw new ValidationException("'matchers." + this.name + ".clause' must not be empty.");
     }
 
     private void validateObject(JsonNode object) throws ValidationException {
         if (!object.isObject())
             throw new ValidationException("'matchers." + this.name + "' must be an object.");
-        if (object.size() == 0)
-            throw new ValidationException("'matchers." + this.name + "' is empty.");
+        if (this.validateRunnable) {
+            if (object.size() == 0) {
+                // Clarifying "in the entity model" because this exception likely will appear only for resolution requests,
+                // and the user might think that the message is referring to the input instead of the entity model.
+                throw new ValidationException("'matchers." + this.name + "' must not be empty in the entity model.");
+            }
+        }
     }
 
     private void validateQuality(JsonNode value) throws ValidationException {

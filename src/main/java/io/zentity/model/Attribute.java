@@ -23,6 +23,7 @@ public class Attribute {
     private Map<String, String> params = new TreeMap<>();
     private Double score;
     private String type = "string";
+    private boolean validateRunnable = false;
 
     public Attribute(String name, JsonNode json) throws ValidationException, JsonProcessingException {
         validateName(name);
@@ -33,6 +34,20 @@ public class Attribute {
     public Attribute(String name, String json) throws ValidationException, IOException {
         validateName(name);
         this.name = name;
+        this.deserialize(json);
+    }
+
+    public Attribute(String name, JsonNode json, boolean validateRunnable) throws ValidationException, JsonProcessingException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
+        this.deserialize(json);
+    }
+
+    public Attribute(String name, String json, boolean validateRunnable) throws ValidationException, IOException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
 

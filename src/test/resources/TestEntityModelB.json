@@ -97,6 +97,13 @@
         "unused": {
           "attribute": "attribute_unused",
           "matcher": "matcher_b"
+        },
+        "unused_matcher": {
+          "attribute": "attribute_unused"
+        },
+        "unused_matcher_null": {
+          "attribute": "attribute_unused",
+          "matcher": null
         }
       }
     }

@@ -73,6 +73,22 @@ public class MatcherTest {
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":null}");
     }
 
+    /**
+     * Valid because the "quality" field is optional.
+     */
+    @Test
+    public void testValidQualityMissing() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}}}");
+    }
+
+    /**
+     * Valid because the "quality" field is optional.
+     */
+    @Test
+    public void testValidQualityTypeNull() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":null}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidQualityTypeArray() throws Exception {
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":[]}");
