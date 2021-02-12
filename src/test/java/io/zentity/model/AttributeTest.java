@@ -60,6 +60,16 @@ public class AttributeTest {
         new Attribute("attribute_name", "{\"score\":null}");
     }
 
+    @Test
+    public void testValidScoreTypeIntegerOne() throws Exception {
+        new Attribute("attribute_name", "{\"score\":1}");
+    }
+
+    @Test
+    public void testValidScoreTypeIntegerZero() throws Exception {
+        new Attribute("attribute_name", "{\"score\":0}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidScoreTypeArray() throws Exception {
         new Attribute("attribute_name", "{\"score\":[]}");
@@ -72,12 +82,12 @@ public class AttributeTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidScoreTypeInteger() throws Exception {
-        new Attribute("attribute_name", "{\"score\":1}");
+        new Attribute("attribute_name", "{\"score\":10}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScoreTypeFloatNegative() throws Exception {
-        new Attribute("attribute_name", "{\"score\":-1.0}");
+        new Attribute("attribute_name", "{\"score\":-0.5}");
     }
 
     @Test(expected = ValidationException.class)
@@ -87,7 +97,7 @@ public class AttributeTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidScoreValueTooHigh() throws Exception {
-        new Attribute("attribute_name", "{\"score\":100.0}");
+        new Attribute("attribute_name", "{\"score\":1.1}");
     }
 
     ////  "attributes".ATTRIBUTE_NAME."type"  //////////////////////////////////////////////////////////////////////////

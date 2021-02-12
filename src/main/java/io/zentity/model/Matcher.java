@@ -127,10 +127,11 @@ public class Matcher {
     }
 
     private void validateQuality(JsonNode value) throws ValidationException {
-        if (!value.isNull() && !value.isFloatingPointNumber())
-            throw new ValidationException("'matchers." + this.name + ".quality' must be a floating point number.");
-        if (value.isFloatingPointNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
-            throw new ValidationException("'matchers." + this.name + ".quality' must be in the range of 0.0 - 1.0.");
+        String errorMessage = "'matchers." + this.name + ".quality' must be a floating point number in the range of 0.0 - 1.0. Integer values of 0 or 1 are acceptable.";
+        if (!value.isNull() && !value.isNumber())
+            throw new ValidationException(errorMessage);
+        if (value.isNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
+            throw new ValidationException(errorMessage);
     }
 
     /**

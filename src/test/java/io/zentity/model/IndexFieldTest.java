@@ -124,6 +124,8 @@ public class IndexFieldTest {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0.0}");
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0.5}");
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":1.0}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":1}");
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":null}");
     }
 
@@ -143,6 +145,16 @@ public class IndexFieldTest {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":null}");
     }
 
+    @Test
+    public void testValidQualityTypeIntegerOne() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":1}");
+    }
+
+    @Test
+    public void testValidQualityTypeIntegerZero() throws Exception {
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":0}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidQualityTypeArray() throws Exception {
         new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":[]}");
@@ -155,7 +167,7 @@ public class IndexFieldTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidQualityTypeInteger() throws Exception {
-        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":1}");
+        new IndexField("index_name", "index_field_name", "{\"attribute\":\"foo\",\"quality\":10}");
     }
 
     @Test(expected = ValidationException.class)
