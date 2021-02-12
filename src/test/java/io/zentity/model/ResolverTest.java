@@ -114,7 +114,11 @@ public class ResolverTest {
     public void testValidWeightValue() throws Exception {
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":0}");
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":2}");
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":-1}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":-2}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":0.0}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1.0}");
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":null}");
     }
 
@@ -134,6 +138,11 @@ public class ResolverTest {
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":null}");
     }
 
+    @Test
+    public void testValidWeightTypeFloatZeroDecimal() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":10.0}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidWeightTypeArray() throws Exception {
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":[]}");
@@ -146,7 +155,7 @@ public class ResolverTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidWeightTypeFloat() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1.0}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1.1}");
     }
 
     @Test(expected = ValidationException.class)

@@ -92,9 +92,9 @@ public class Resolver {
 
     private void validateWeight(JsonNode value) throws ValidationException {
         // Allow floats only if the decimal value is ###.0
-        if (value.isFloatingPointNumber() && value.floatValue() % 1 != 0.0)
+        if (value.isNumber() && value.floatValue() % 1 != 0.0)
             throw new ValidationException("'resolvers." + this.name + ".weight' must be an integer.");
-        if (!value.isNull() && !value.isInt())
+        if (!value.isNull() && !value.isNumber())
             throw new ValidationException("'resolvers." + this.name + ".weight' must be an integer.");
     }
 
