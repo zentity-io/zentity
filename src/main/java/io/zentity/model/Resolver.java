@@ -19,6 +19,7 @@ public class Resolver {
 
     private final String name;
     private Set<String> attributes = new TreeSet<>();
+    private boolean validateRunnable = false;
     private int weight = 0;
 
     public Resolver(String name, JsonNode json) throws ValidationException {
@@ -30,6 +31,20 @@ public class Resolver {
     public Resolver(String name, String json) throws ValidationException, IOException {
         validateName(name);
         this.name = name;
+        this.deserialize(json);
+    }
+
+    public Resolver(String name, JsonNode json, boolean validateRunnable) throws ValidationException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
+        this.deserialize(json);
+    }
+
+    public Resolver(String name, String json, boolean validateRunnable) throws ValidationException, IOException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
 
@@ -66,7 +81,7 @@ public class Resolver {
         if (!value.isArray())
             throw new ValidationException("'resolvers." + this.name + ".attributes' must be an array of strings.");
         if (value.size() == 0)
-            throw new ValidationException("'resolvers." + this.name + ".attributes' is empty.");
+            throw new ValidationException("'resolvers." + this.name + ".attributes' must not be empty.");
         for (JsonNode attribute : value) {
             if (!attribute.isTextual())
                 throw new ValidationException("'resolvers." + this.name + ".attributes' must be an array of strings.");
@@ -77,15 +92,23 @@ public class Resolver {
     }
 
     private void validateWeight(JsonNode value) throws ValidationException {
-        if (!value.isInt())
+        // Allow floats only if the decimal value is ###.0
+        if (value.isNumber() && value.floatValue() % 1 != 0.0)
+            throw new ValidationException("'resolvers." + this.name + ".weight' must be an integer.");
+        if (!value.isNull() && !value.isNumber())
             throw new ValidationException("'resolvers." + this.name + ".weight' must be an integer.");
     }
 
     private void validateObject(JsonNode object) throws ValidationException {
         if (!object.isObject())
             throw new ValidationException("'resolvers." + this.name + "' must be an object.");
-        if (object.size() == 0)
-            throw new ValidationException("'resolvers." + this.name + "' is empty.");
+        if (this.validateRunnable) {
+            if (object.size() == 0) {
+                // Clarifying "in the entity model" because this exception likely will appear only for resolution requests,
+                // and the user might think that the message is referring to the input instead of the entity model.
+                throw new ValidationException("'resolvers." + this.name + "' must not be empty in the entity model.");
+            }
+        }
     }
 
     /**

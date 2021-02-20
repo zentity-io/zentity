@@ -23,6 +23,7 @@ public class Attribute {
     private Map<String, String> params = new TreeMap<>();
     private Double score;
     private String type = "string";
+    private boolean validateRunnable = false;
 
     public Attribute(String name, JsonNode json) throws ValidationException, JsonProcessingException {
         validateName(name);
@@ -33,6 +34,20 @@ public class Attribute {
     public Attribute(String name, String json) throws ValidationException, IOException {
         validateName(name);
         this.name = name;
+        this.deserialize(json);
+    }
+
+    public Attribute(String name, JsonNode json, boolean validateRunnable) throws ValidationException, JsonProcessingException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
+        this.deserialize(json);
+    }
+
+    public Attribute(String name, String json, boolean validateRunnable) throws ValidationException, IOException {
+        validateName(name);
+        this.name = name;
+        this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
 
@@ -69,10 +84,11 @@ public class Attribute {
     }
 
     private void validateScore(JsonNode value) throws ValidationException {
-        if (!value.isNull() && !value.isFloatingPointNumber())
-            throw new ValidationException("'attributes." + this.name + ".score' must be a floating point number.");
-        if (value.isFloatingPointNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
-            throw new ValidationException("'attributes." + this.name + ".score' must be in the range of 0.0 - 1.0.");
+        String errorMessage = "'attributes." + this.name + ".score' must be a floating point number in the range of 0.0 - 1.0. Integer values of 0 or 1 are acceptable.";
+        if (!value.isNull() && !value.isNumber())
+            throw new ValidationException(errorMessage);
+        if (value.isNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
+            throw new ValidationException(errorMessage);
     }
 
     /**

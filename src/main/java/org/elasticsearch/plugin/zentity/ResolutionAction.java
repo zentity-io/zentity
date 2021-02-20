@@ -157,7 +157,7 @@ public class ResolutionAction extends BaseRestHandler {
 
                                 // Run the entity resolution job using the input from the retrieved entity model.
                                 String model = response.getSourceAsString();
-                                Input input = new Input(body, new Model(model));
+                                Input input = new Input(body, new Model(model, true));
                                 job.input(input);
                                 runJob(channel, job);
 

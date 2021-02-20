@@ -133,7 +133,35 @@ public class MatcherTest {
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":0.0}");
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":0.5}");
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":1.0}");
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":0}");
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":1}");
         new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":null}");
+    }
+
+    /**
+     * Valid because the "quality" field is optional.
+     */
+    @Test
+    public void testValidQualityMissing() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}}}");
+    }
+
+    /**
+     * Valid because the "quality" field is optional.
+     */
+    @Test
+    public void testValidQualityTypeNull() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":null}");
+    }
+
+    @Test
+    public void testValidQualityTypeIntegerOne() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":1}");
+    }
+
+    @Test
+    public void testValidQualityTypeIntegerZero() throws Exception {
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":0}");
     }
 
     @Test(expected = ValidationException.class)
@@ -148,7 +176,7 @@ public class MatcherTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidQualityTypeInteger() throws Exception {
-        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":1}");
+        new Matcher("matcher_name", "{\"clause\":{\"match\":{\"{{ field }}\":\"{{ value }}\"}},\"quality\":10}");
     }
 
     @Test(expected = ValidationException.class)

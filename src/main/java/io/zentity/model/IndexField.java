@@ -25,6 +25,7 @@ public class IndexField {
     private String attribute;
     private String matcher;
     private Double quality;
+    private boolean validateRunnable = false;
 
     public IndexField(String index, String name, JsonNode json) throws ValidationException {
         validateName(name);
@@ -38,6 +39,24 @@ public class IndexField {
         validateName(name);
         this.index = index;
         this.name = name;
+        this.nameToPaths(name);
+        this.deserialize(json);
+    }
+
+    public IndexField(String index, String name, JsonNode json, boolean validateRunnable) throws ValidationException {
+        validateName(name);
+        this.index = index;
+        this.name = name;
+        this.validateRunnable = validateRunnable;
+        this.nameToPaths(name);
+        this.deserialize(json);
+    }
+
+    public IndexField(String index, String name, String json, boolean validateRunnable) throws ValidationException, IOException {
+        validateName(name);
+        this.index = index;
+        this.name = name;
+        this.validateRunnable = validateRunnable;
         this.nameToPaths(name);
         this.deserialize(json);
     }
@@ -99,30 +118,29 @@ public class IndexField {
 
     private void validateAttribute(JsonNode value) throws ValidationException {
         if (!value.isTextual())
-            throw new ValidationException("'indices." + this.index + "." + this.name + ".attribute' must be a string.");
+            throw new ValidationException("'indices." + this.index + ".fields." + this.name + ".attribute' must be a string.");
         if (Patterns.EMPTY_STRING.matcher(value.textValue()).matches())
-            throw new ValidationException("'indices." + this.index + "." + this.name + ".attribute' must not be empty.");
+            throw new ValidationException("'indices." + this.index + ".fields." + this.name + ".attribute' must not be empty.");
     }
 
     private void validateMatcher(JsonNode value) throws ValidationException {
-        if (!value.isTextual())
+        if (!value.isNull() && !value.isTextual())
             throw new ValidationException("'indices." + this.index + "." + this.name + ".matcher' must be a string.");
-        if (Patterns.EMPTY_STRING.matcher(value.textValue()).matches())
-            throw new ValidationException("'indices." + this.index + "." + this.name + ".matcher' must not be empty.");
+        if (value.isTextual() && Patterns.EMPTY_STRING.matcher(value.textValue()).matches())
+            throw new ValidationException("'indices." + this.index + ".fields." + this.name + ".matcher' must not be empty.");
     }
 
     private void validateObject(JsonNode object) throws ValidationException {
         if (!object.isObject())
-            throw new ValidationException("'indices." + this.index + "." + this.name + "' must be an object.");
-        if (object.size() == 0)
-            throw new ValidationException("'indices." + this.index + "." + this.name + "' is empty.");
+            throw new ValidationException("'indices." + this.index + ".fields." + this.name + "' must be an object.");
     }
 
     private void validateQuality(JsonNode value) throws ValidationException {
-        if (!value.isNull() && !value.isFloatingPointNumber())
-            throw new ValidationException("'indices." + this.index + "." + this.name + ".quality' must be a floating point number.");
-        if (value.isFloatingPointNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
-            throw new ValidationException("'indices." + this.index + "." + this.name + ".quality' must be in the range of 0.0 - 1.0.");
+        String errorMessage = "'indices." + this.index + ".fields." + this.name + ".quality' must be a floating point number in the range of 0.0 - 1.0. Integer values of 0 or 1 are acceptable.";
+        if (!value.isNull() && !value.isNumber())
+            throw new ValidationException(errorMessage);
+        if (value.isNumber() && (value.floatValue() < 0.0 || value.floatValue() > 1.0))
+            throw new ValidationException(errorMessage);
     }
 
     /**
@@ -144,7 +162,7 @@ public class IndexField {
         // Validate the existence of required fields.
         for (String field : REQUIRED_FIELDS)
             if (!json.has(field))
-                throw new ValidationException("'indices." + this.index + "." + this.name + "' is missing required field '" + field + "'.");
+                throw new ValidationException("'indices." + this.index + ".fields." + this.name + "' is missing required field '" + field + "'.");
 
         // Validate and hold the state of fields.
         Iterator<Map.Entry<String, JsonNode>> fields = json.fields();
@@ -163,7 +181,7 @@ public class IndexField {
                     this.quality(value);
                     break;
                 default:
-                    throw new ValidationException("'indices." + this.index + "." + this.name + "." + name + "' is not a recognized field.");
+                    throw new ValidationException("'indices." + this.index + ".fields." + this.name + "." + name + "' is not a recognized field.");
             }
         }
     }

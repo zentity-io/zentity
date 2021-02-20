@@ -124,9 +124,10 @@ public class ModelTest {
 
     ////  model."attributes"  //////////////////////////////////////////////////////////////////////////////////////////
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidAttributesMissing() throws Exception {
+    @Test
+    public void testValidAttributesEmpty() throws Exception {
         new Model("{\n" +
+                "  \"attributes\":{},\n" +
                 "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
                 "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
                 "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
@@ -134,9 +135,18 @@ public class ModelTest {
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidAttributesEmpty() throws Exception {
+    public void testInvalidAttributesEmptyRunnable() throws Exception {
         new Model("{\n" +
                 "  \"attributes\":{},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
+                "}", true);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidAttributesMissing() throws Exception {
+        new Model("{\n" +
                 "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
                 "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
                 "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
@@ -265,20 +275,30 @@ public class ModelTest {
 
     ////  model."resolvers"  ///////////////////////////////////////////////////////////////////////////////////////////
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidResolversMissing() throws Exception {
+    @Test
+    public void testValidResolversEmpty() throws Exception {
         new Model("{\n" +
                 "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+                "  \"resolvers\":{},\n" +
                 "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
                 "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
                 "}");
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidResolversEmpty() throws Exception {
+    public void testInvalidResolversEmptyRunnable() throws Exception {
         new Model("{\n" +
                 "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
                 "  \"resolvers\":{},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
+                "}", true);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidResolversMissing() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
                 "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
                 "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
                 "}");
@@ -406,21 +426,31 @@ public class ModelTest {
 
     ////  model."matchers"  ////////////////////////////////////////////////////////////////////////////////////////////
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidMatchersMissing() throws Exception {
+    @Test
+    public void testValidMatchersEmpty() throws Exception {
         new Model("{\n" +
                 "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
                 "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{},\n" +
                 "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
                 "}");
     }
 
     @Test(expected = ValidationException.class)
-    public void testInvalidMatchersEmpty() throws Exception {
+    public void testInvalidMatchersEmptyRunnable() throws Exception {
         new Model("{\n" +
                 "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
                 "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
                 "  \"matchers\":{},\n" +
+                "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
+                "}", true);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidMatchersMissing() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
                 "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
                 "}");
     }
@@ -547,22 +577,62 @@ public class ModelTest {
 
     ////  model."indices"  /////////////////////////////////////////////////////////////////////////////////////////////
 
+    @Test
+    public void testValidIndicesEmpty() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\":{}\n" +
+                "}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIndicesEmptyRunnable() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\":{}\n" +
+                "}", true);
+    }
+
+    @Test
+    public void testValidIndexEmpty() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\": {\"index_name\":{\"fields\":{}}}\n" +
+                "}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIndexEmptyRunnable() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\": {\"index_name\":{\"fields\":{}}}\n" +
+                "}", true);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidIndexFieldEmpty() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\": {\"index_name\":{\"fields\":{\"index_field_name\":{}}}}\n" +
+                "}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidIndicesMissing() throws Exception {
         new Model("{\n" +
                 "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
                 "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
                 "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "}\n" +
-                "}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidIndicesEmpty() throws Exception {
-        new Model("{\n" +
-                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
-                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
-                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
-                "  \"indices\":{}\n" +
                 "}");
     }
 
@@ -623,16 +693,6 @@ public class ModelTest {
                 "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
                 "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
                 "  \"indices\":\"foobar\"\n" +
-                "}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidIndexEmpty() throws Exception {
-        new Model("{\n" +
-                "  \"attributes\":{\"attribute_name\":" + AttributeTest.VALID_OBJECT + "},\n" +
-                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
-                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
-                "  \"indices\": {}\n" +
                 "}");
     }
 

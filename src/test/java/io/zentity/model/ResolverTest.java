@@ -173,6 +173,39 @@ public class ResolverTest {
 
     ////  "resolvers".RESOLVER_NAME."weight"  //////////////////////////////////////////////////////////////////////
 
+    @Test
+    public void testValidWeightValue() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":0}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":2}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":-1}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":-2}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":0.0}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1.0}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":null}");
+    }
+
+    /**
+     * Valid because the "weight" field is optional.
+     */
+    @Test
+    public void testValidWeightMissing() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"]}");
+    }
+
+    /**
+     * Valid because the "weight" field is optional.
+     */
+    @Test
+    public void testValidWeightTypeNull() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":null}");
+    }
+
+    @Test
+    public void testValidWeightTypeFloatZeroDecimal() throws Exception {
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":10.0}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidWeightTypeArray() throws Exception {
         new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":[]}");
@@ -185,12 +218,7 @@ public class ResolverTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidWeightTypeFloat() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1.0}");
-    }
-
-    @Test(expected = ValidationException.class)
-    public void testInvalidWeightTypeNull() throws Exception {
-        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":null}");
+        new Resolver("resolver_name", "{\"attributes\":[\"attribute_a\"],\"weight\":1.1}");
     }
 
     @Test(expected = ValidationException.class)

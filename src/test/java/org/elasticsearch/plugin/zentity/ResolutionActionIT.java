@@ -2,6 +2,7 @@ package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.zentity.common.Json;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.ByteArrayEntity;
@@ -10,10 +11,7 @@ import org.apache.http.entity.StringEntity;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -647,6 +645,28 @@ public class ResolutionActionIT extends AbstractIT {
         String endpoint = "_zentity/resolution/zentity_test_entity_a";
         Request postResolution = new Request("POST", endpoint);
         postResolution.setEntity(TEST_PAYLOAD_JOB_NO_SCOPE);
+        Response response = client().performRequest(postResolution);
+        JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+        assertEquals(json.get("hits").get("total").asInt(), 40);
+        JsonPointer pathAttributes = JsonPointer.compile("/_attributes");
+        JsonPointer pathNull = JsonPointer.compile("/_attributes/attribute_type_string_null");
+        JsonPointer pathUnused = JsonPointer.compile("/_attributes/attribute_type_string_unused");
+        for (JsonNode doc : json.get("hits").get("hits")) {
+            assertFalse(doc.at(pathAttributes).isMissingNode());
+            assertTrue(doc.at(pathNull).isMissingNode());
+            assertTrue(doc.at(pathUnused).isMissingNode());
+        }
+    }
+
+    @Test
+    public void testJobEmbeddedModel() throws Exception {
+        JsonNode model = Json.MAPPER.readTree(readFile("TestEntityModelA.json"));
+        String payload = "{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"model\":" + Json.MAPPER.writeValueAsString(model) + "}";
+        String endpoint = "_zentity/resolution";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+
+        // Expect the same response as testJobNoScope
         Response response = client().performRequest(postResolution);
         JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
         assertEquals(json.get("hits").get("total").asInt(), 40);
@@ -1648,6 +1668,157 @@ public class ResolutionActionIT extends AbstractIT {
             }
             for (JsonNode match : doc.get("_explanation").get("matches"))
                 assertFalse(match.get("score").isMissingNode());
+        }
+    }
+
+    ////  Invalid Jobs  ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Test(expected = ResponseException.class)
+    public void testInvalidJobAttributesEmpty() throws Exception {
+
+        // Replace the "attributes" of an entity model with an empty object.
+        JsonNode model = Json.MAPPER.readTree(readFile("TestEntityModelA.json"));
+        ObjectNode modelObjNode = (ObjectNode) model;
+        modelObjNode.remove("attributes");
+        modelObjNode.putObject("attributes");
+
+        // Use the modified entity model.
+        String payload = "{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"model\":" + Json.MAPPER.writeValueAsString(model) + "}";
+        String endpoint = "_zentity/resolution";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        try {
+            client().performRequest(postResolution);
+        } catch (ResponseException e) {
+            JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
+            assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
+            assertEquals(responseBody.get("error").get("reason").asText(), "'attributes' must not be empty in the entity model.");
+            throw(e);
+        }
+    }
+
+    @Test(expected = ResponseException.class)
+    public void testInvalidJobResolversEmpty() throws Exception {
+
+        // Replace the "resolvers" of an entity model with an empty object.
+        JsonNode model = Json.MAPPER.readTree(readFile("TestEntityModelA.json"));
+        ObjectNode modelObjNode = (ObjectNode) model;
+        modelObjNode.remove("resolvers");
+        modelObjNode.putObject("resolvers");
+
+        // Use the modified entity model.
+        String payload = "{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"model\":" + Json.MAPPER.writeValueAsString(model) + "}";
+        String endpoint = "_zentity/resolution";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        try {
+            client().performRequest(postResolution);
+        } catch (ResponseException e) {
+            JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
+            assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
+            assertEquals(responseBody.get("error").get("reason").asText(), "'resolvers' must not be empty in the entity model.");
+            throw(e);
+        }
+    }
+
+    @Test(expected = ResponseException.class)
+    public void testInvalidJobMatchersEmpty() throws Exception {
+
+        // Replace the "matchers" of an entity model with an empty object.
+        JsonNode model = Json.MAPPER.readTree(readFile("TestEntityModelA.json"));
+        ObjectNode modelObjNode = (ObjectNode) model;
+        modelObjNode.remove("matchers");
+        modelObjNode.putObject("matchers");
+
+        // Use the modified entity model.
+        String payload = "{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"model\":" + Json.MAPPER.writeValueAsString(model) + "}";
+        String endpoint = "_zentity/resolution";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        try {
+            client().performRequest(postResolution);
+        } catch (ResponseException e) {
+            JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
+            assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
+            assertEquals(responseBody.get("error").get("reason").asText(), "'matchers' must not be empty in the entity model.");
+            throw(e);
+        }
+        fail("Expected a validation exception.");
+    }
+
+    @Test(expected = ResponseException.class)
+    public void testInvalidJobIndicesEmpty() throws Exception {
+
+        // Replace the "indices" of an entity model with an empty object.
+        JsonNode model = Json.MAPPER.readTree(readFile("TestEntityModelA.json"));
+        ObjectNode modelObjNode = (ObjectNode) model;
+        modelObjNode.remove("indices");
+        modelObjNode.putObject("indices");
+
+        // Use the modified entity model.
+        String payload = "{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"model\":" + Json.MAPPER.writeValueAsString(model) + "}";
+        String endpoint = "_zentity/resolution";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        try {
+            client().performRequest(postResolution);
+        } catch (ResponseException e) {
+            JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
+            assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
+            assertEquals(responseBody.get("error").get("reason").asText(), "'indices' must not be empty in the entity model.");
+            throw(e);
+        }
+    }
+
+    @Test(expected = ResponseException.class)
+    public void testInvalidJobIndexEmpty() throws Exception {
+
+        // Replace the "indices" of an entity model with an empty object.
+        JsonNode model = Json.MAPPER.readTree(readFile("TestEntityModelA.json"));
+        ObjectNode modelObjNode = (ObjectNode) model;
+        JsonNode index = modelObjNode.get("indices").get("zentity_test_index_a");
+        ObjectNode indexObjNode = (ObjectNode) index;
+        indexObjNode.remove("fields");
+        indexObjNode.putObject("fields");
+
+        // Use the modified entity model.
+        String payload = "{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"model\":" + Json.MAPPER.writeValueAsString(model) + "}";
+        String endpoint = "_zentity/resolution";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        try {
+            client().performRequest(postResolution);
+        } catch (ResponseException e) {
+            JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
+            assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
+            assertEquals(responseBody.get("error").get("reason").asText(), "'indices.zentity_test_index_a.fields' must not be empty in the entity model.");
+            throw(e);
+        }
+    }
+
+    @Test(expected = ResponseException.class)
+    public void testInvalidJobIndexFieldEmpty() throws Exception {
+
+        // Replace the "indices" of an entity model with an empty object.
+        JsonNode model = Json.MAPPER.readTree(readFile("TestEntityModelA.json"));
+        ObjectNode modelObjNode = (ObjectNode) model;
+        JsonNode indexFields = modelObjNode.get("indices").get("zentity_test_index_a").get("fields");
+        ObjectNode indexFieldsObjNode = (ObjectNode) indexFields;
+        indexFieldsObjNode.remove("field_a.clean");
+        indexFieldsObjNode.putObject("field_a.clean");
+
+        // Use the modified entity model.
+        String payload = "{\"attributes\":{\"attribute_a\":[\"a_00\"]},\"model\":" + Json.MAPPER.writeValueAsString(model) + "}";
+        String endpoint = "_zentity/resolution";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON));
+        try {
+            client().performRequest(postResolution);
+        } catch (ResponseException e) {
+            JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
+            assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
+            assertEquals(responseBody.get("error").get("reason").asText(), "'indices.zentity_test_index_a.fields.field_a.clean' is missing required field 'attribute'.");
+            throw(e);
         }
     }
 }

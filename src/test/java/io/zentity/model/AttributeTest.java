@@ -11,13 +11,14 @@ import java.util.Collections;
 
 public class AttributeTest {
 
-    public final static String VALID_OBJECT = "{\"type\":\"string\"}";
+    public final static String VALID_OBJECT = "{\"type\":\"string\",\"score\":0.5}";
 
     ////  "attributes"  ////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void testValid() throws Exception {
         new Attribute("attribute_name", VALID_OBJECT);
+        new Attribute("attribute_name", "{\"type\":\"string\"}");
         new Attribute("attribute_name", "{\"score\":0.5}");
         new Attribute("attribute_name", "{}");
     }
@@ -105,6 +106,32 @@ public class AttributeTest {
         new Attribute("attribute_name", "{\"score\":null}");
     }
 
+    /**
+     * Valid because the "score" field is optional.
+     */
+    @Test
+    public void testValidScoreMissing() throws Exception {
+        new Attribute("attribute_name", "{\"type\":\"string\"}");
+    }
+
+    /**
+     * Valid because the "score" field is optional.
+     */
+    @Test
+    public void testValidScoreTypeNull() throws Exception {
+        new Attribute("attribute_name", "{\"score\":null}");
+    }
+
+    @Test
+    public void testValidScoreTypeIntegerOne() throws Exception {
+        new Attribute("attribute_name", "{\"score\":1}");
+    }
+
+    @Test
+    public void testValidScoreTypeIntegerZero() throws Exception {
+        new Attribute("attribute_name", "{\"score\":0}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidScoreTypeArray() throws Exception {
         new Attribute("attribute_name", "{\"score\":[]}");
@@ -117,12 +144,12 @@ public class AttributeTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidScoreTypeInteger() throws Exception {
-        new Attribute("attribute_name", "{\"score\":1}");
+        new Attribute("attribute_name", "{\"score\":10}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidScoreTypeFloatNegative() throws Exception {
-        new Attribute("attribute_name", "{\"score\":-1.0}");
+        new Attribute("attribute_name", "{\"score\":-0.5}");
     }
 
     @Test(expected = ValidationException.class)
@@ -132,7 +159,7 @@ public class AttributeTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidScoreValueTooHigh() throws Exception {
-        new Attribute("attribute_name", "{\"score\":100.0}");
+        new Attribute("attribute_name", "{\"score\":1.1}");
     }
 
     ////  "attributes".ATTRIBUTE_NAME."type"  //////////////////////////////////////////////////////////////////////////

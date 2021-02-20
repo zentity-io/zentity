@@ -32,9 +32,14 @@ public class IndexTest {
         new Index("index_name", "{}");
     }
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidFieldsEmpty() throws Exception {
+    @Test
+    public void testValidFieldsEmpty() throws Exception {
         new Index("index_name", "{\"fields\":{}}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidFieldsEmptyRunnable() throws Exception {
+        new Index("index_name", "{\"fields\":{}}", true);
     }
 
     @Test(expected = ValidationException.class)
