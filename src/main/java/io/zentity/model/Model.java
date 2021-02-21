@@ -121,16 +121,8 @@ public class Model {
                 if (a == b)
                     continue;
                 String nameB = names.get(b) + ".";
-                List<String> conflict = new ArrayList<>();
-                if (nameA.startsWith(nameB)) {
-                    conflict.add(names.get(b));
-                    conflict.add(names.get(a));
-                } else if (nameB.startsWith(nameA)) {
-                    conflict.add(names.get(a));
-                    conflict.add(names.get(b));
-                }
-                if (!conflict.isEmpty())
-                    throw new ValidationException("'attributes." + conflict.get(0) + "' is invalid because 'attributes." + conflict.get(1) + "' overrides its name.");
+                if (nameA.startsWith(nameB))
+                   throw new ValidationException("'attributes." + names.get(b) + "' is invalid because 'attributes." + names.get(a) + "' overrides its name.");
             }
         }
     }
