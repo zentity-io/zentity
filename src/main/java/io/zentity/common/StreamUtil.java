@@ -25,7 +25,7 @@ public class StreamUtil {
         return (T item) -> {
             int index = (int) (idxCounter.getAndIncrement() % 2);
 
-            if (index != 0) {
+            if (index == 0) {
                 v1.set(item);
                 return Stream.empty();
             }
