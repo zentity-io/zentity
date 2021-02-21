@@ -914,7 +914,7 @@ public class Job {
      * @throws ValidationException
      */
     private void buildHopQueue() throws IOException, ValidationException {
-        
+
         // Construct a query for each index that maps to a resolver.
         int hopQueryNumber = 0;
         for (String indexName : this.input.model().indices().keySet()) {
@@ -1086,7 +1086,7 @@ public class Job {
             responseParts.add("\"queries\":[" + queries + "]");
         response = "{" + String.join(",", responseParts) + "}";
         if (this.pretty)
-            response = Json.ORDERED_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(Json.ORDERED_MAPPER.readTree(response));
+            response = Json.pretty(response);
         return response;
     }
 
@@ -1095,7 +1095,7 @@ public class Job {
      *
      * @param onComplete    The action to perform after completing the resolution job.
      */
-    public void run(ActionListener onComplete) {
+    public void run(ActionListener<String> onComplete) {
 
         // Prepare to run the job.
         try {
@@ -1151,5 +1151,4 @@ public class Job {
             onComplete.onFailure(e);
         }
     }
-
 }
