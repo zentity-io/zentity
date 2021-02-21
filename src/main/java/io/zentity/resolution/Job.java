@@ -417,6 +417,10 @@ public class Job {
         this.error = error;
     }
 
+    public void error(Exception error) {
+        error(serializeException(error, includeErrorTrace()));
+    }
+
     public String error() {
         return this.error;
     }
@@ -469,7 +473,7 @@ public class Job {
         return this.queries;
     }
 
-    private void ran(Boolean ran) {
+    private void ran(boolean ran) {
         this.ran = ran;
     }
 
@@ -481,7 +485,7 @@ public class Job {
         return this.startTime;
     }
 
-    private void took(long took) {
+    public void took(long took) {
         this.took = took;
     }
 
@@ -594,7 +598,7 @@ public class Job {
      * @throws IOException
      * @throws ValidationException
      */
-    private void onSearchComplete(Job job, Query query, SearchResponse response, Exception responseError, ActionListener onComplete) throws IOException, ValidationException {
+    private void onSearchComplete(Job job, Query query, SearchResponse response, Exception responseError, ActionListener<String> onComplete) throws IOException, ValidationException {
 
         // Read response from Elasticsearch.
         JsonNode responseData = null;
@@ -631,7 +635,7 @@ public class Job {
         // Stop traversing if there was an error not due to a missing index.
         // Include the logged query in the response.
         if (job.failed()) {
-            job.error(serializeException(responseError, job.includeErrorTrace()));
+            job.error(responseError);
             onComplete.onResponse(job.response());
             return;
         }
@@ -970,7 +974,7 @@ public class Job {
      * @throws IOException
      * @throws ValidationException
      */
-    private void traverse(Job job, ActionListener onComplete) throws IOException, ValidationException {
+    private void traverse(Job job, ActionListener<String> onComplete) throws IOException, ValidationException {
         if (job.hop() < 0) {
 
             // No hops have been initialized.
@@ -1112,7 +1116,7 @@ public class Job {
             job.traverse(job, new ActionListener<>() {
 
                 @Override
-                public void onResponse(Object o) {
+                public void onResponse(String o) {
                     try {
 
                         // The job completed. Prepare and send the response.
@@ -1134,7 +1138,7 @@ public class Job {
                         job.took(TimeUnit.MILLISECONDS.convert(System.nanoTime() - job.startTime(), TimeUnit.NANOSECONDS));
                         job.ran(true);
                         job.failed(true);
-                        job.error(serializeException(e, job.includeErrorTrace));
+                        job.error(e);
                         onComplete.onResponse(job.response());
                     } catch (Exception ee) {
 
