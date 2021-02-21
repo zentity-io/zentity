@@ -119,8 +119,8 @@ public class Job {
             errorParts.add("\"by\":\"elasticsearch\"");
         else
             errorParts.add("\"by\":\"zentity\"");
-        errorParts.add("\"type\":\"" + e.getClass().getCanonicalName() + "\"");
-        errorParts.add("\"reason\":\"" + e.getMessage() + "\"");
+        errorParts.add("\"type\":" + Json.quoteString(e.getClass().getCanonicalName()) + "");
+        errorParts.add("\"reason\":" + Json.quoteString(e.getMessage()) + "");
         if (includeErrorTrace) {
             StringWriter traceWriter = new StringWriter();
             e.printStackTrace(new PrintWriter(traceWriter));
