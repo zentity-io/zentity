@@ -2,12 +2,17 @@ package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.zentity.common.Json;
+import io.zentity.common.StreamUtil;
+import joptsimple.internal.Strings;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Consts;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
@@ -15,489 +20,500 @@ import org.junit.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.*;
 
 public class ResolutionActionIT extends AbstractIT {
 
+    public static final ContentType NDJSON_TYPE = ContentType.create("application/x-ndjson", Consts.UTF_8);
+
     public static final StringEntity TEST_PAYLOAD_JOB_NO_SCOPE = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_00\" ]\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_a\": [ \"a_00\" ]\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_ATTRIBUTES = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_00\" ]\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_a\": [ \"a_00\" ]\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
-    public static final StringEntity TEST_PAYLOAD_JOB_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"a_00\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+    public static final String TEST_PAYLOAD_JOB_TERMS_JSON = "{\n" +
+        "  \"terms\": [ \"a_00\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}";
 
-    public static final StringEntity TEST_PAYLOAD_JOB_EXPLANATION = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_00\" ],\n" +
-            "    \"attribute_type.date\": {" +
-            "      \"values\": [ \"1999-12-31T23:59:57.0000\" ],\n" +
-            "      \"params\": {\n" +
-            "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
-            "        \"window\" : \"1d\"\n" +
-            "      }\n" +
-            "    }\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+    public static final StringEntity TEST_PAYLOAD_JOB_TERMS = new StringEntity(
+        TEST_PAYLOAD_JOB_TERMS_JSON, ContentType.APPLICATION_JSON);
+
+    public static final String TEST_PAYLOAD_JOB_EXPLANATION_JSON = "{\n" +
+        "  \"attributes\": {\n" +
+        "    \"attribute_a\": [ \"a_00\" ],\n" +
+        "    \"attribute_type.date\": {" +
+        "      \"values\": [ \"1999-12-31T23:59:57.0000\" ],\n" +
+        "      \"params\": {\n" +
+        "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
+        "        \"window\" : \"1d\"\n" +
+        "      }\n" +
+        "    }\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}";
+
+    public static final StringEntity TEST_PAYLOAD_JOB_EXPLANATION = new StringEntity(
+        TEST_PAYLOAD_JOB_EXPLANATION_JSON, ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_EXPLANATION_TERMS = new StringEntity("{\n" +
-            "  \"attributes\": {" +
-            "    \"attribute_type.date\": {" +
-            "      \"params\": {\n" +
-            "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
-            "        \"window\" : \"1d\"\n" +
-            "      }\n" +
-            "    }\n" +
-            "  },\n" +
-            "  \"terms\": [ \"a_00\", \"1999-12-31T23:59:57.0000\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {" +
+        "    \"attribute_type.date\": {" +
+        "      \"params\": {\n" +
+        "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
+        "        \"window\" : \"1d\"\n" +
+        "      }\n" +
+        "    }\n" +
+        "  },\n" +
+        "  \"terms\": [ \"a_00\", \"1999-12-31T23:59:57.0000\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_IDS = new StringEntity("{\n" +
-            "  \"ids\": {\n" +
-            "    \"zentity_test_index_a\": [ \"a0\" ]\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"ids\": {\n" +
+        "    \"zentity_test_index_a\": [ \"a0\" ]\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_ATTRIBUTES_IDS = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_00\" ]\n" +
-            "  },\n" +
-            "  \"ids\": {\n" +
-            "    \"zentity_test_index_a\": [ \"a6\" ]\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_a\": [ \"a_00\" ]\n" +
+        "  },\n" +
+        "  \"ids\": {\n" +
+        "    \"zentity_test_index_a\": [ \"a6\" ]\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_TERMS_IDS = new StringEntity("{\n" +
-            "  \"ids\": {\n" +
-            "    \"zentity_test_index_a\": [ \"a6\" ]\n" +
-            "  },\n" +
-            "  \"terms\": [ \"a_00\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"ids\": {\n" +
+        "    \"zentity_test_index_a\": [ \"a6\" ]\n" +
+        "  },\n" +
+        "  \"terms\": [ \"a_00\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_MAX_HOPS_AND_DOCS = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_d\": { \"values\": [ \"d_00\" ] }\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_d\": { \"values\": [ \"d_00\" ] }\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.boolean\": [ true ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.boolean\": [ true ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"true\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"true\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_DATE = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_d\": { \"values\": [ \"d_00\" ] },\n" +
-            "    \"attribute_type.date\": {\n" +
-            "      \"values\": [ \"2000-01-01 00:00:00\" ],\n" +
-            "      \"params\": { \"format\": \"yyyy-MM-dd HH:mm:ss\", \"window\": \"1s\" }\n" +
-            "    }\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"resolvers\": [ \"resolver_type_date_a\", \"resolver_type_date_b\", \"resolver_type_date_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_d\": { \"values\": [ \"d_00\" ] },\n" +
+        "    \"attribute_type.date\": {\n" +
+        "      \"values\": [ \"2000-01-01 00:00:00\" ],\n" +
+        "      \"params\": { \"format\": \"yyyy-MM-dd HH:mm:ss\", \"window\": \"1s\" }\n" +
+        "    }\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"resolvers\": [ \"resolver_type_date_a\", \"resolver_type_date_b\", \"resolver_type_date_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_DATE_TERMS = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_type.date\": {\n" +
-            "      \"params\": { \"format\": \"yyyy-MM-dd HH:mm:ss\", \"window\": \"1s\" }\n" +
-            "    }\n" +
-            "  },\n" +
-            "  \"terms\": [ \"d_00\", \"2000-01-01 00:00:00\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"resolvers\": [ \"resolver_type_date_a\", \"resolver_type_date_b\", \"resolver_type_date_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_type.date\": {\n" +
+        "      \"params\": { \"format\": \"yyyy-MM-dd HH:mm:ss\", \"window\": \"1s\" }\n" +
+        "    }\n" +
+        "  },\n" +
+        "  \"terms\": [ \"d_00\", \"2000-01-01 00:00:00\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"resolvers\": [ \"resolver_type_date_a\", \"resolver_type_date_b\", \"resolver_type_date_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.boolean\": [ false ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.boolean\": [ false ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"false\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"false\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"3.141592653589793\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"3.141592653589793\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.double\": [ -3.141592653589793 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.double\": [ -3.141592653589793 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"-3.141592653589793\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"-3.141592653589793\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.float\": [ 1.0 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.float\": [ 1.0 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"1.0\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"1.0\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.float\": [ -1.0 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.float\": [ -1.0 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"-1.0\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"-1.0\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.integer\": [ 1 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.integer\": [ 1 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"1\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"1\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.integer\": [ -1 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.integer\": [ -1 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"-1\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"-1\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.long\": [ 922337203685477 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.long\": [ 922337203685477 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"922337203685477\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"922337203685477\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.number.long\": [ -922337203685477 ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.number.long\": [ -922337203685477 ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"-922337203685477\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"-922337203685477\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.string.normal\": [ \"a\" ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.string.normal\": [ \"a\" ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"a\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"a\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type.string.normal\": [ \"b\" ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_type.string.normal\": [ \"b\" ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"b\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"b\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_OBJECT = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_object\": [ \"a\" ] },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_object\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": { \"attribute_object\": [ \"a\" ] },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_object\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_00\" ]\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"exclude\": {\n" +
-            "      \"attributes\": { \"attribute_a\":[ \"a_11\" ], \"attribute_c\": [ \"c_03\" ] }\n" +
-            "    },\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_a\": [ \"a_00\" ]\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"exclude\": {\n" +
+        "      \"attributes\": { \"attribute_a\":[ \"a_11\" ], \"attribute_c\": [ \"c_03\" ] }\n" +
+        "    },\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"a_00\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"exclude\": {\n" +
-            "      \"attributes\": { \"attribute_a\":[ \"a_11\" ], \"attribute_c\": [ \"c_03\" ] }\n" +
-            "    },\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"a_00\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"exclude\": {\n" +
+        "      \"attributes\": { \"attribute_a\":[ \"a_11\" ], \"attribute_c\": [ \"c_03\" ] }\n" +
+        "    },\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_d\": [ \"d_00\" ]\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_d\": [ \"d_00\" ]\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_SCOPE_INCLUDE_ATTRIBUTES_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"d_00\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"d_00\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_d\": [ \"d_00\" ]\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"exclude\": {\n" +
-            "      \"attributes\": { \"attribute_c\": [ \"c_00\", \"c_01\" ] }\n" +
-            "    },\n" +
-            "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_d\": [ \"d_00\" ]\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"exclude\": {\n" +
+        "      \"attributes\": { \"attribute_c\": [ \"c_00\", \"c_01\" ] }\n" +
+        "    },\n" +
+        "    \"include\": {\n" +
+        "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_AND_INCLUDE_ATTRIBUTES_TERMS = new StringEntity("{\n" +
-            "  \"terms\": [ \"d_00\" ],\n" +
-            "  \"scope\": {\n" +
-            "    \"exclude\": {\n" +
-            "      \"attributes\": { \"attribute_c\": [ \"c_00\", \"c_01\" ] }\n" +
-            "    },\n" +
-            "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
-            "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
-            "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"terms\": [ \"d_00\" ],\n" +
+        "  \"scope\": {\n" +
+        "    \"exclude\": {\n" +
+        "      \"attributes\": { \"attribute_c\": [ \"c_00\", \"c_01\" ] }\n" +
+        "    },\n" +
+        "    \"include\": {\n" +
+        "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_RESOLVER_WEIGHT = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_10\" ],\n" +
-            "    \"attribute_b\": [ \"b_10\" ]\n" +
-            "  },\n" +
-            "  \"scope\": {\n" +
-            "    \"include\": {\n" +
-            "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
-            "    }\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_a\": [ \"a_10\" ],\n" +
+        "    \"attribute_b\": [ \"b_10\" ]\n" +
+        "  },\n" +
+        "  \"scope\": {\n" +
+        "    \"include\": {\n" +
+        "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_ERROR = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"attribute_a\": [ \"a_10\" ],\n" +
-            "    \"attribute_b\": [ \"b_10\" ]\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"attribute_a\": [ \"a_10\" ],\n" +
+        "    \"attribute_b\": [ \"b_10\" ]\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_ARRAYS = new StringEntity("{\n" +
-            "  \"attributes\": {\n" +
-            "    \"string\": [ \"abc\" ],\n" +
-            "    \"array\": [ \"222\" ]\n" +
-            "  }\n" +
-            "}", ContentType.APPLICATION_JSON);
+        "  \"attributes\": {\n" +
+        "    \"string\": [ \"abc\" ],\n" +
+        "    \"array\": [ \"222\" ]\n" +
+        "  }\n" +
+        "}", ContentType.APPLICATION_JSON);
 
     public static byte[] readFile(String filename) throws IOException {
         InputStream stream = ResolutionActionIT.class.getResourceAsStream("/" + filename);
@@ -1472,7 +1488,7 @@ public class ResolutionActionIT extends AbstractIT {
 
         // Test error_trace=false and queries=true
         String endpointQueriesNoTrace = "_zentity/resolution/zentity_test_entity_elasticsearch_error";
-        Request postResolutionQueriesNoTrace  = new Request("POST", endpointQueriesNoTrace);
+        Request postResolutionQueriesNoTrace = new Request("POST", endpointQueriesNoTrace);
         postResolutionQueriesNoTrace.addParameter("error_trace", "false");
         postResolutionQueriesNoTrace.addParameter("queries", "true");
         postResolutionQueriesNoTrace.setEntity(TEST_PAYLOAD_JOB_ERROR);
@@ -1514,7 +1530,7 @@ public class ResolutionActionIT extends AbstractIT {
 
         // Test error_trace=false and queries=true
         String endpointQueriesNoTrace = "_zentity/resolution/zentity_test_entity_zentity_error";
-        Request postResolutionQueriesNoTrace  = new Request("POST", endpointQueriesNoTrace);
+        Request postResolutionQueriesNoTrace = new Request("POST", endpointQueriesNoTrace);
         postResolutionQueriesNoTrace.addParameter("error_trace", "false");
         postResolutionQueriesNoTrace.addParameter("queries", "true");
         postResolutionQueriesNoTrace.setEntity(TEST_PAYLOAD_JOB_ERROR);
@@ -1693,7 +1709,7 @@ public class ResolutionActionIT extends AbstractIT {
             JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
             assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
             assertEquals(responseBody.get("error").get("reason").asText(), "'attributes' must not be empty in the entity model.");
-            throw(e);
+            throw (e);
         }
     }
 
@@ -1717,7 +1733,7 @@ public class ResolutionActionIT extends AbstractIT {
             JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
             assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
             assertEquals(responseBody.get("error").get("reason").asText(), "'resolvers' must not be empty in the entity model.");
-            throw(e);
+            throw (e);
         }
     }
 
@@ -1741,7 +1757,7 @@ public class ResolutionActionIT extends AbstractIT {
             JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
             assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
             assertEquals(responseBody.get("error").get("reason").asText(), "'matchers' must not be empty in the entity model.");
-            throw(e);
+            throw (e);
         }
         fail("Expected a validation exception.");
     }
@@ -1766,7 +1782,7 @@ public class ResolutionActionIT extends AbstractIT {
             JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
             assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
             assertEquals(responseBody.get("error").get("reason").asText(), "'indices' must not be empty in the entity model.");
-            throw(e);
+            throw (e);
         }
     }
 
@@ -1792,7 +1808,7 @@ public class ResolutionActionIT extends AbstractIT {
             JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
             assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
             assertEquals(responseBody.get("error").get("reason").asText(), "'indices.zentity_test_index_a.fields' must not be empty in the entity model.");
-            throw(e);
+            throw (e);
         }
     }
 
@@ -1818,7 +1834,137 @@ public class ResolutionActionIT extends AbstractIT {
             JsonNode responseBody = Json.MAPPER.readTree(e.getResponse().getEntity().getContent());
             assertEquals(responseBody.get("error").get("type").asText(), "validation_exception");
             assertEquals(responseBody.get("error").get("reason").asText(), "'indices.zentity_test_index_a.fields.field_a.clean' is missing required field 'attribute'.");
-            throw(e);
+            throw (e);
         }
+    }
+
+    // BULK
+
+    @Test
+    public void testBulkResolutionWithMalformed() throws Exception {
+        String endpoint = "_zentity/resolution/_bulk";
+        Request req = new Request("POST", endpoint);
+        String[] reqBodyLines = new String[]{
+            "malformed json",
+            TEST_PAYLOAD_JOB_TERMS_JSON,
+            "{ \"entity_type\": \"unknown\" }", // unknown entity type
+            TEST_PAYLOAD_JOB_TERMS_JSON,
+            "{ \"entity_type\": \"zentity_test_entity_a\" }",
+            "", // empty body
+            "{ \"entity_type\": \"zentity_test_entity_a\" }",
+            TEST_PAYLOAD_JOB_EXPLANATION_JSON
+        };
+        String reqBody = Strings.join(reqBodyLines, "\n");
+        req.setEntity(new NStringEntity(reqBody, NDJSON_TYPE));
+        req.addParameter("_explanation", "false");
+        req.addParameter("_source", "true");
+
+        Response response = client().performRequest(req);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+
+        JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+        // check shape
+        assertTrue(json.isObject());
+        assertTrue(json.has("errors"));
+        assertTrue(json.get("errors").isBoolean());
+
+        assertTrue(json.has("took"));
+        assertTrue(json.get("took").isNumber());
+
+        assertTrue(json.has("items"));
+        assertTrue(json.get("items").isArray());
+
+        // check the values
+        assertTrue(json.get("took").asLong() > 0);
+        assertTrue(json.get("errors").booleanValue());
+
+        ArrayNode items = (ArrayNode) json.get("items");
+        assertEquals(4, items.size());
+
+        // should have three failures
+        List<JsonNode> failures = StreamSupport.stream(items.spliterator(), false)
+            .limit(3)
+            .collect(Collectors.toList());
+
+        failures.forEach((item) -> {
+            assertTrue(item.has("error"));
+            assertTrue(item.get("error").isObject());
+
+            assertTrue(item.has("hits"));
+            assertTrue(item.get("hits").isObject());
+
+            JsonNode hits = item.get("hits");
+            assertTrue(hits.has("hits"));
+            assertTrue(hits.get("hits").isArray());
+            assertTrue(hits.get("hits").isEmpty());
+
+            assertTrue(item.has("took"));
+            assertTrue(item.get("took").isNumber());
+        });
+    }
+
+    @Test
+    public void testBulkResolution() throws Exception {
+        String endpoint = "_zentity/resolution/zentity_test_entity_a/_bulk";
+        Request req = new Request("POST", endpoint);
+        String[] reqBodyLines = new String[]{
+            "{\"_source\": false}", // override source
+            TEST_PAYLOAD_JOB_TERMS_JSON,
+            "{\"_explanation\": true}", // override explanation
+            TEST_PAYLOAD_JOB_EXPLANATION_JSON
+        };
+        String reqBody = Strings.join(reqBodyLines, "\n");
+        req.setEntity(new NStringEntity(reqBody, NDJSON_TYPE));
+        req.addParameter("_explanation", "false");
+        req.addParameter("_source", "true");
+
+        Response response = client().performRequest(req);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+
+        JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+        // check shape
+        assertTrue(json.isObject());
+        assertTrue(json.has("errors"));
+        assertTrue(json.get("errors").isBoolean());
+
+        assertTrue(json.has("took"));
+        assertTrue(json.get("took").isNumber());
+
+        assertTrue(json.has("items"));
+        assertTrue(json.get("items").isArray());
+
+        // check the values
+        assertFalse(json.get("errors").booleanValue());
+        assertTrue(json.get("took").asLong() > 0);
+
+        ArrayNode items = (ArrayNode) json.get("items");
+        assertEquals(2, items.size());
+        items.forEach((item) -> {
+            assertTrue(item.has("hits"));
+            assertTrue(item.get("hits").isObject());
+
+            JsonNode hits = item.get("hits");
+            assertTrue(hits.has("hits"));
+            assertTrue(hits.get("hits").isArray());
+
+            assertTrue(item.has("took"));
+            assertTrue(item.get("took").isNumber());
+        });
+
+        JsonNode termsResult = items.get(0);
+        assertTrue(termsResult.get("hits").get("total").asInt() > 0);
+
+        JsonNode firstTermHit = termsResult.get("hits").get("hits").get(0);
+        assertFalse(firstTermHit.has("_source"));
+        assertFalse(firstTermHit.has("_explanation"));
+
+        JsonNode explanationResult = items.get(1);
+        assertTrue(explanationResult.get("hits").get("total").asInt() > 0);
+
+        JsonNode firstExplanationHit = explanationResult.get("hits").get("hits").get(0);
+        assertTrue(firstExplanationHit.has("_source"));
+        assertTrue(firstExplanationHit.has("_explanation"));
     }
 }
