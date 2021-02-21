@@ -86,6 +86,7 @@ public class ResolverTest {
         new Resolver("hello", VALID_OBJECT);
         new Resolver(".hello", VALID_OBJECT);
         new Resolver("..hello", VALID_OBJECT);
+        new Resolver("hello.world", VALID_OBJECT);
         new Resolver("hello_world", VALID_OBJECT);
         new Resolver("hello-world", VALID_OBJECT);
         new Resolver("hello+world", VALID_OBJECT);

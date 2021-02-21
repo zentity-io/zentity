@@ -761,9 +761,37 @@ public class Job {
                 if (job.includeScore())
                     docObjNode.putNull("_score");
                 if (job.includeAttributes()) {
-                    ObjectNode docAttributesObjNode = docObjNode.putObject("_attributes");
+                    docObjNode.putObject("_attributes");
                     for (String attributeName : docAttributes.keySet()) {
-                        ArrayNode docAttributeArrNode = docAttributesObjNode.putArray(attributeName);
+                        ObjectNode docAttributesObjNode = (ObjectNode) docObjNode.get("_attributes");
+                        String[] nameFields = job.input().model().attributes().get(attributeName).nameFields();
+                        String lastNameField = nameFields[nameFields.length - 1];
+                        if (nameFields.length > 1) {
+                            // This attribute has a nested structure as indicated by the periods in its name.
+                            // Structure the attribute object by nesting its name fields. The last field will contain
+                            // the array of values.
+                            //
+                            // For example, the attribute "location.address.street" would become:
+                            //
+                            // {
+                            //   "_attributes": {
+                            //     "location": {
+                            //       "address": {
+                            //         "street": [ VALUE, ... ]
+                            //       }
+                            //     }
+                            //   }
+                            // }
+                            for (int i = 0; i < nameFields.length - 1; i++) {
+                                String nameField = nameFields[i];
+                                if (!docAttributesObjNode.has(nameField))
+                                    docAttributesObjNode.putObject(nameField);
+                                docAttributesObjNode = (ObjectNode) docAttributesObjNode.get(nameField);
+
+                            }
+                        }
+                        // The last name field of the attribute contains the array of values.
+                        ArrayNode docAttributeArrNode = docAttributesObjNode.putArray(lastNameField);
                         for (Value value : docAttributes.get(attributeName))
                             docAttributeArrNode.add(value.value());
                     }

@@ -54,7 +54,7 @@ public class ResolutionActionIT extends AbstractIT {
     public static final StringEntity TEST_PAYLOAD_JOB_EXPLANATION = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_a\": [ \"a_00\" ],\n" +
-            "    \"attribute_type_date\": {" +
+            "    \"attribute_type.date\": {" +
             "      \"values\": [ \"1999-12-31T23:59:57.0000\" ],\n" +
             "      \"params\": {\n" +
             "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
@@ -71,7 +71,7 @@ public class ResolutionActionIT extends AbstractIT {
 
     public static final StringEntity TEST_PAYLOAD_JOB_EXPLANATION_TERMS = new StringEntity("{\n" +
             "  \"attributes\": {" +
-            "    \"attribute_type_date\": {" +
+            "    \"attribute_type.date\": {" +
             "      \"params\": {\n" +
             "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
             "        \"window\" : \"1d\"\n" +
@@ -138,7 +138,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_TRUE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_boolean\": [ true ] },\n" +
+            "  \"attributes\": { \"attribute_type.boolean\": [ true ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
@@ -158,7 +158,7 @@ public class ResolutionActionIT extends AbstractIT {
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_DATE = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
             "    \"attribute_d\": { \"values\": [ \"d_00\" ] },\n" +
-            "    \"attribute_type_date\": {\n" +
+            "    \"attribute_type.date\": {\n" +
             "      \"values\": [ \"2000-01-01 00:00:00\" ],\n" +
             "      \"params\": { \"format\": \"yyyy-MM-dd HH:mm:ss\", \"window\": \"1s\" }\n" +
             "    }\n" +
@@ -172,7 +172,7 @@ public class ResolutionActionIT extends AbstractIT {
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_DATE_TERMS = new StringEntity("{\n" +
             "  \"attributes\": {\n" +
-            "    \"attribute_type_date\": {\n" +
+            "    \"attribute_type.date\": {\n" +
             "      \"params\": { \"format\": \"yyyy-MM-dd HH:mm:ss\", \"window\": \"1s\" }\n" +
             "    }\n" +
             "  },\n" +
@@ -185,7 +185,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_BOOLEAN_FALSE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_boolean\": [ false ] },\n" +
+            "  \"attributes\": { \"attribute_type.boolean\": [ false ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_boolean\" ]\n" +
@@ -203,7 +203,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
@@ -221,7 +221,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_DOUBLE_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_double\": [ -3.141592653589793 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.double\": [ -3.141592653589793 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_double\" ]\n" +
@@ -239,7 +239,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_float\": [ 1.0 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.float\": [ 1.0 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
@@ -257,7 +257,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_FLOAT_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_float\": [ -1.0 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.float\": [ -1.0 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_float\" ]\n" +
@@ -275,7 +275,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_integer\": [ 1 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.integer\": [ 1 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
@@ -293,7 +293,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_INTEGER_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_integer\": [ -1 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.integer\": [ -1 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_integer\" ]\n" +
@@ -311,7 +311,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_POSITIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_long\": [ 922337203685477 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.long\": [ 922337203685477 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
@@ -329,7 +329,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_NUMBER_LONG_NEGATIVE = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_long\": [ -922337203685477 ] },\n" +
+            "  \"attributes\": { \"attribute_type.number.long\": [ -922337203685477 ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_long\" ]\n" +
@@ -347,7 +347,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_A = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_string\": [ \"a\" ] },\n" +
+            "  \"attributes\": { \"attribute_type.string.normal\": [ \"a\" ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
@@ -365,7 +365,7 @@ public class ResolutionActionIT extends AbstractIT {
             "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_DATA_TYPES_STRING_B = new StringEntity("{\n" +
-            "  \"attributes\": { \"attribute_type_string\": [ \"b\" ] },\n" +
+            "  \"attributes\": { \"attribute_type.string.normal\": [ \"b\" ] },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
             "      \"indices\": [ \"zentity_test_index_a\" ], \"resolvers\": [ \"resolver_type_string\" ]\n" +
@@ -425,7 +425,7 @@ public class ResolutionActionIT extends AbstractIT {
             "  },\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
+            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
             "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
@@ -436,7 +436,7 @@ public class ResolutionActionIT extends AbstractIT {
             "  \"terms\": [ \"d_00\" ],\n" +
             "  \"scope\": {\n" +
             "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
+            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
             "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
@@ -452,7 +452,7 @@ public class ResolutionActionIT extends AbstractIT {
             "      \"attributes\": { \"attribute_c\": [ \"c_00\", \"c_01\" ] }\n" +
             "    },\n" +
             "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
+            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
             "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
@@ -466,7 +466,7 @@ public class ResolutionActionIT extends AbstractIT {
             "      \"attributes\": { \"attribute_c\": [ \"c_00\", \"c_01\" ] }\n" +
             "    },\n" +
             "    \"include\": {\n" +
-            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type_double\": [ 3.141592653589793 ] },\n" +
+            "      \"attributes\": { \"attribute_d\": [ \"d_00\" ], \"attribute_type.number.double\": [ 3.141592653589793 ] },\n" +
             "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\", \"zentity_test_index_d\" ],\n" +
             "      \"resolvers\": [ \"resolver_a\", \"resolver_b\", \"resolver_c\" ]\n" +
             "    }\n" +
@@ -649,8 +649,8 @@ public class ResolutionActionIT extends AbstractIT {
         JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
         assertEquals(json.get("hits").get("total").asInt(), 40);
         JsonPointer pathAttributes = JsonPointer.compile("/_attributes");
-        JsonPointer pathNull = JsonPointer.compile("/_attributes/attribute_type_string_null");
-        JsonPointer pathUnused = JsonPointer.compile("/_attributes/attribute_type_string_unused");
+        JsonPointer pathNull = JsonPointer.compile("/_attributes/attribute_type.string.null");
+        JsonPointer pathUnused = JsonPointer.compile("/_attributes/attribute_type.string.unused");
         for (JsonNode doc : json.get("hits").get("hits")) {
             assertFalse(doc.at(pathAttributes).isMissingNode());
             assertTrue(doc.at(pathNull).isMissingNode());
@@ -671,8 +671,8 @@ public class ResolutionActionIT extends AbstractIT {
         JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
         assertEquals(json.get("hits").get("total").asInt(), 40);
         JsonPointer pathAttributes = JsonPointer.compile("/_attributes");
-        JsonPointer pathNull = JsonPointer.compile("/_attributes/attribute_type_string_null");
-        JsonPointer pathUnused = JsonPointer.compile("/_attributes/attribute_type_string_unused");
+        JsonPointer pathNull = JsonPointer.compile("/_attributes/attribute_type.string.null");
+        JsonPointer pathUnused = JsonPointer.compile("/_attributes/attribute_type.string.unused");
         for (JsonNode doc : json.get("hits").get("hits")) {
             assertFalse(doc.at(pathAttributes).isMissingNode());
             assertTrue(doc.at(pathNull).isMissingNode());
@@ -738,13 +738,13 @@ public class ResolutionActionIT extends AbstractIT {
             String expected = "";
             switch (doc.get("_id").asText()) {
                 case "a0":
-                    expected = "{\"resolvers\":{\"resolver_a\":{\"attributes\":[\"attribute_a\"]},\"resolver_type_date_a\":{\"attributes\":[\"attribute_a\",\"attribute_type_date\"]}},\"matches\":[{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.clean\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.keyword\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:57.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
+                    expected = "{\"resolvers\":{\"resolver_a\":{\"attributes\":[\"attribute_a\"]},\"resolver_type_date_a\":{\"attributes\":[\"attribute_a\",\"attribute_type.date\"]}},\"matches\":[{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.clean\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.keyword\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:57.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
                     break;
                 case "a1":
-                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type_date\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:59.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
+                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type.date\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:59.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
                     break;
                 case "a2":
-                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_object\":{\"attributes\":[\"attribute_object\"]},\"resolver_type_boolean\":{\"attributes\":[\"attribute_type_boolean\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type_date\"]},\"resolver_type_double\":{\"attributes\":[\"attribute_type_double\"]},\"resolver_type_float\":{\"attributes\":[\"attribute_type_float\"]},\"resolver_type_integer\":{\"attributes\":[\"attribute_type_integer\"]},\"resolver_type_long\":{\"attributes\":[\"attribute_type_long\"]},\"resolver_type_string\":{\"attributes\":[\"attribute_type_string\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_object\",\"target_field\":\"object.a.b.c.keyword\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_boolean\",\"target_field\":\"type_boolean\",\"target_value\":true,\"input_value\":true,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"target_field\":\"type_date\",\"target_value\":\"2000-01-01T00:00:00.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}},{\"attribute\":\"attribute_type_double\",\"target_field\":\"type_double\",\"target_value\":3.141592653589793,\"input_value\":3.141592653589793,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_float\",\"target_field\":\"type_float\",\"target_value\":1.0,\"input_value\":1.0,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_integer\",\"target_field\":\"type_integer\",\"target_value\":1,\"input_value\":1,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_long\",\"target_field\":\"type_long\",\"target_value\":922337203685477,\"input_value\":922337203685477,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_string\",\"target_field\":\"type_string\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}}]}";
+                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_object\":{\"attributes\":[\"attribute_object\"]},\"resolver_type_boolean\":{\"attributes\":[\"attribute_type.boolean\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type.date\"]},\"resolver_type_double\":{\"attributes\":[\"attribute_type.number.double\"]},\"resolver_type_float\":{\"attributes\":[\"attribute_type.number.float\"]},\"resolver_type_integer\":{\"attributes\":[\"attribute_type.number.integer\"]},\"resolver_type_long\":{\"attributes\":[\"attribute_type.number.long\"]},\"resolver_type_string\":{\"attributes\":[\"attribute_type.string.normal\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_object\",\"target_field\":\"object.a.b.c.keyword\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.boolean\",\"target_field\":\"type_boolean\",\"target_value\":true,\"input_value\":true,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.date\",\"target_field\":\"type_date\",\"target_value\":\"2000-01-01T00:00:00.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}},{\"attribute\":\"attribute_type.number.double\",\"target_field\":\"type_double\",\"target_value\":3.141592653589793,\"input_value\":3.141592653589793,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.number.float\",\"target_field\":\"type_float\",\"target_value\":1.0,\"input_value\":1.0,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.number.integer\",\"target_field\":\"type_integer\",\"target_value\":1,\"input_value\":1,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.number.long\",\"target_field\":\"type_long\",\"target_value\":922337203685477,\"input_value\":922337203685477,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.string.normal\",\"target_field\":\"type_string\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}}]}";
                     break;
             }
             assertEquals(expected, Json.MAPPER.writeValueAsString(doc.get("_explanation")));
@@ -773,13 +773,13 @@ public class ResolutionActionIT extends AbstractIT {
             String expected = "";
             switch (doc.get("_id").asText()) {
                 case "a0":
-                    expected = "{\"resolvers\":{\"resolver_a\":{\"attributes\":[\"attribute_a\"]},\"resolver_type_date_a\":{\"attributes\":[\"attribute_a\",\"attribute_type_date\"]}},\"matches\":[{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.clean\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.keyword\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:57.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
+                    expected = "{\"resolvers\":{\"resolver_a\":{\"attributes\":[\"attribute_a\"]},\"resolver_type_date_a\":{\"attributes\":[\"attribute_a\",\"attribute_type.date\"]}},\"matches\":[{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.clean\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_a\",\"target_field\":\"field_a.keyword\",\"target_value\":\"a_00\",\"input_value\":\"a_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:57.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
                     break;
                 case "a1":
-                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type_date\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:59.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
+                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type.date\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.date\",\"target_field\":\"type_date\",\"target_value\":\"1999-12-31T23:59:59.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}}]}";
                     break;
                 case "a2":
-                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_object\":{\"attributes\":[\"attribute_object\"]},\"resolver_type_boolean\":{\"attributes\":[\"attribute_type_boolean\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type_date\"]},\"resolver_type_double\":{\"attributes\":[\"attribute_type_double\"]},\"resolver_type_float\":{\"attributes\":[\"attribute_type_float\"]},\"resolver_type_integer\":{\"attributes\":[\"attribute_type_integer\"]},\"resolver_type_long\":{\"attributes\":[\"attribute_type_long\"]},\"resolver_type_string\":{\"attributes\":[\"attribute_type_string\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_object\",\"target_field\":\"object.a.b.c.keyword\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_boolean\",\"target_field\":\"type_boolean\",\"target_value\":true,\"input_value\":true,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_date\",\"target_field\":\"type_date\",\"target_value\":\"2000-01-01T00:00:00.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}},{\"attribute\":\"attribute_type_double\",\"target_field\":\"type_double\",\"target_value\":3.141592653589793,\"input_value\":3.141592653589793,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_float\",\"target_field\":\"type_float\",\"target_value\":1.0,\"input_value\":1.0,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_integer\",\"target_field\":\"type_integer\",\"target_value\":1,\"input_value\":1,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_long\",\"target_field\":\"type_long\",\"target_value\":922337203685477,\"input_value\":922337203685477,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type_string\",\"target_field\":\"type_string\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}}]}";
+                    expected = "{\"resolvers\":{\"resolver_c\":{\"attributes\":[\"attribute_d\"]},\"resolver_object\":{\"attributes\":[\"attribute_object\"]},\"resolver_type_boolean\":{\"attributes\":[\"attribute_type.boolean\"]},\"resolver_type_date_c\":{\"attributes\":[\"attribute_d\",\"attribute_type.date\"]},\"resolver_type_double\":{\"attributes\":[\"attribute_type.number.double\"]},\"resolver_type_float\":{\"attributes\":[\"attribute_type.number.float\"]},\"resolver_type_integer\":{\"attributes\":[\"attribute_type.number.integer\"]},\"resolver_type_long\":{\"attributes\":[\"attribute_type.number.long\"]},\"resolver_type_string\":{\"attributes\":[\"attribute_type.string.normal\"]}},\"matches\":[{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.clean\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_a\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_d\",\"target_field\":\"field_d.keyword\",\"target_value\":\"d_00\",\"input_value\":\"d_00\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_object\",\"target_field\":\"object.a.b.c.keyword\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.boolean\",\"target_field\":\"type_boolean\",\"target_value\":true,\"input_value\":true,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.date\",\"target_field\":\"type_date\",\"target_value\":\"2000-01-01T00:00:00.0000\",\"input_value\":\"1999-12-31T23:59:57.0000\",\"input_matcher\":\"matcher_c\",\"input_matcher_params\":{\"format\":\"yyyy-MM-dd'T'HH:mm:ss.0000\",\"window\":\"1d\"}},{\"attribute\":\"attribute_type.number.double\",\"target_field\":\"type_double\",\"target_value\":3.141592653589793,\"input_value\":3.141592653589793,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.number.float\",\"target_field\":\"type_float\",\"target_value\":1.0,\"input_value\":1.0,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.number.integer\",\"target_field\":\"type_integer\",\"target_value\":1,\"input_value\":1,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.number.long\",\"target_field\":\"type_long\",\"target_value\":922337203685477,\"input_value\":922337203685477,\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}},{\"attribute\":\"attribute_type.string.normal\",\"target_field\":\"type_string\",\"target_value\":\"a\",\"input_value\":\"a\",\"input_matcher\":\"matcher_b\",\"input_matcher_params\":{}}]}";
                     break;
             }
             assertEquals(expected, Json.MAPPER.writeValueAsString(doc.get("_explanation")));
