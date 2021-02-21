@@ -5,6 +5,7 @@ import io.zentity.model.ValidationException;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -38,6 +39,16 @@ class NotImplementedException extends Exception {
 class ForbiddenException extends ElasticsearchSecurityException {
     public ForbiddenException(String message) {
         super(message);
+    }
+}
+
+class BadRequestException extends ElasticsearchStatusException {
+    public BadRequestException(String message) {
+        this(message, null);
+    }
+
+    public BadRequestException(String message, Throwable cause) {
+        super(message, RestStatus.BAD_REQUEST, cause);
     }
 }
 
