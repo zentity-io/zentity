@@ -13,32 +13,32 @@
     "attribute_d": {
       "score": 0.5
     },
-    "attribute_type_boolean": {
+    "attribute_type.boolean": {
       "type": "boolean",
       "score": 0.5
     },
-    "attribute_type_date": {
+    "attribute_type.date": {
       "type": "date",
       "score": 0.9
     },
-    "attribute_type_double": {
+    "attribute_type.number.double": {
       "type": "number",
       "score": 0.75
     },
-    "attribute_type_float": {
+    "attribute_type.number.float": {
       "type": "number"
     },
-    "attribute_type_integer": {
+    "attribute_type.number.integer": {
       "type": "number",
       "score": 0.65
     },
-    "attribute_type_long": {
+    "attribute_type.number.long": {
       "type": "number"
     },
-    "attribute_type_string": {
+    "attribute_type.string.normal": {
       "type": "string"
     },
-    "attribute_type_string_null": {
+    "attribute_type.string.null": {
       "type": "string"
     },
     "attribute_object": {
@@ -67,56 +67,56 @@
     },
     "resolver_type_boolean": {
       "attributes": [
-        "attribute_type_boolean"
+        "attribute_type.boolean"
       ]
     },
     "resolver_type_date_a": {
       "attributes": [
         "attribute_a",
-        "attribute_type_date"
+        "attribute_type.date"
       ]
     },
     "resolver_type_date_b": {
       "attributes": [
         "attribute_b",
         "attribute_c",
-        "attribute_type_date"
+        "attribute_type.date"
       ]
     },
     "resolver_type_date_c": {
       "attributes": [
         "attribute_d",
-        "attribute_type_date"
+        "attribute_type.date"
       ]
     },
     "resolver_type_double": {
       "attributes": [
-        "attribute_type_double"
+        "attribute_type.number.double"
       ]
     },
     "resolver_type_float": {
       "attributes": [
-        "attribute_type_float"
+        "attribute_type.number.float"
       ]
     },
     "resolver_type_integer": {
       "attributes": [
-        "attribute_type_integer"
+        "attribute_type.number.integer"
       ]
     },
     "resolver_type_long": {
       "attributes": [
-        "attribute_type_long"
+        "attribute_type.number.long"
       ]
     },
     "resolver_type_string": {
       "attributes": [
-        "attribute_type_string"
+        "attribute_type.string.normal"
       ]
     },
     "resolver_type_string_null": {
       "attributes": [
-        "attribute_type_string_null"
+        "attribute_type.string.null"
       ]
     },
     "resolver_object": {
@@ -204,35 +204,35 @@
           "quality": 0.95
         },
         "type_boolean": {
-          "attribute": "attribute_type_boolean",
+          "attribute": "attribute_type.boolean",
           "matcher": "matcher_b"
         },
         "type_date": {
-          "attribute": "attribute_type_date",
+          "attribute": "attribute_type.date",
           "matcher": "matcher_c"
         },
         "type_double": {
-          "attribute": "attribute_type_double",
+          "attribute": "attribute_type.number.double",
           "matcher": "matcher_b"
         },
         "type_float": {
-          "attribute": "attribute_type_float",
+          "attribute": "attribute_type.number.float",
           "matcher": "matcher_b"
         },
         "type_integer": {
-          "attribute": "attribute_type_integer",
+          "attribute": "attribute_type.number.integer",
           "matcher": "matcher_b"
         },
         "type_long": {
-          "attribute": "attribute_type_long",
+          "attribute": "attribute_type.number.long",
           "matcher": "matcher_b"
         },
         "type_string": {
-          "attribute": "attribute_type_string",
+          "attribute": "attribute_type.string.normal",
           "matcher": "matcher_b"
         },
         "type_string_null": {
-          "attribute": "attribute_type_string_null",
+          "attribute": "attribute_type.string.null",
           "matcher": "matcher_b"
         },
         "object.a.b.c.keyword": {
@@ -283,35 +283,35 @@
           "matcher": "matcher_b"
         },
         "type_boolean": {
-          "attribute": "attribute_type_boolean",
+          "attribute": "attribute_type.boolean",
           "matcher": "matcher_b"
         },
         "type_date": {
-          "attribute": "attribute_type_date",
+          "attribute": "attribute_type.date",
           "matcher": "matcher_c"
         },
         "type_double": {
-          "attribute": "attribute_type_double",
+          "attribute": "attribute_type.number.double",
           "matcher": "matcher_b"
         },
         "type_float": {
-          "attribute": "attribute_type_float",
+          "attribute": "attribute_type.number.float",
           "matcher": "matcher_b"
         },
         "type_integer": {
-          "attribute": "attribute_type_integer",
+          "attribute": "attribute_type.number.integer",
           "matcher": "matcher_b"
         },
         "type_long": {
-          "attribute": "attribute_type_long",
+          "attribute": "attribute_type.number.long",
           "matcher": "matcher_b"
         },
         "type_string": {
-          "attribute": "attribute_type_string",
+          "attribute": "attribute_type.string.normal",
           "matcher": "matcher_b"
         },
         "type_string_null": {
-          "attribute": "attribute_type_string_null",
+          "attribute": "attribute_type.string.null",
           "matcher": "matcher_b"
         },
         "object.a.b.c.keyword": {
@@ -359,35 +359,35 @@
           "matcher": "matcher_b"
         },
         "type_boolean": {
-          "attribute": "attribute_type_boolean",
+          "attribute": "attribute_type.boolean",
           "matcher": "matcher_b"
         },
         "type_date": {
-          "attribute": "attribute_type_date",
+          "attribute": "attribute_type.date",
           "matcher": "matcher_c"
         },
         "type_double": {
-          "attribute": "attribute_type_double",
+          "attribute": "attribute_type.number.double",
           "matcher": "matcher_b"
         },
         "type_float": {
-          "attribute": "attribute_type_float",
+          "attribute": "attribute_type.number.float",
           "matcher": "matcher_b"
         },
         "type_integer": {
-          "attribute": "attribute_type_integer",
+          "attribute": "attribute_type.number.integer",
           "matcher": "matcher_b"
         },
         "type_long": {
-          "attribute": "attribute_type_long",
+          "attribute": "attribute_type.number.long",
           "matcher": "matcher_b"
         },
         "type_string": {
-          "attribute": "attribute_type_string",
+          "attribute": "attribute_type.string.normal",
           "matcher": "matcher_b"
         },
         "type_string_null": {
-          "attribute": "attribute_type_string_null",
+          "attribute": "attribute_type.string.null",
           "matcher": "matcher_b"
         },
         "object.a.b.c.keyword": {
@@ -439,36 +439,36 @@
           "quality": 0.95
         },
         "type_boolean": {
-          "attribute": "attribute_type_boolean",
+          "attribute": "attribute_type.boolean",
           "matcher": "matcher_b",
           "quality": 0.0
         },
         "type_date": {
-          "attribute": "attribute_type_date",
+          "attribute": "attribute_type.date",
           "matcher": "matcher_c"
         },
         "type_double": {
-          "attribute": "attribute_type_double",
+          "attribute": "attribute_type.number.double",
           "matcher": "matcher_b"
         },
         "type_float": {
-          "attribute": "attribute_type_float",
+          "attribute": "attribute_type.number.float",
           "matcher": "matcher_b"
         },
         "type_integer": {
-          "attribute": "attribute_type_integer",
+          "attribute": "attribute_type.number.integer",
           "matcher": "matcher_b"
         },
         "type_long": {
-          "attribute": "attribute_type_long",
+          "attribute": "attribute_type.number.long",
           "matcher": "matcher_b"
         },
         "type_string": {
-          "attribute": "attribute_type_string",
+          "attribute": "attribute_type.string.normal",
           "matcher": "matcher_b"
         },
         "type_string_null": {
-          "attribute": "attribute_type_string_null",
+          "attribute": "attribute_type.string.null",
           "matcher": "matcher_b"
         },
         "object.a.b.c.keyword": {
@@ -483,8 +483,7 @@
           "attribute": "attribute_unused"
         },
         "unused_matcher_null": {
-          "attribute": "attribute_unused",
-          "matcher": null
+          "attribute": "attribute_unused"
         }
       }
     }

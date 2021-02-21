@@ -3,6 +3,7 @@ package io.zentity.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
+import io.zentity.common.Patterns;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.Strings;
 
@@ -70,6 +71,8 @@ public class Model {
      */
     public static void validateStrictName(String name) throws ValidationException {
         BiFunction<String, String, String> msg = (invalidName, description) -> "Invalid name [" + invalidName + "], " + description;
+        if (Patterns.EMPTY_STRING.matcher(name).matches())
+            throw new ValidationException(msg.apply(name, "must not be empty"));
         if (!Strings.validFileName(name))
             throw new ValidationException(msg.apply(name, "must not contain the following characters: " + Strings.INVALID_FILENAME_CHARS));
         if (name.contains("#"))

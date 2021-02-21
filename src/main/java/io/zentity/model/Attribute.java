@@ -20,6 +20,7 @@ public class Attribute {
     );
 
     private final String name;
+    private String[] nameFields;
     private Map<String, String> params = new TreeMap<>();
     private Double score;
     private String type = "string";
@@ -28,18 +29,21 @@ public class Attribute {
     public Attribute(String name, JsonNode json) throws ValidationException, JsonProcessingException {
         validateName(name);
         this.name = name;
+        this.nameFields = this.parseNameFields(name);
         this.deserialize(json);
     }
 
     public Attribute(String name, String json) throws ValidationException, IOException {
         validateName(name);
         this.name = name;
+        this.nameFields = this.parseNameFields(name);
         this.deserialize(json);
     }
 
     public Attribute(String name, JsonNode json, boolean validateRunnable) throws ValidationException, JsonProcessingException {
         validateName(name);
         this.name = name;
+        this.nameFields = this.parseNameFields(name);
         this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
@@ -47,12 +51,17 @@ public class Attribute {
     public Attribute(String name, String json, boolean validateRunnable) throws ValidationException, IOException {
         validateName(name);
         this.name = name;
+        this.nameFields = this.parseNameFields(name);
         this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
 
     public String name() {
         return this.name;
+    }
+
+    public String[] nameFields() {
+        return this.nameFields;
     }
 
     public Map<String, String> params() {
@@ -77,10 +86,24 @@ public class Attribute {
         this.type = value.textValue();
     }
 
+    /**
+     *
+     * @param name The name of the attribute.
+     * @return
+     */
+    private String[] parseNameFields(String name) throws ValidationException {
+        String[] nameFields = Patterns.PERIOD.split(name, -1);
+        this.validateNameFields(nameFields);
+        return nameFields;
+    }
+
     private void validateName(String value) throws ValidationException {
         Model.validateStrictName(value);
-        if (Patterns.EMPTY_STRING.matcher(value).matches())
-            throw new ValidationException("'attributes' has an attribute with empty name.");
+    }
+
+    private void validateNameFields(String[] nameFields) throws ValidationException {
+        for (String nameField : nameFields)
+            Model.validateStrictName(nameField);
     }
 
     private void validateScore(JsonNode value) throws ValidationException {

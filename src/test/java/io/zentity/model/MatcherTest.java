@@ -83,6 +83,7 @@ public class MatcherTest {
         new Matcher("hello", VALID_OBJECT);
         new Matcher(".hello", VALID_OBJECT);
         new Matcher("..hello", VALID_OBJECT);
+        new Matcher("hello.world", VALID_OBJECT);
         new Matcher("hello_world", VALID_OBJECT);
         new Matcher("hello-world", VALID_OBJECT);
         new Matcher("hello+world", VALID_OBJECT);

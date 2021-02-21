@@ -32,6 +32,11 @@ public class AttributeTest {
 
     @Test(expected = ValidationException.class)
     public void testInvalidNameEmpty() throws Exception {
+        new Attribute("", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameEmptyWhitespace() throws Exception {
         new Attribute(" ", VALID_OBJECT);
     }
 
@@ -85,11 +90,45 @@ public class AttributeTest {
         new Attribute("MELLO_yello", VALID_OBJECT);
     }
 
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameFieldEmptyFirst() throws Exception {
+        new Attribute(".hello", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameFieldEmptyLast() throws Exception {
+        new Attribute("hello.", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameFieldEmptyMiddle() throws Exception {
+        new Attribute("hello..world", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameFieldEmptyWhitespace() throws Exception {
+        new Attribute("hello. ", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameFieldStartsWithUnderscore() throws Exception {
+        new Attribute("hello._fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameFieldStartsWithDash() throws Exception {
+        new Attribute("hello.-fanta", VALID_OBJECT);
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidNameFieldStartsWithPlus() throws Exception {
+        new Attribute("hello.+fanta", VALID_OBJECT);
+    }
+
     @Test
     public void testValidNames() throws Exception {
         new Attribute("hello", VALID_OBJECT);
-        new Attribute(".hello", VALID_OBJECT);
-        new Attribute("..hello", VALID_OBJECT);
+        new Attribute("hello.world", VALID_OBJECT);
         new Attribute("hello_world", VALID_OBJECT);
         new Attribute("hello-world", VALID_OBJECT);
         new Attribute("hello+world", VALID_OBJECT);
