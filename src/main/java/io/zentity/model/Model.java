@@ -97,6 +97,45 @@ public class Model {
     }
 
     /**
+     * Validate the nesting of attribute names. An attribute name is invalid if another attribute name overrides it.
+     *
+     * Example 1 (valid):   "name.first", "name.last"
+     *
+     *      Both attributes can hold values in the resolution response because their names do not conflict.
+     *
+     * Example 2 (invalid): "name.first", "name.last", "name"
+     *
+     *      The "name" attribute cannot hold values in the resolution response because it must hold the "name.first"
+     *      and "name.last" attributes. The "name" attribute should be removed or renamed to something appropriate
+     *      such as "name.full".
+     *
+     *
+     * @throws ValidationException
+     */
+    private void validateAttributeNesting() throws ValidationException {
+        List<String> names = new ArrayList<>(this.attributes.keySet());
+        int size = names.size();
+        for (int a = 0; a < size; a++) {
+            String nameA = names.get(a) + ".";
+            for (int b = 0; b < size; b++) {
+                if (a == b)
+                    continue;
+                String nameB = names.get(b) + ".";
+                List<String> conflict = new ArrayList<>();
+                if (nameA.startsWith(nameB)) {
+                    conflict.add(names.get(b));
+                    conflict.add(names.get(a));
+                } else if (nameB.startsWith(nameA)) {
+                    conflict.add(names.get(a));
+                    conflict.add(names.get(b));
+                }
+                if (!conflict.isEmpty())
+                    throw new ValidationException("'attributes." + conflict.get(0) + "' is invalid because 'attributes." + conflict.get(1) + "' overrides its name.");
+            }
+        }
+    }
+
+    /**
      * Validate a top-level field of the entity model.
      *
      * @param json  JSON object.
@@ -174,8 +213,8 @@ public class Model {
                         throw new ValidationException("'" + fieldName + "' is not a recognized field.");
                 }
             }
-
         }
+        this.validateAttributeNesting();
     }
 
     public void deserialize(String json) throws ValidationException, IOException {

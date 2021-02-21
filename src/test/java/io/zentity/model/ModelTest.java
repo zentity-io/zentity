@@ -134,6 +134,22 @@ public class ModelTest {
                 "}");
     }
 
+    @Test
+    public void testValidAttributeNesting() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"a.b\":{},\"a.c\":{},\"d\":{}},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
+                "}");
+        new Model("{\n" +
+                "  \"attributes\":{\"a.b\":{},\"a.c\":{},\"a.d.a\":{},\"a.d.b\":{},\"a.d.c\":{}},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
+                "}");
+    }
+
     @Test(expected = ValidationException.class)
     public void testInvalidAttributesEmptyRunnable() throws Exception {
         new Model("{\n" +
@@ -267,6 +283,16 @@ public class ModelTest {
     public void testInvalidAttributeTypeString() throws Exception {
         new Model("{\n" +
                 "  \"attributes\":{\"attribute_name\":\"foobar\"},\n" +
+                "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
+                "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
+                "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
+                "}");
+    }
+
+    @Test(expected = ValidationException.class)
+    public void testInvalidAttributeNestingConflict() throws Exception {
+        new Model("{\n" +
+                "  \"attributes\":{\"attribute_name\":{},\"attribute_name.nested\":" + AttributeTest.VALID_OBJECT + "},\n" +
                 "  \"resolvers\":{\"resolver_name_a\":" + ResolverTest.VALID_OBJECT + "},\n" +
                 "  \"matchers\":{\"matcher_name\":" + MatcherTest.VALID_OBJECT + "},\n" +
                 "  \"indices\":{\"index_name_a\":" + IndexTest.VALID_OBJECT + "}\n" +
