@@ -51,35 +51,35 @@ public class ResolutionActionIT extends AbstractIT {
         "  }\n" +
         "}", ContentType.APPLICATION_JSON);
 
-    public static final String TEST_PAYLOAD_JOB_TERMS_JSON = "{\n" +
-        "  \"terms\": [ \"a_00\" ],\n" +
-        "  \"scope\": {\n" +
-        "    \"include\": {\n" +
-        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ],\n" +
-        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]\n" +
-        "    }\n" +
-        "  }\n" +
+    public static final String TEST_PAYLOAD_JOB_TERMS_JSON = "{" +
+        "  \"terms\": [ \"a_00\" ]," +
+        "  \"scope\": {" +
+        "    \"include\": {" +
+        "      \"indices\": [ \"zentity_test_index_a\", \"zentity_test_index_b\", \"zentity_test_index_c\" ]," +
+        "      \"resolvers\": [ \"resolver_a\", \"resolver_b\" ]" +
+        "    }" +
+        "  }" +
         "}";
 
     public static final StringEntity TEST_PAYLOAD_JOB_TERMS = new StringEntity(
         TEST_PAYLOAD_JOB_TERMS_JSON, ContentType.APPLICATION_JSON);
 
-    public static final String TEST_PAYLOAD_JOB_EXPLANATION_JSON = "{\n" +
-        "  \"attributes\": {\n" +
-        "    \"attribute_a\": [ \"a_00\" ],\n" +
+    public static final String TEST_PAYLOAD_JOB_EXPLANATION_JSON = "{" +
+        "  \"attributes\": {" +
+        "    \"attribute_a\": [ \"a_00\" ]," +
         "    \"attribute_type.date\": {" +
-        "      \"values\": [ \"1999-12-31T23:59:57.0000\" ],\n" +
-        "      \"params\": {\n" +
-        "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\",\n" +
-        "        \"window\" : \"1d\"\n" +
-        "      }\n" +
-        "    }\n" +
-        "  },\n" +
-        "  \"scope\": {\n" +
-        "    \"include\": {\n" +
-        "      \"indices\": [ \"zentity_test_index_a\" ]\n" +
-        "    }\n" +
-        "  }\n" +
+        "      \"values\": [ \"1999-12-31T23:59:57.0000\" ]," +
+        "      \"params\": {" +
+        "        \"format\" : \"yyyy-MM-dd'T'HH:mm:ss.0000\"," +
+        "        \"window\" : \"1d\"" +
+        "      }" +
+        "    }" +
+        "  }," +
+        "  \"scope\": {" +
+        "    \"include\": {" +
+        "      \"indices\": [ \"zentity_test_index_a\" ]" +
+        "    }" +
+        "  }" +
         "}";
 
     public static final StringEntity TEST_PAYLOAD_JOB_EXPLANATION = new StringEntity(
