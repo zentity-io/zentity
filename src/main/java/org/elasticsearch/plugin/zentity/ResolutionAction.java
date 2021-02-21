@@ -211,9 +211,10 @@ public class ResolutionAction extends BaseRestHandler {
                 return;
             }
 
-            buildAndRunJob(client, tuple.v2(), params, reqParams, ActionListener.delegateResponse(
-                delegate,
-                (ignored, ex) -> delegateJobFailure(delegate, client, ex)
+            // Handle job building errors, but not job running as those should be considered fatal
+            buildJob(client, tuple.v2(), params, reqParams, ActionListener.wrap(
+                (job) -> runJob(job, delegate),
+                (ex) -> delegateJobFailure(delegate, client, ex)
             ));
         };
 
