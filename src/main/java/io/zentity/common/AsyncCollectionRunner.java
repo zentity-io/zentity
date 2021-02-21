@@ -10,7 +10,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
 /**
- * A runner for a {@link AbstractGroupedActionListener} that runs items in a collection.
+ * A utility class that runs items in a collection asynchronously and collects their results in order.
  *
  * @param <T>
  * @param <ResultT>
