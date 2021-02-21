@@ -252,7 +252,7 @@ public class ResolutionAction extends BaseRestHandler {
         return "{" +
             Json.quoteString("took") + ":" + result.took +
             "," + Json.quoteString("errors") + ":" + result.errors +
-            "," + Json.quoteString("items") + ":" + Strings.join(result.items, ",") +
+            "," + Json.quoteString("items") + ":" + "[" + Strings.join(result.items, ",") + "]" +
             "}";
     }
 
