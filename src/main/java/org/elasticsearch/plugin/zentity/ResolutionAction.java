@@ -108,7 +108,7 @@ public class ResolutionAction extends BaseRestHandler {
 
     static Job buildJob(NodeClient client, Input input, Map<String, String> params, Map<String, String> reqParams) {
         // Parse the request params that will be passed to the job configuration
-        final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, Job.DEFAULT_INCLUDE_ATTRIBUTES, params, reqParams);
+        final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, Job.DEFAULT_PRETTY, params, reqParams);
         final boolean includeAttributes = ParamsUtil.optBoolean(PARAM_INCLUDE_ATTRIBUTES, Job.DEFAULT_INCLUDE_ATTRIBUTES, params, reqParams);
         final boolean includeErrorTrace = ParamsUtil.optBoolean(PARAM_INCLUDE_ERROR_TRACE, Job.DEFAULT_INCLUDE_ERROR_TRACE, params, reqParams);
         final boolean includeExplanation = ParamsUtil.optBoolean(PARAM_INCLUDE_EXPLANATION, Job.DEFAULT_INCLUDE_EXPLANATION, params, reqParams);
@@ -306,7 +306,7 @@ public class ResolutionAction extends BaseRestHandler {
             PARAM_SEARCH_PREFERENCE
         );
 
-        final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, Job.DEFAULT_INCLUDE_ATTRIBUTES, reqParams, emptyMap());
+        final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, Job.DEFAULT_PRETTY, reqParams, emptyMap());
 
         return channel -> {
             boolean isBulkRequest = restRequest.path().endsWith("_bulk");
