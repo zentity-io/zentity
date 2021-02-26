@@ -2,11 +2,9 @@ package org.elasticsearch.plugin.zentity;
 
 import io.zentity.common.AsyncCollectionRunner;
 import io.zentity.common.Json;
-import io.zentity.common.StreamUtil;
 import io.zentity.model.Model;
 import io.zentity.resolution.Job;
 import io.zentity.resolution.input.Input;
-import joptsimple.internal.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
@@ -18,7 +16,6 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +30,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 public class ResolutionAction extends BaseRestHandler {
 
     private static final Logger logger = LogManager.getLogger(ResolutionAction.class);
-
-    private static final int MAX_CONCURRENT_JOBS_PER_REQUEST = 100;
+    private static final int MAX_CONCURRENT_JOBS_PER_REQUEST = BulkAction.MAX_CONCURRENT_OPERATIONS_PER_REQUEST;
 
     // All parameters known to the request
     private static final String PARAM_ENTITY_TYPE = "entity_type";
@@ -170,39 +166,39 @@ public class ResolutionAction extends BaseRestHandler {
         ));
     }
 
-    static void runJob(Job job, ActionListener<JobResult> onComplete) {
+    static void runJob(Job job, ActionListener<BulkAction.SingleResult> onComplete) {
         job.run(ActionListener.delegateFailure(
             onComplete,
             (ignored, res) -> {
-                JobResult jobResult = new JobResult(res, job.failed());
+                BulkAction.SingleResult jobResult = new BulkAction.SingleResult(res, job.failed());
                 onComplete.onResponse(jobResult);
             }
         ));
     }
 
-    static void buildAndRunJob(NodeClient client, String body, Map<String, String> params, Map<String, String> reqParams, ActionListener<JobResult> onComplete) {
+    static void buildAndRunJob(NodeClient client, String body, Map<String, String> params, Map<String, String> reqParams, ActionListener<BulkAction.SingleResult> onComplete) {
         buildJob(client, body, params, reqParams, ActionListener.delegateFailure(
             onComplete,
             (ignored, job) -> runJob(job, onComplete)
         ));
     }
 
-    static void delegateJobFailure(ActionListener<JobResult> delegate, NodeClient client, Exception failure) {
+    static void delegateJobFailure(ActionListener<BulkAction.SingleResult> delegate, NodeClient client, Exception failure) {
         Job failedJob = new Job(client);
         failedJob.took(0);
         failedJob.failed(true);
         failedJob.error(failure);
 
         try {
-            delegate.onResponse(new JobResult(failedJob.response(), true));
+            delegate.onResponse(new BulkAction.SingleResult(failedJob.response(), true));
         } catch (Exception err) {
             // An error occurred when preparing or sending the response.
             delegate.onFailure(err);
         }
     }
 
-    static void executeBulk(NodeClient client, List<Tuple<String, String>> entries, Map<String, String> reqParams, ActionListener<Collection<JobResult>> listener) {
-        BiConsumer<Tuple<String, String>, ActionListener<JobResult>> jobRunner = (tuple, delegate) -> {
+    static void executeBulk(NodeClient client, List<Tuple<String, String>> entries, Map<String, String> reqParams, ActionListener<Collection<BulkAction.SingleResult>> listener) {
+        BiConsumer<Tuple<String, String>, ActionListener<BulkAction.SingleResult>> jobRunner = (tuple, delegate) -> {
             Map<String, String> params;
             try {
                 params = Json.toStringMap(tuple.v1());
@@ -218,9 +214,9 @@ public class ResolutionAction extends BaseRestHandler {
             ));
         };
 
-        // Treat all failures as fatal and fail the request as quickly as possible
-        // Jobs that have handleable errors should attempt to complete normally with a structured response
-        AsyncCollectionRunner<Tuple<String, String>, JobResult> collectionRunner
+        // Treat all failures as fatal and fail the request as quickly as possible.
+        // Jobs that have handleable errors should attempt to complete normally with a structured response.
+        AsyncCollectionRunner<Tuple<String, String>, BulkAction.SingleResult> collectionRunner
             = new AsyncCollectionRunner<>(entries, jobRunner, MAX_CONCURRENT_JOBS_PER_REQUEST, true);
 
         collectionRunner.run(listener);
@@ -234,7 +230,7 @@ public class ResolutionAction extends BaseRestHandler {
      * @param reqParams The parameters map for the entire request.
      * @param onComplete The listener for completion results.
      */
-    static void runBulk(NodeClient client, List<Tuple<String, String>> entries, Map<String, String> reqParams, ActionListener<BulkResult> onComplete) {
+    static void runBulk(NodeClient client, List<Tuple<String, String>> entries, Map<String, String> reqParams, ActionListener<BulkAction.BulkResult> onComplete) {
         final long startTime = System.nanoTime();
 
         executeBulk(client, entries, reqParams, ActionListener.delegateFailure(
@@ -243,30 +239,10 @@ public class ResolutionAction extends BaseRestHandler {
                 List<String> items = results.stream().map((res) -> res.response).collect(Collectors.toList());
                 boolean errors = results.stream().anyMatch((res) -> res.failed);
                 long took = Duration.ofNanos(System.nanoTime() - startTime).toMillis();
-                onComplete.onResponse(new BulkResult(items, errors, took));
+                onComplete.onResponse(new BulkAction.BulkResult(items, errors, took));
             }
         ));
     }
-
-    static String bulkResultToJson(BulkResult result) {
-        return "{" +
-            Json.quoteString("took") + ":" + result.took +
-            "," + Json.quoteString("errors") + ":" + result.errors +
-            "," + Json.quoteString("items") + ":" + "[" + Strings.join(result.items, ",") + "]" +
-            "}";
-    }
-
-    static List<Tuple<String, String>> splitBulkEntries(String body) {
-        String[] lines = body.split("\\n");
-        if (lines.length % 2 != 0) {
-            throw new BadRequestException("Bulk request must have repeating pairs of params and resolution body on separate lines.");
-        }
-
-        return Arrays.stream(lines)
-            .flatMap(StreamUtil.tupleFlatmapper())
-            .collect(Collectors.toList());
-    }
-
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
@@ -309,26 +285,26 @@ public class ResolutionAction extends BaseRestHandler {
         final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, Job.DEFAULT_PRETTY, reqParams, emptyMap());
 
         return channel -> {
-            boolean isBulkRequest = restRequest.path().endsWith("_bulk");
-
             Consumer<Exception> errorHandler = (e) -> ZentityPlugin.sendResponseError(channel, logger, e);
-
             try {
+                boolean isBulkRequest = restRequest.path().endsWith("_bulk");
                 if (isBulkRequest) {
-                    List<Tuple<String, String>> entries = splitBulkEntries(body);
+
+                    // Run bulk jobs
+                    List<Tuple<String, String>> entries = BulkAction.splitBulkEntries(body);
                     runBulk(client, entries, reqParams, ActionListener.wrap(
                         (bulkResult) -> {
-                            String json = bulkResultToJson(bulkResult);
-                            if (pretty) {
+                            String json = BulkAction.bulkResultToJson(bulkResult);
+                            if (pretty)
                                 json = Json.pretty(json);
-                            }
-
                             channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", json));
                         },
                         errorHandler
                     ));
                 } else {
-                    // Prepare the entity resolution job.
+
+                    // Run single job
+                    // Prepare the entity resolution job
                     buildAndRunJob(client, body, reqParams, emptyMap(), ActionListener.wrap(
                         (jobResult) -> {
                             if (jobResult.failed)
@@ -346,31 +322,4 @@ public class ResolutionAction extends BaseRestHandler {
         };
     }
 
-    /**
-     * Small wrapper around a {@link Job} response.
-     */
-    static final class JobResult {
-        final String response;
-        final boolean failed;
-
-        JobResult(String response, boolean failed) {
-            this.response = response;
-            this.failed = failed;
-        }
-    }
-
-    /**
-     * A wrapper for a collection of {@link Job} responses.
-     */
-    static final class BulkResult {
-        final List<String> items;
-        final boolean errors;
-        final long took;
-
-        BulkResult(List<String> items, boolean errors, long took) {
-            this.items = items;
-            this.errors = errors;
-            this.took = took;
-        }
-    }
 }

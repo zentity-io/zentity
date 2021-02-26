@@ -151,4 +151,26 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
     protected static void sendResponse(RestChannel channel, XContentBuilder content) {
         sendResponse(channel, RestStatus.OK, content);
     }
+
+    /**
+     * Return a response through a RestChannel.
+     * This method is used by the action classes in org.elasticsearch.plugin.zentity.
+     *
+     * @param channel The REST channel to return the response through.
+     * @param json    The JSON string to process and return.
+     */
+    protected static void sendResponse(RestChannel channel, RestStatus statusCode, String json) {
+        channel.sendResponse(new BytesRestResponse(statusCode, "application/json", json));
+    }
+
+    /**
+     * Return a response through a RestChannel.
+     * This method is used by the action classes in org.elasticsearch.plugin.zentity.
+     *
+     * @param channel The REST channel to return the response through.
+     * @param json    The JSON string to process and return.
+     */
+    protected static void sendResponse(RestChannel channel, String json) {
+        sendResponse(channel, RestStatus.OK, json);
+    }
 }
