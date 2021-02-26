@@ -1,7 +1,6 @@
 package io.zentity.common;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.collect.Tuple;
 
 import java.util.Collection;
 import java.util.Deque;
