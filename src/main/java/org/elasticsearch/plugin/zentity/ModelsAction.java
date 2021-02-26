@@ -318,14 +318,20 @@ public class ModelsAction extends BaseRestHandler {
     /**
      * Index one entity model by its type. Return error if an entity model already exists for that entity type.
      *
-     * @param entityType  The entity type.
-     * @param requestBody The request body.
-     * @param client      The client that will communicate with Elasticsearch.
-     * @param onComplete  The action to perform after indexing the entity model.
+     * @param entityType        The entity type.
+     * @param requestBody       The request body.
+     * @param client            The client that will communicate with Elasticsearch.
+     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     *                          Set to 'false' when using bulk operations to prevent redundant checks.
+     * @param onComplete        The action to perform after indexing the entity model.
      */
-    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) throws ValidationException {
+    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException {
+
+        // Validate model before indexing it.
         Model.validateStrictName(entityType);
-        ensureIndex(client, new ActionListener<>() {
+
+        // The action that indexes the entity model.
+        ActionListener<ActionResponse> action = new ActionListener<>() {
 
             @Override
             public void onResponse(ActionResponse actionResponse) {
@@ -350,20 +356,32 @@ public class ModelsAction extends BaseRestHandler {
                 // An error occurred when ensuring that the '.zentity-models' index existed.
                 onComplete.onFailure(e);
             }
-        });
+        };
+
+        // Run the action, optionally after ensuring that the '.zentity-models' index exists.
+        if (shouldEnsureIndex)
+            ensureIndex(client, action);
+        else
+            action.onResponse(null); // Null is safe because it is never used
     }
 
     /**
      * Update one entity model by its type. Does not support partial updates.
      *
-     * @param entityType  The entity type.
-     * @param requestBody The request body.
-     * @param client      The client that will communicate with Elasticsearch.
-     * @param onComplete  The action to perform after updating the entity model.
+     * @param entityType        The entity type.
+     * @param requestBody       The request body.
+     * @param client            The client that will communicate with Elasticsearch.
+     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     *                          Set to 'false' when using bulk operations to prevent redundant checks.
+     * @param onComplete        The action to perform after updating the entity model.
      */
-    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, ActionListener<IndexResponse> onComplete) throws ValidationException {
+    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException {
+
+        // Validate model before indexing it.
         Model.validateStrictName(entityType);
-        ensureIndex(client, new ActionListener<>() {
+
+        // The action that updates the entity model.
+        ActionListener<ActionResponse> action = new ActionListener<>() {
 
             @Override
             public void onResponse(ActionResponse actionResponse) {
@@ -388,18 +406,28 @@ public class ModelsAction extends BaseRestHandler {
                 // An error occurred when ensuring that the '.zentity-models' index existed.
                 onComplete.onFailure(e);
             }
-        });
+        };
+
+        // Run the action, optionally after ensuring that the '.zentity-models' index exists.
+        if (shouldEnsureIndex)
+            ensureIndex(client, action);
+        else
+            action.onResponse(null); // Null is safe because it is never used
     }
 
     /**
      * Delete one entity model by its type.
      *
-     * @param entityType The entity type.
-     * @param client     The client that will communicate with Elasticsearch.
-     * @param onComplete The action to perform after deleting the entity model.
+     * @param entityType        The entity type.
+     * @param client            The client that will communicate with Elasticsearch.
+     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     *                          Set to 'false' when using bulk operations to prevent redundant checks.
+     * @param onComplete        The action to perform after deleting the entity model.
      */
-    public static void deleteEntityModel(String entityType, NodeClient client, ActionListener<DeleteResponse> onComplete) {
-        ensureIndex(client, new ActionListener<>() {
+    public static void deleteEntityModel(String entityType, NodeClient client, boolean shouldEnsureIndex, ActionListener<DeleteResponse> onComplete) {
+
+        // The action that deletes the entity model.
+        ActionListener<ActionResponse> action = new ActionListener<>() {
 
             @Override
             public void onResponse(ActionResponse actionResponse) {
@@ -422,10 +450,31 @@ public class ModelsAction extends BaseRestHandler {
                 // An error occurred when ensuring that the '.zentity-models' index existed.
                 onComplete.onFailure(e);
             }
-        });
+        };
+
+        // Run the action, optionally after ensuring that the '.zentity-models' index exists.
+        if (shouldEnsureIndex)
+            ensureIndex(client, action);
+        else
+            action.onResponse(null); // Null is safe because it is never used
     }
 
-    static void runOperation(NodeClient client, Method method, String body, Map<String, String> params, Map<String, String> reqParams, ActionListener<XContentBuilder> onComplete) throws NotImplementedException, ValidationException, IOException {
+    /**
+     * Run a single model management operation.
+     *
+     * @param client            The client that will communicate with Elasticsearch.
+     * @param method            The HTTP method ("GET", "POST", "PUT", "DELETE").
+     * @param body              The request body.
+     * @param params            The URL parameters for the request. Overrides reqParams during bulk operations.
+     * @param reqParams         The URL parameters for the request.
+     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     *                          Set to 'false' when using bulk operations to prevent redundant checks.
+     * @param onComplete        The action to perform after running the model management operation.
+     * @throws NotImplementedException
+     * @throws ValidationException
+     * @throws IOException
+     */
+    static void runOperation(NodeClient client, Method method, String body, Map<String, String> params, Map<String, String> reqParams, boolean shouldEnsureIndex, ActionListener<XContentBuilder> onComplete) throws NotImplementedException, ValidationException, IOException {
         final String entityType = ParamsUtil.optString(ModelsAction.PARAM_ENTITY_TYPE, null, params, reqParams);
         final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, DEFAULT_PRETTY, reqParams, emptyMap());
 
@@ -478,7 +527,7 @@ public class ModelsAction extends BaseRestHandler {
                    throw new ValidationException("Request body cannot be empty when indexing an entity model.");
                 new Model(body);
 
-                indexEntityModel(entityType, body, client, ActionListener.wrap(
+                indexEntityModel(entityType, body, client, shouldEnsureIndex, ActionListener.wrap(
 
                         // Success
                         (IndexResponse response) -> {
@@ -516,7 +565,7 @@ public class ModelsAction extends BaseRestHandler {
                     throw new ValidationException("Request body cannot be empty when updating an entity model.");
                 new Model(body);
 
-                updateEntityModel(entityType, body, client, ActionListener.wrap(
+                updateEntityModel(entityType, body, client, shouldEnsureIndex, ActionListener.wrap(
 
                         // Success
                         (IndexResponse response) -> {
@@ -550,7 +599,7 @@ public class ModelsAction extends BaseRestHandler {
             case DELETE:
 
                 // DELETE _zentity/models/{entity_type}
-                deleteEntityModel(entityType, client, ActionListener.wrap(
+                deleteEntityModel(entityType, client, shouldEnsureIndex, ActionListener.wrap(
 
                         // Success
                         (DeleteResponse response) -> {
@@ -624,7 +673,7 @@ public class ModelsAction extends BaseRestHandler {
                 } else {
 
                     // Run single operation
-                    runOperation(client, method, body, reqParams, emptyMap(), ActionListener.wrap(
+                    runOperation(client, method, body, reqParams, reqParams, true, ActionListener.wrap(
                         (content) -> {
                             ZentityPlugin.sendResponse(channel, content);
                         },
@@ -655,12 +704,16 @@ public class ModelsAction extends BaseRestHandler {
     }
 
     /**
+     * Run a collection of operations concurrently.
+     *
      * @param client The node client.
      * @param entries The bulk tuple entries: <String actionAndParams, String entityModel>.
      * @param reqParams The parameters map for the entire request. Overridden by any params from entries.
      * @param listener The listener for completion results.
      */
     static void executeBulk(NodeClient client, List<Tuple<String, String>> entries, Map<String, String> reqParams, ActionListener<Collection<BulkAction.SingleResult>> listener) {
+
+        // Process a single bulk entry.
         BiConsumer<Tuple<String, String>, ActionListener<BulkAction.SingleResult>> operationRunner = (tuple, delegate) -> {
             String actionAndParams = tuple.v1();
             String entityModel = tuple.v2();
@@ -702,27 +755,43 @@ public class ModelsAction extends BaseRestHandler {
                         method = GET;
                         break;
                 }
-                final String finalAction = action;
-                final Map<String, String> finalParams = Json.toStringMap(params);
-                runOperation(client, method, entityModel, finalParams, reqParams, ActionListener.wrap(
-                        (xContentBuilder) -> delegate.onResponse(new BulkAction.SingleResult("{\"" + finalAction + "\":" + Strings.toString(xContentBuilder) + "}", false)),
-                        (e) -> delegateFailure(delegate, finalAction, e)
+
+                // These variables must be final.
+                final String actionFinal = action;
+                final Map<String, String> paramsFinal = Json.toStringMap(params);
+
+                // Run a single model management operation.
+                runOperation(client, method, entityModel, paramsFinal, reqParams, false, ActionListener.wrap(
+                        (xContentBuilder) -> delegate.onResponse(new BulkAction.SingleResult("{\"" + actionFinal + "\":" + Strings.toString(xContentBuilder) + "}", false)),
+                        (e) -> delegateFailure(delegate, actionFinal, e)
                 ));
             } catch (Exception e) {
                 delegateFailure(delegate, action, e);
             }
         };
 
-        // Treat all failures as fatal and fail the request as quickly as possible.
-        // Operations that have handleable errors should attempt to complete normally with a structured response.
-        AsyncCollectionRunner<Tuple<String, String>, BulkAction.SingleResult> collectionRunner
-                = new AsyncCollectionRunner<>(entries, operationRunner, MAX_CONCURRENT_OPERATIONS_PER_REQUEST, true);
+        // Ensure that the .zentity-models index exists once before running bulk operations.
+        ensureIndex(client, new ActionListener<>() {
 
-        collectionRunner.run(listener);
+            @Override
+            public void onResponse(ActionResponse actionResponse) {
+
+                // Treat all failures as fatal and fail the request as quickly as possible.
+                // Operations that have handleable errors should attempt to complete normally with a structured response.
+                AsyncCollectionRunner<Tuple<String, String>, BulkAction.SingleResult> collectionRunner
+                        = new AsyncCollectionRunner<>(entries, operationRunner, MAX_CONCURRENT_OPERATIONS_PER_REQUEST, true);
+                collectionRunner.run(listener);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                listener.onFailure(e);
+            }
+        });
     }
 
     /**
-     * Run a collection of operations concurrently.
+     * Run a collection of operations concurrently, and then build and return the response.
      *
      * Expected syntax is NDJSON:
      *
