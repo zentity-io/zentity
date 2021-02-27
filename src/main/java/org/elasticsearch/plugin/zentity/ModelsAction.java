@@ -17,6 +17,7 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Tuple;
@@ -48,7 +49,7 @@ import static org.elasticsearch.rest.RestRequest.Method.PUT;
 public class ModelsAction extends BaseRestHandler {
 
     private static final Logger logger = LogManager.getLogger(ModelsAction.class);
-    private static final int MAX_CONCURRENT_OPERATIONS_PER_REQUEST = BulkAction.MAX_CONCURRENT_OPERATIONS_PER_REQUEST;
+    private static final int MAX_CONCURRENT_OPERATIONS_PER_REQUEST = 1;
 
     public static final String INDEX_NAME = ".zentity-models";
 
@@ -320,11 +321,13 @@ public class ModelsAction extends BaseRestHandler {
      * @param entityType        The entity type.
      * @param requestBody       The request body.
      * @param client            The client that will communicate with Elasticsearch.
-     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     * @param isBulkRequest     Whether this request is part of a bulk request. If false, ensure that the
+     *                          '.zentity-models' index exists before running the operation, and wait for the index
+     *                          to refresh after completing the operation. If true, skip both of these steps.
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after indexing the entity model.
      */
-    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
+    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, boolean isBulkRequest, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
 
         // Validate inputs
         if (entityType == null || entityType.equals(""))
@@ -342,10 +345,13 @@ public class ModelsAction extends BaseRestHandler {
                 try {
 
                     // Index the entity model.
+                    WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
+                    if (isBulkRequest)
+                        refreshPolicy = WriteRequest.RefreshPolicy.NONE;
                     client.prepareIndex(INDEX_NAME, "doc", entityType)
                             .setSource(requestBody, XContentType.JSON)
                             .setCreate(true)
-                            .setRefreshPolicy("wait_for")
+                            .setRefreshPolicy(refreshPolicy)
                             .execute(onComplete);
                 } catch (Exception e) {
 
@@ -363,7 +369,7 @@ public class ModelsAction extends BaseRestHandler {
         };
 
         // Run the action, optionally after ensuring that the '.zentity-models' index exists.
-        if (shouldEnsureIndex)
+        if (!isBulkRequest)
             ensureIndex(client, action);
         else
             action.onResponse(null); // Null is safe because it is never used
@@ -375,11 +381,13 @@ public class ModelsAction extends BaseRestHandler {
      * @param entityType        The entity type.
      * @param requestBody       The request body.
      * @param client            The client that will communicate with Elasticsearch.
-     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     * @param isBulkRequest     Whether this request is part of a bulk request. If false, ensure that the
+     *                          '.zentity-models' index exists before running the operation, and wait for the index
+     *                          to refresh after completing the operation. If true, skip both of these steps.
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after updating the entity model.
      */
-    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
+    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, boolean isBulkRequest, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
 
         // Validate inputs
         if (entityType == null || entityType.equals(""))
@@ -397,10 +405,13 @@ public class ModelsAction extends BaseRestHandler {
                 try {
 
                     // Update the entity model.
+                    WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
+                    if (isBulkRequest)
+                        refreshPolicy = WriteRequest.RefreshPolicy.NONE;
                     client.prepareIndex(INDEX_NAME, "doc", entityType)
                             .setSource(requestBody, XContentType.JSON)
                             .setCreate(false)
-                            .setRefreshPolicy("wait_for")
+                            .setRefreshPolicy(refreshPolicy)
                             .execute(onComplete);
                 } catch (Exception e) {
 
@@ -418,7 +429,7 @@ public class ModelsAction extends BaseRestHandler {
         };
 
         // Run the action, optionally after ensuring that the '.zentity-models' index exists.
-        if (shouldEnsureIndex)
+        if (!isBulkRequest)
             ensureIndex(client, action);
         else
             action.onResponse(null); // Null is safe because it is never used
@@ -429,11 +440,13 @@ public class ModelsAction extends BaseRestHandler {
      *
      * @param entityType        The entity type.
      * @param client            The client that will communicate with Elasticsearch.
-     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     * @param isBulkRequest     Whether this request is part of a bulk request. If false, ensure that the
+     *                          '.zentity-models' index exists before running the operation, and wait for the index
+     *                          to refresh after completing the operation. If true, skip both of these steps.
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after deleting the entity model.
      */
-    public static void deleteEntityModel(String entityType, NodeClient client, boolean shouldEnsureIndex, ActionListener<DeleteResponse> onComplete) throws ValidationException {
+    public static void deleteEntityModel(String entityType, NodeClient client, boolean isBulkRequest, ActionListener<DeleteResponse> onComplete) throws ValidationException {
 
         // Validate inputs
         if (entityType == null || entityType.equals(""))
@@ -447,8 +460,11 @@ public class ModelsAction extends BaseRestHandler {
                 try {
 
                     // Delete the entity model.
+                    WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
+                    if (isBulkRequest)
+                        refreshPolicy = WriteRequest.RefreshPolicy.NONE;
                     client.prepareDelete(INDEX_NAME, "doc", entityType)
-                            .setRefreshPolicy("wait_for")
+                            .setRefreshPolicy(refreshPolicy)
                             .execute(onComplete);
                 } catch (Exception e) {
 
@@ -466,7 +482,7 @@ public class ModelsAction extends BaseRestHandler {
         };
 
         // Run the action, optionally after ensuring that the '.zentity-models' index exists.
-        if (shouldEnsureIndex)
+        if (!isBulkRequest)
             ensureIndex(client, action);
         else
             action.onResponse(null); // Null is safe because it is never used
@@ -480,14 +496,16 @@ public class ModelsAction extends BaseRestHandler {
      * @param body              The request body.
      * @param params            The URL parameters for the request. Overrides reqParams during bulk operations.
      * @param reqParams         The URL parameters for the request.
-     * @param shouldEnsureIndex Whether to ensure if the .zentity-models index exists before running the operation.
+     * @param isBulkRequest     Whether this request is part of a bulk request. If false, ensure that the
+     *                          '.zentity-models' index exists before running the operation, and wait for the index
+     *                          to refresh after completing the operation. If true, skip both of these steps.
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after running the model management operation.
      * @throws NotImplementedException
      * @throws ValidationException
      * @throws IOException
      */
-    static void runOperation(NodeClient client, Method method, String body, Map<String, String> params, Map<String, String> reqParams, boolean shouldEnsureIndex, ActionListener<XContentBuilder> onComplete) throws NotImplementedException, ValidationException, IOException {
+    static void runOperation(NodeClient client, Method method, String body, Map<String, String> params, Map<String, String> reqParams, boolean isBulkRequest, ActionListener<XContentBuilder> onComplete) throws NotImplementedException, ValidationException, IOException {
         final String entityType = ParamsUtil.optString(ModelsAction.PARAM_ENTITY_TYPE, null, params, reqParams);
         final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, DEFAULT_PRETTY, reqParams, emptyMap());
 
@@ -536,7 +554,7 @@ public class ModelsAction extends BaseRestHandler {
             case POST:
 
                 // POST _zentity/models/{entity_type}
-                indexEntityModel(entityType, body, client, shouldEnsureIndex, ActionListener.wrap(
+                indexEntityModel(entityType, body, client, isBulkRequest, ActionListener.wrap(
 
                         // Success
                         (IndexResponse response) -> {
@@ -570,7 +588,7 @@ public class ModelsAction extends BaseRestHandler {
             case PUT:
 
                 // PUT _zentity/models/{entity_type}
-                updateEntityModel(entityType, body, client, shouldEnsureIndex, ActionListener.wrap(
+                updateEntityModel(entityType, body, client, isBulkRequest, ActionListener.wrap(
 
                         // Success
                         (IndexResponse response) -> {
@@ -604,7 +622,7 @@ public class ModelsAction extends BaseRestHandler {
             case DELETE:
 
                 // DELETE _zentity/models/{entity_type}
-                deleteEntityModel(entityType, client, shouldEnsureIndex, ActionListener.wrap(
+                deleteEntityModel(entityType, client, isBulkRequest, ActionListener.wrap(
 
                         // Success
                         (DeleteResponse response) -> {
@@ -678,7 +696,7 @@ public class ModelsAction extends BaseRestHandler {
                 } else {
 
                     // Run single operation
-                    runOperation(client, method, body, reqParams, reqParams, true, ActionListener.wrap(
+                    runOperation(client, method, body, reqParams, reqParams, false, ActionListener.wrap(
                         (content) -> {
                             ZentityPlugin.sendResponse(channel, content);
                         },
@@ -766,7 +784,7 @@ public class ModelsAction extends BaseRestHandler {
                 final Map<String, String> paramsFinal = Json.toStringMap(params);
 
                 // Run a single model management operation.
-                runOperation(client, method, entityModel, paramsFinal, reqParams, false, ActionListener.wrap(
+                runOperation(client, method, entityModel, paramsFinal, reqParams, true, ActionListener.wrap(
                         (xContentBuilder) -> delegate.onResponse(new BulkAction.SingleResult("{\"" + actionFinal + "\":" + Strings.toString(xContentBuilder) + "}", false)),
                         (e) -> delegateFailure(delegate, actionFinal, e)
                 ));
