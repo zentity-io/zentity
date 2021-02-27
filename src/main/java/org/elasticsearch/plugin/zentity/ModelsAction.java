@@ -13,6 +13,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -803,7 +804,25 @@ public class ModelsAction extends BaseRestHandler {
                 // Operations that have handleable errors should attempt to complete normally with a structured response.
                 AsyncCollectionRunner<Tuple<String, String>, BulkAction.SingleResult> collectionRunner
                         = new AsyncCollectionRunner<>(entries, operationRunner, MAX_CONCURRENT_OPERATIONS_PER_REQUEST, true);
-                collectionRunner.run(listener);
+
+                collectionRunner.run(new ActionListener<>() {
+
+                    @Override
+                    public void onResponse(Collection<BulkAction.SingleResult> singleResults) {
+
+                        // Refresh the index so that the changes are immediately visible.
+                        RefreshRequest request = new RefreshRequest(INDEX_NAME);
+                        client.admin().indices().refresh(request, ActionListener.wrap(
+                                (refreshResponse) -> {logger.debug("refreshed"); listener.onResponse(singleResults);},
+                                listener::onFailure
+                        ));
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        listener.onFailure(e);
+                    }
+                });
             }
 
             @Override
