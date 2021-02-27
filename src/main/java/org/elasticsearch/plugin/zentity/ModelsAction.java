@@ -50,6 +50,8 @@ import static org.elasticsearch.rest.RestRequest.Method.PUT;
 public class ModelsAction extends BaseRestHandler {
 
     private static final Logger logger = LogManager.getLogger(ModelsAction.class);
+
+    // Bulk model management operations must run in series, not in parallel
     private static final int MAX_CONCURRENT_OPERATIONS_PER_REQUEST = 1;
 
     public static final String INDEX_NAME = ".zentity-models";
@@ -516,7 +518,6 @@ public class ModelsAction extends BaseRestHandler {
                 if (entityType == null || entityType.equals("")) {
 
                     // GET _zentity/models
-                    // An error occurred when retrieving the entity models.
                     getEntityModels(client, ActionListener.wrap(
 
                             // Success
@@ -534,7 +535,6 @@ public class ModelsAction extends BaseRestHandler {
                 } else {
 
                     // GET _zentity/models/{entity_type}
-                    // An error occurred when retrieving the entity models.
                     getEntityModel(entityType, client, ActionListener.wrap(
 
                             // Success
