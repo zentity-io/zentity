@@ -287,7 +287,7 @@ public class ResolutionAction extends BaseRestHandler {
         return channel -> {
             Consumer<Exception> errorHandler = (e) -> ZentityPlugin.sendResponseError(channel, logger, e);
             try {
-                boolean isBulkRequest = restRequest.path().endsWith("_bulk");
+                boolean isBulkRequest = restRequest.path().endsWith("/_bulk");
                 if (isBulkRequest) {
 
                     // Run bulk jobs

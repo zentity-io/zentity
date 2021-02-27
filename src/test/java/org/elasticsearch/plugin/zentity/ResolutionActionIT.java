@@ -1838,7 +1838,7 @@ public class ResolutionActionIT extends AbstractIT {
         }
     }
 
-    // BULK
+    ////  Bulk actions  ////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void testBulkResolutionWithMalformed() throws Exception {
@@ -1876,7 +1876,7 @@ public class ResolutionActionIT extends AbstractIT {
         assertTrue(json.get("items").isArray());
 
         // check the values
-        assertTrue(json.get("took").asLong() > 0);
+        assertTrue(json.get("took").asLong() >= 0);
         assertTrue(json.get("errors").booleanValue());
 
         ArrayNode items = (ArrayNode) json.get("items");

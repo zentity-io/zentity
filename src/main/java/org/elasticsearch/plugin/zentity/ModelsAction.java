@@ -66,13 +66,12 @@ public class ModelsAction extends BaseRestHandler {
                 // Single operations
                 new Route(GET, "_zentity/models"),
                 new Route(GET, "_zentity/models/{entity_type}"),
-                new Route(POST, "_zentity/models/{entity_type}"),   // Bulkable
-                new Route(PUT, "_zentity/models/{entity_type}"),    // Bulkable
-                new Route(DELETE, "_zentity/models/{entity_type}"), // Bulkable
+                new Route(POST, "_zentity/models/{entity_type}"),
+                new Route(PUT, "_zentity/models/{entity_type}"),
+                new Route(DELETE, "_zentity/models/{entity_type}"),
 
                 // Bulk operations
-                new Route(POST, "_zentity/models/_bulk"),
-                new Route(POST, "_zentity/models/{entity_type}/_bulk")
+                new Route(POST, "_zentity/models/_bulk")
         );
     }
 
@@ -325,9 +324,14 @@ public class ModelsAction extends BaseRestHandler {
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after indexing the entity model.
      */
-    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException {
+    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
 
-        // Validate model before indexing it.
+        // Validate inputs
+        if (entityType == null || entityType.equals(""))
+            throw new ValidationException("Entity type must be specified when indexing an entity model.");
+        if (requestBody == null || requestBody.equals(""))
+            throw new ValidationException("Request body cannot be empty when indexing an entity model.");
+        new Model(requestBody);
         Model.validateStrictName(entityType);
 
         // The action that indexes the entity model.
@@ -375,9 +379,14 @@ public class ModelsAction extends BaseRestHandler {
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after updating the entity model.
      */
-    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException {
+    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, boolean shouldEnsureIndex, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
 
-        // Validate model before indexing it.
+        // Validate inputs
+        if (entityType == null || entityType.equals(""))
+            throw new ValidationException("Entity type must be specified when updating an entity model.");
+        if (requestBody == null || requestBody.equals(""))
+            throw new ValidationException("Request body cannot be empty when updating an entity model.");
+        new Model(requestBody);
         Model.validateStrictName(entityType);
 
         // The action that updates the entity model.
@@ -424,7 +433,11 @@ public class ModelsAction extends BaseRestHandler {
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after deleting the entity model.
      */
-    public static void deleteEntityModel(String entityType, NodeClient client, boolean shouldEnsureIndex, ActionListener<DeleteResponse> onComplete) {
+    public static void deleteEntityModel(String entityType, NodeClient client, boolean shouldEnsureIndex, ActionListener<DeleteResponse> onComplete) throws ValidationException {
+
+        // Validate inputs
+        if (entityType == null || entityType.equals(""))
+            throw new ValidationException("Entity type must be specified when deleting an entity model.");
 
         // The action that deletes the entity model.
         ActionListener<ActionResponse> action = new ActionListener<>() {
@@ -523,10 +536,6 @@ public class ModelsAction extends BaseRestHandler {
             case POST:
 
                 // POST _zentity/models/{entity_type}
-                if (body == null || body.equals(""))
-                   throw new ValidationException("Request body cannot be empty when indexing an entity model.");
-                new Model(body);
-
                 indexEntityModel(entityType, body, client, shouldEnsureIndex, ActionListener.wrap(
 
                         // Success
@@ -561,10 +570,6 @@ public class ModelsAction extends BaseRestHandler {
             case PUT:
 
                 // PUT _zentity/models/{entity_type}
-                if (body == null || body.equals(""))
-                    throw new ValidationException("Request body cannot be empty when updating an entity model.");
-                new Model(body);
-
                 updateEntityModel(entityType, body, client, shouldEnsureIndex, ActionListener.wrap(
 
                         // Success
@@ -656,7 +661,7 @@ public class ModelsAction extends BaseRestHandler {
         return channel -> {
             Consumer<Exception> errorHandler = (e) -> ZentityPlugin.sendResponseError(channel, logger, e);
             try {
-                boolean isBulkRequest = restRequest.path().endsWith("_bulk");
+                boolean isBulkRequest = restRequest.path().endsWith("/_bulk");
                 if (isBulkRequest) {
 
                     // Run bulk operations
