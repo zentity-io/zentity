@@ -71,6 +71,8 @@ public class Model {
      */
     public static void validateStrictName(String name) throws ValidationException {
         BiFunction<String, String, String> msg = (invalidName, description) -> "Invalid name [" + invalidName + "], " + description;
+        if (name == null)
+            throw new ValidationException(msg.apply("", "must not be empty"));
         if (Patterns.EMPTY_STRING.matcher(name).matches())
             throw new ValidationException(msg.apply(name, "must not be empty"));
         if (!Strings.validFileName(name))
