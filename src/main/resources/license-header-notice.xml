@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<additionalHeaders>
+    <text>
+        <firstLineDetectionPattern>^\s*$</firstLineDetectionPattern>
+        <lastLineDetectionPattern>^\s*$</lastLineDetectionPattern>
+        <allowBlankLines>true</allowBlankLines>
+        <isMultiline>true</isMultiline>
+        <padLines>false</padLines>
+    </text>
+</additionalHeaders>

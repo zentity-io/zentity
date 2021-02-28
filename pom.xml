@@ -9,11 +9,13 @@
     <groupId>io.zentity</groupId>
     <artifactId>zentity</artifactId>
     <version>${zentity.version}-elasticsearch-${elasticsearch.version}</version>
+    <url>https://zentity.io</url>
+    <inceptionYear>2018</inceptionYear>
 
     <properties>
         <zentity.author>Dave Moore</zentity.author>
         <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
-        <zentity.website>https://zentity.io</zentity.website>
+        <zentity.website>${project.url}</zentity.website>
         <zentity.version>1.7.0</zentity.version>
         <!-- dependency versions -->
         <elasticsearch.version>7.11.1</elasticsearch.version>
@@ -26,6 +28,7 @@
         <maven.assembly.version>3.3.0</maven.assembly.version>
         <maven.junit.version>2.7.8</maven.junit.version>
         <maven.surefire.version>2.22.2</maven.surefire.version>
+        <maven.license.version>3.0</maven.license.version>
         <!-- test properties -->
         <skipTests>false</skipTests>
         <skipUnitTests>${skipTests}</skipUnitTests>
@@ -89,6 +92,42 @@
                     <source>9</source>
                     <target>9</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>${maven.license.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.mycila</groupId>
+                        <artifactId>license-maven-plugin-git</artifactId>
+                        <version>${maven.license.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <header>src/main/resources/license-header.txt</header>
+                    <headerDefinitions>src/main/resources/license-header-notice.xml</headerDefinitions>
+                    <mapping>
+                        <java>SLASHSTAR_STYLE</java>
+                        <NOTICE>TEXT</NOTICE>
+                    </mapping>
+                    <properties>
+                        <owner>${zentity.author}</owner>
+                    </properties>
+                    <includes>
+                        <include>NOTICE</include>
+                        <include>src/test/java/**</include>
+                        <include>src/main/java/**</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
