@@ -1,11 +1,15 @@
 package org.elasticsearch.plugin.zentity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.zentity.common.Json;
 import io.zentity.model.*;
+import joptsimple.internal.Strings;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Consts;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
+import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
@@ -13,6 +17,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,6 +27,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ModelsActionIT extends AbstractIT {
+
+    public static final ContentType NDJSON_TYPE = ContentType.create("application/x-ndjson", Consts.UTF_8);
 
     public static void destroyTestResources() throws Exception {
         try {
@@ -226,6 +235,7 @@ public class ModelsActionIT extends AbstractIT {
 
     @Test
     public void testCannotCreateInvalidEntityType() throws Exception {
+        destroyTestResources();
         ByteArrayEntity testEntityModelA = new ByteArrayEntity(readFile("TestEntityModelA.json"), ContentType.APPLICATION_JSON);
         Request request = new Request("POST", "_zentity/models/_anInvalidType");
         request.setEntity(testEntityModelA);
@@ -249,6 +259,513 @@ public class ModelsActionIT extends AbstractIT {
 
             assertTrue("error has reason field", errorJson.has("reason"));
             assertTrue(errorJson.get("reason").textValue().contains("Invalid name [_anInvalidType]"));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    ////  Bulk actions  ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    public void testBulkCreate() throws Exception {
+        destroyTestResources();
+        try {
+            String endpoint = "_zentity/models/_bulk";
+            String entityTypeA = "zentity_test_entity_a";
+            String entityTypeB = "zentity_test_entity_b";
+            String entityModelA =  "{\"attributes\":{\"a\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            String entityModelB =  "{\"attributes\":{\"b\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            Request request = new Request("POST", endpoint);
+            String[] requestBodyLines = new String[] {
+                    "{\"create\":{\"entity_type\":\"" + entityTypeA + "\"}}",
+                    entityModelA,
+                    "{\"create\":{\"entity_type\":\"" + entityTypeB + "\"}}",
+                    entityModelB
+            };
+            String requestBody = Strings.join(requestBodyLines, "\n");
+            request.setEntity(new NStringEntity(requestBody, NDJSON_TYPE));
+            Response response = client().performRequest(request);
+            assertEquals(response.getStatusLine().getStatusCode(), 200);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check shape
+            assertTrue(json.isObject());
+            assertTrue(json.has("errors"));
+            assertTrue(json.get("errors").isBoolean());
+            assertTrue(json.has("took"));
+            assertTrue(json.get("took").isNumber());
+            assertTrue(json.has("items"));
+            assertTrue(json.get("items").isArray());
+
+            // check the values
+            assertTrue(json.get("took").asLong() >= 0);
+            assertFalse(json.get("errors").booleanValue());
+            ArrayNode items = (ArrayNode) json.get("items");
+            int size = items.size();
+            assertEquals(2, size);
+
+            // check the values of each item
+            for (int i = 0; i < size; i++) {
+
+                // validate the action
+                JsonNode item = items.get(i);
+                assertTrue(item.has("create"));
+                assertFalse(item.has("update"));
+                assertFalse(item.has("delete"));
+                assertFalse(item.has("action"));
+
+                // validate the result
+                JsonNode result = item.get("create");
+                assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
+                assertEquals("created", result.get("result").asText());
+                assertTrue(result.has("_type"));
+                assertTrue(result.has("_version"));
+                assertTrue(result.has("_shards"));
+                assertTrue(result.has("_seq_no"));
+                assertTrue(result.has("_primary_term"));
+                assertFalse(result.has("error"));
+
+                // items should be returned in the order they were processed
+                String _id = "";
+                String model = "";
+                if (i == 0) {
+                    _id = entityTypeA;
+                    model = entityModelA;
+                } else if (i == 1) {
+                    _id = entityTypeB;
+                    model = entityModelB;
+                }
+                assertEquals(_id, result.get("_id").asText());
+
+                // ensure the entity model is properly reflected in the '.zentity-models' index
+                Request getRequest = new Request("GET", "_zentity/models/" + _id);
+                Response getResponse = client().performRequest(getRequest);
+                JsonNode getResponseJson = Json.MAPPER.readTree(getResponse.getEntity().getContent());
+                assertEquals(getResponse.getStatusLine().getStatusCode(), 200);
+                assertTrue(getResponseJson.get("found").booleanValue());
+                model = Json.ORDERED_MAPPER.writeValueAsString(Json.ORDERED_MAPPER.readTree(model));
+                assertEquals(model, Json.ORDERED_MAPPER.writeValueAsString(getResponseJson.get("_source")));
+            }
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    @Test
+    public void testBulkCreateConflict() throws Exception {
+        destroyTestResources();
+        try {
+            String endpoint = "_zentity/models/_bulk";
+            String entityType = "zentity_test_entity_a";
+            String entityModel =  "{\"attributes\":{\"a\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            Request request = new Request("POST", endpoint);
+            String[] requestBodyLines = new String[] {
+                    "{\"create\":{\"entity_type\":\"" + entityType + "\"}}",
+                    entityModel,
+                    "{\"create\":{\"entity_type\":\"" + entityType + "\"}}",
+                    entityModel
+            };
+            String requestBody = Strings.join(requestBodyLines, "\n");
+            request.setEntity(new NStringEntity(requestBody, NDJSON_TYPE));
+            Response response = client().performRequest(request);
+            assertEquals(response.getStatusLine().getStatusCode(), 200);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check shape
+            assertTrue(json.isObject());
+            assertTrue(json.has("errors"));
+            assertTrue(json.get("errors").isBoolean());
+            assertTrue(json.has("took"));
+            assertTrue(json.get("took").isNumber());
+            assertTrue(json.has("items"));
+            assertTrue(json.get("items").isArray());
+
+            // check the values
+            assertTrue(json.get("took").asLong() >= 0);
+            assertTrue(json.get("errors").booleanValue());
+            ArrayNode items = (ArrayNode) json.get("items");
+            int size = items.size();
+            assertEquals(2, size);
+
+            // check the values of each item
+            for (int i = 0; i < size; i++) {
+
+                // validate the action
+                JsonNode item = items.get(i);
+                assertTrue(item.has("create"));
+                assertFalse(item.has("update"));
+                assertFalse(item.has("delete"));
+                assertFalse(item.has("action"));
+
+                // validate the result
+                JsonNode result = item.get("create");
+                if (i == 0) {
+                    assertEquals(entityType, result.get("_id").asText());
+                    assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
+                    assertEquals("created", result.get("result").asText());
+                    assertTrue(result.has("_type"));
+                    assertTrue(result.has("_version"));
+                    assertTrue(result.has("_shards"));
+                    assertTrue(result.has("_seq_no"));
+                    assertTrue(result.has("_primary_term"));
+                    assertFalse(result.has("error"));
+                } else {
+                    assertTrue(result.has("error"));
+                    assertEquals("org.elasticsearch.index.engine.VersionConflictEngineException", result.get("error").get("type").asText());
+                }
+
+                // ensure the entity model is properly reflected in the '.zentity-models' index
+                Request getRequest = new Request("GET", "_zentity/models/" + entityType);
+                Response getResponse = client().performRequest(getRequest);
+                JsonNode getResponseJson = Json.MAPPER.readTree(getResponse.getEntity().getContent());
+                assertEquals(getResponse.getStatusLine().getStatusCode(), 200);
+                assertTrue(getResponseJson.get("found").booleanValue());
+                entityModel = Json.ORDERED_MAPPER.writeValueAsString(Json.ORDERED_MAPPER.readTree(entityModel));
+                assertEquals(entityModel, Json.ORDERED_MAPPER.writeValueAsString(getResponseJson.get("_source")));
+            }
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    @Test
+    public void testBulkUpdate() throws Exception {
+        destroyTestResources();
+        try {
+            String endpoint = "_zentity/models/_bulk";
+            String entityTypeA = "zentity_test_entity_a";
+            String entityTypeB = "zentity_test_entity_b";
+            String entityModelA =  "{\"attributes\":{\"a\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            String entityModelAUpdated =  "{\"attributes\":{\"a_updated\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            String entityModelB =  "{\"attributes\":{\"b\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            Request request = new Request("POST", endpoint);
+            String[] requestBodyLines = new String[] {
+                    "{\"create\":{\"entity_type\":\"" + entityTypeA + "\"}}",
+                    entityModelA,
+                    "{\"create\":{\"entity_type\":\"" + entityTypeB + "\"}}",
+                    entityModelB,
+                    "{\"update\":{\"entity_type\":\"" + entityTypeA + "\"}}",
+                    entityModelAUpdated
+            };
+            String requestBody = Strings.join(requestBodyLines, "\n");
+            request.setEntity(new NStringEntity(requestBody, NDJSON_TYPE));
+            Response response = client().performRequest(request);
+            assertEquals(response.getStatusLine().getStatusCode(), 200);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check shape
+            assertTrue(json.isObject());
+            assertTrue(json.has("errors"));
+            assertTrue(json.get("errors").isBoolean());
+            assertTrue(json.has("took"));
+            assertTrue(json.get("took").isNumber());
+            assertTrue(json.has("items"));
+            assertTrue(json.get("items").isArray());
+
+            // check the values
+            assertTrue(json.get("took").asLong() >= 0);
+            assertFalse(json.get("errors").booleanValue());
+            ArrayNode items = (ArrayNode) json.get("items");
+            int size = items.size();
+            assertEquals(3, size);
+
+            // check the values of each item
+            for (int i = 0; i < size; i++) {
+
+                // validate the action
+                JsonNode item = items.get(i);
+                String action = "action";
+                if (i == 0 || i == 1) {
+                    assertTrue(item.has("create"));
+                    assertFalse(item.has("update"));
+                    action = "create";
+                } else if (i == 2) {
+                    assertTrue(item.has("update"));
+                    assertFalse(item.has("create"));
+                    action = "update";
+                }
+                assertFalse(item.has("delete"));
+                assertFalse(item.has("action"));
+
+                // validate the result
+                JsonNode result = item.get(action);
+                assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
+                assertEquals( action + "d", result.get("result").asText());
+                assertTrue(result.has("_type"));
+                assertTrue(result.has("_version"));
+                assertTrue(result.has("_shards"));
+                assertTrue(result.has("_seq_no"));
+                assertTrue(result.has("_primary_term"));
+                assertFalse(result.has("error"));
+
+                // items should be returned in the order they were processed
+                String _id = "";
+                String model = "";
+                if (i == 0 || i == 2) {
+                    _id = entityTypeA;
+                    model = entityModelAUpdated;
+                } else if (i == 1) {
+                    _id = entityTypeB;
+                    model = entityModelB;
+                }
+                assertEquals(_id, result.get("_id").asText());
+
+                // ensure the entity model is properly reflected in the '.zentity-models' index
+                Request getRequest = new Request("GET", "_zentity/models/" + _id);
+                Response getResponse = client().performRequest(getRequest);
+                JsonNode getResponseJson = Json.MAPPER.readTree(getResponse.getEntity().getContent());
+                assertEquals(getResponse.getStatusLine().getStatusCode(), 200);
+                assertTrue(getResponseJson.get("found").booleanValue());
+                model = Json.ORDERED_MAPPER.writeValueAsString(Json.ORDERED_MAPPER.readTree(model));
+                assertEquals(model, Json.ORDERED_MAPPER.writeValueAsString(getResponseJson.get("_source")));
+            }
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    @Test
+    public void testBulkDelete() throws Exception {
+        destroyTestResources();
+        try {
+            String endpoint = "_zentity/models/_bulk";
+            String entityTypeA = "zentity_test_entity_a";
+            String entityTypeB = "zentity_test_entity_b";
+            String entityModelA =  "{\"attributes\":{\"a\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            String entityModelB =  "{\"attributes\":{\"b\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            Request request = new Request("POST", endpoint);
+            String[] requestBodyLines = new String[] {
+                    "{\"create\":{\"entity_type\":\"" + entityTypeA + "\"}}",
+                    entityModelA,
+                    "{\"create\":{\"entity_type\":\"" + entityTypeB + "\"}}",
+                    entityModelB,
+                    "{\"delete\":{\"entity_type\":\"" + entityTypeA + "\"}}",
+                    "{}"
+            };
+            String requestBody = Strings.join(requestBodyLines, "\n");
+            request.setEntity(new NStringEntity(requestBody, NDJSON_TYPE));
+            Response response = client().performRequest(request);
+            assertEquals(response.getStatusLine().getStatusCode(), 200);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check shape
+            assertTrue(json.isObject());
+            assertTrue(json.has("errors"));
+            assertTrue(json.get("errors").isBoolean());
+            assertTrue(json.has("took"));
+            assertTrue(json.get("took").isNumber());
+            assertTrue(json.has("items"));
+            assertTrue(json.get("items").isArray());
+
+            // check the values
+            assertTrue(json.get("took").asLong() >= 0);
+            assertFalse(json.get("errors").booleanValue());
+            ArrayNode items = (ArrayNode) json.get("items");
+            int size = items.size();
+            assertEquals(3, size);
+
+            // check the values of each item
+            for (int i = 0; i < size; i++) {
+
+                // validate the action
+                JsonNode item = items.get(i);
+                String action = "action";
+                if (i == 0 || i == 1) {
+                    assertTrue(item.has("create"));
+                    assertFalse(item.has("delete"));
+                    action = "create";
+                } else if (i == 2) {
+                    assertTrue(item.has("delete"));
+                    assertFalse(item.has("create"));
+                    action = "delete";
+                }
+                assertFalse(item.has("update"));
+                assertFalse(item.has("action"));
+
+                // validate the result
+                JsonNode result = item.get(action);
+                assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
+                assertEquals( action + "d", result.get("result").asText());
+                assertTrue(result.has("_type"));
+                assertTrue(result.has("_version"));
+                assertTrue(result.has("_shards"));
+                assertTrue(result.has("_seq_no"));
+                assertTrue(result.has("_primary_term"));
+                assertFalse(result.has("error"));
+
+                // items should be returned in the order they were processed
+                if (i == 0 || i == 2) {
+                    assertEquals(entityTypeA, result.get("_id").asText());
+
+                    // Ensure entityTypeA was deleted
+                    Request getRequest = new Request("GET", "_zentity/models/" + entityTypeA);
+                    Response getResponse = client().performRequest(getRequest);
+                    JsonNode getResponseJson = Json.MAPPER.readTree(getResponse.getEntity().getContent());
+                    assertEquals(getResponse.getStatusLine().getStatusCode(), 200);
+                    assertFalse(getResponseJson.get("found").booleanValue());
+
+                } else if (i == 1) {
+                    String model = entityModelB;
+                    assertEquals(entityTypeB, result.get("_id").asText());
+
+                    // Ensure entityTypeB was created and not affected
+                    Request getRequest = new Request("GET", "_zentity/models/" + entityTypeB);
+                    Response getResponse = client().performRequest(getRequest);
+                    JsonNode getResponseJson = Json.MAPPER.readTree(getResponse.getEntity().getContent());
+                    assertEquals(getResponse.getStatusLine().getStatusCode(), 200);
+                    assertTrue(getResponseJson.get("found").booleanValue());
+                    model = Json.ORDERED_MAPPER.writeValueAsString(Json.ORDERED_MAPPER.readTree(model));
+                    assertEquals(model, Json.ORDERED_MAPPER.writeValueAsString(getResponseJson.get("_source")));
+                }
+            }
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    @Test
+    public void testBulkInvalidActionUnsupported() throws Exception {
+        destroyTestResources();
+        try {
+            String endpoint = "_zentity/models/_bulk";
+            String entityType = "zentity_test_entity_a";
+            String entityModel =  "{\"attributes\":{\"a\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            Request request = new Request("POST", endpoint);
+            String[] requestBodyLines = new String[] {
+                    "{\"create\":{\"entity_type\":\"" + entityType + "\"}}",
+                    entityModel,
+                    "{\"get\":{\"entity_type\":\"" + entityType + "\"}}",
+                    entityModel
+            };
+            String requestBody = Strings.join(requestBodyLines, "\n");
+            request.setEntity(new NStringEntity(requestBody, NDJSON_TYPE));
+            Response response = client().performRequest(request);
+            assertEquals(response.getStatusLine().getStatusCode(), 200);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check shape
+            assertTrue(json.isObject());
+            assertTrue(json.has("errors"));
+            assertTrue(json.get("errors").isBoolean());
+            assertTrue(json.has("took"));
+            assertTrue(json.get("took").isNumber());
+            assertTrue(json.has("items"));
+            assertTrue(json.get("items").isArray());
+
+            // check the values
+            assertTrue(json.get("took").asLong() >= 0);
+            assertTrue(json.get("errors").booleanValue());
+            ArrayNode items = (ArrayNode) json.get("items");
+            int size = items.size();
+            assertEquals(2, size);
+
+            // check the values of each item
+            for (int i = 0; i < size; i++) {
+
+                // validate the action
+                JsonNode item = items.get(i);
+                String action = "action";
+                if (i == 0) {
+                    assertTrue(item.has("create"));
+                    assertFalse(item.has("action"));
+                    action = "create";
+                } else if (i == 2) {
+                    assertTrue(item.has("action"));
+                    assertFalse(item.has("create"));
+                    action = "action";
+                }
+                assertFalse(item.has("update"));
+                assertFalse(item.has("delete"));
+
+                // validate the result
+                JsonNode result = item.get(action);
+
+                // items should be returned in the order they were processed
+                if (i == 0) {
+                    assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
+                    assertEquals( "created", result.get("result").asText());
+                    assertTrue(result.has("_type"));
+                    assertTrue(result.has("_version"));
+                    assertTrue(result.has("_shards"));
+                    assertTrue(result.has("_seq_no"));
+                    assertTrue(result.has("_primary_term"));
+                    assertFalse(result.has("error"));
+                    assertEquals(entityType, result.get("_id").asText());
+
+                } else if (i == 1) {
+                    assertTrue(result.get("error").get("reason").asText().startsWith("'get' is not a recognized action"));
+                }
+
+                // Ensure entityType was created and not affected
+                Request getRequest = new Request("GET", "_zentity/models/" + entityType);
+                Response getResponse = client().performRequest(getRequest);
+                JsonNode getResponseJson = Json.MAPPER.readTree(getResponse.getEntity().getContent());
+                assertEquals(getResponse.getStatusLine().getStatusCode(), 200);
+                assertTrue(getResponseJson.get("found").booleanValue());
+                String model = Json.ORDERED_MAPPER.writeValueAsString(Json.ORDERED_MAPPER.readTree(entityModel));
+                assertEquals(model, Json.ORDERED_MAPPER.writeValueAsString(getResponseJson.get("_source")));
+            }
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    @Test
+    public void testBulkInvalidEntityTypeMissing() throws Exception {
+        destroyTestResources();
+        try {
+            String endpoint = "_zentity/models/_bulk";
+            String entityModel =  "{\"attributes\":{\"a\":{}},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            Request request = new Request("POST", endpoint);
+            String[] requestBodyLines = new String[] {
+                    "{\"create\":{}}",
+                    entityModel
+            };
+            String requestBody = Strings.join(requestBodyLines, "\n");
+            request.setEntity(new NStringEntity(requestBody, NDJSON_TYPE));
+            Response response = client().performRequest(request);
+            assertEquals(response.getStatusLine().getStatusCode(), 200);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check the values
+            assertTrue(json.get("errors").isBoolean());
+            assertTrue(json.get("took").asLong() >= 0);
+            assertTrue(json.get("errors").booleanValue());
+            ArrayNode items = (ArrayNode) json.get("items");
+            assertEquals(1, items.size());
+            assertTrue(items.get(0).get("create").get("error").get("reason").asText().startsWith("Entity type must be specified"));
+        } finally {
+            destroyTestResources();
+        }
+    }
+
+    @Test
+    public void testBulkInvalidEntityModelMalformed() throws Exception {
+        destroyTestResources();
+        try {
+            String endpoint = "_zentity/models/_bulk";
+            String entityType = "zentity_test_entity_a";
+            String entityModel =  "{\"foo\":{},\"resolvers\":{},\"matchers\":{},\"indices\":{}}";
+            Request request = new Request("POST", endpoint);
+            String[] requestBodyLines = new String[] {
+                    "{\"create\":{\"entity_type\":\"" + entityType + "\"}}",
+                    entityModel
+            };
+            String requestBody = Strings.join(requestBodyLines, "\n");
+            request.setEntity(new NStringEntity(requestBody, NDJSON_TYPE));
+            Response response = client().performRequest(request);
+            assertEquals(response.getStatusLine().getStatusCode(), 200);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check the values
+            assertTrue(json.get("errors").isBoolean());
+            assertTrue(json.get("took").asLong() >= 0);
+            assertTrue(json.get("errors").booleanValue());
+            ArrayNode items = (ArrayNode) json.get("items");
+            assertEquals(1, items.size());
+            assertTrue(items.get(0).get("create").get("error").get("reason").asText().startsWith("Entity model is missing required field"));
+        } finally {
+            destroyTestResources();
         }
     }
 }
