@@ -12,7 +12,7 @@
             <filtered>true</filtered>
         </file>
         <file>
-            <source>${project.basedir}/NOTICE</source>
+            <source>${project.build.directory}/generated-sources/NOTICE</source>
             <outputDirectory>/</outputDirectory>
             <filtered>true</filtered>
         </file>
