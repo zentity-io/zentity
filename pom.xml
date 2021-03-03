@@ -31,6 +31,7 @@
         <!-- Maven plugin versions -->
         <maven.antrun.version>3.0.0</maven.antrun.version>
         <maven.assembly.version>3.3.0</maven.assembly.version>
+        <maven.build-helper.version>3.2.0</maven.build-helper.version>
         <maven.junit.version>2.7.8</maven.junit.version>
         <maven.license.codehaus.version>2.0.0</maven.license.codehaus.version>
         <maven.license.mycila.version>3.0</maven.license.mycila.version>
@@ -106,7 +107,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.12</version>
+                <version>${maven.build-helper.version}</version>
                 <executions>
                     <execution>
                         <id>timestamp-property</id>
