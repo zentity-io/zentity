@@ -1,5 +1,5 @@
 ${project.name}
-Copyright © ${project.inceptionYear}-${license.git.copyrightLastYear} ${owner}
+Copyright © ${project.inceptionYear}-${current.year} ${owner}
 ${project.url}
 
 Licensed under the Apache License, Version 2.0 (the "License");
