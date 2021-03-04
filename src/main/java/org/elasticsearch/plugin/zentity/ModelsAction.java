@@ -830,7 +830,7 @@ public class ModelsAction extends BaseRestHandler {
                         // Refresh the index so that the changes are immediately visible.
                         RefreshRequest request = new RefreshRequest(INDEX_NAME);
                         client.admin().indices().refresh(request, ActionListener.wrap(
-                                (refreshResponse) -> {logger.debug("refreshed"); listener.onResponse(singleResults);},
+                                (refreshResponse) -> listener.onResponse(singleResults),
                                 listener::onFailure
                         ));
                     }
