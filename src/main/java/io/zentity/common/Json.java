@@ -38,6 +38,8 @@ public class Json {
     }
 
     private static String jsonStringEscape(String value) {
+        if (value == null)
+            return "null"; // Prevents NullPointerException on STRING_ENCODER.quoteAsString()
         return new String(STRING_ENCODER.quoteAsString(value));
     }
 

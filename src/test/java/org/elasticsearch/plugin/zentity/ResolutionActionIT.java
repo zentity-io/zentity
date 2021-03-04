@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.zentity.common.Json;
-import io.zentity.common.StreamUtil;
 import joptsimple.internal.Strings;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Consts;
@@ -1954,7 +1953,7 @@ public class ResolutionActionIT extends AbstractIT {
 
         // check the values
         assertFalse(json.get("errors").booleanValue());
-        assertTrue(json.get("took").asLong() > 0);
+        assertTrue(json.get("took").asLong() >= 0);
 
         ArrayNode items = (ArrayNode) json.get("items");
         assertEquals(2, items.size());
@@ -1983,5 +1982,90 @@ public class ResolutionActionIT extends AbstractIT {
         JsonNode firstExplanationHit = explanationResult.get("hits").get("hits").get(0);
         assertTrue(firstExplanationHit.has("_source"));
         assertTrue(firstExplanationHit.has("_explanation"));
+    }
+
+    @Test
+    public void testBulkResolutionOverrideEntityType() throws Exception {
+        String endpoint = "_zentity/resolution/zentity_test_entity_b/_bulk";
+        Request req = new Request("POST", endpoint);
+        String[] reqBodyLines = new String[]{
+                "{\"entity_type\":\"zentity_test_entity_a\",\"_source\": false}", // override entity_type and expect success
+                TEST_PAYLOAD_JOB_TERMS_JSON,
+                "{\"entity_type\":\"zentity_test_entity_unknown\",\"_explanation\": true}", // override entity_type and expect failure
+                TEST_PAYLOAD_JOB_EXPLANATION_JSON
+        };
+        String reqBody = Strings.join(reqBodyLines, "\n");
+        req.setEntity(new NStringEntity(reqBody, NDJSON_TYPE));
+        req.addParameter("_explanation", "false");
+        req.addParameter("_source", "true");
+
+        Response response = client().performRequest(req);
+        assertEquals(response.getStatusLine().getStatusCode(), 200);
+
+        JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+        // check shape
+        assertTrue(json.isObject());
+        assertTrue(json.has("errors"));
+        assertTrue(json.get("errors").isBoolean());
+
+        assertTrue(json.has("took"));
+        assertTrue(json.get("took").isNumber());
+
+        assertTrue(json.has("items"));
+        assertTrue(json.get("items").isArray());
+
+        // check the values
+        assertTrue(json.get("errors").booleanValue());
+        assertTrue(json.get("took").asLong() >= 0);
+
+        ArrayNode items = (ArrayNode) json.get("items");
+        assertEquals(2, items.size());
+
+        JsonNode termsResult = items.get(0);
+        assertTrue(termsResult.get("hits").get("total").asInt() > 0);
+
+        JsonNode firstTermHit = termsResult.get("hits").get("hits").get(0);
+        assertFalse(firstTermHit.has("_source"));
+        assertFalse(firstTermHit.has("_explanation"));
+
+        JsonNode explanationResult = items.get(1);
+        assertEquals("org.elasticsearch.plugin.zentity.NotFoundException", explanationResult.get("error").get("type").asText());
+    }
+
+    @Test(expected = ResponseException.class)
+    public void testBulkResolutionInvalidEntityType() throws Exception {
+        String endpoint = "_zentity/resolution/zentity_test_entity_unknown/_bulk";
+        Request req = new Request("POST", endpoint);
+        String[] reqBodyLines = new String[]{
+                "{\"_source\": false}",
+                TEST_PAYLOAD_JOB_TERMS_JSON,
+                "{\"_explanation\": true}",
+                TEST_PAYLOAD_JOB_EXPLANATION_JSON
+        };
+        String reqBody = Strings.join(reqBodyLines, "\n");
+        req.setEntity(new NStringEntity(reqBody, NDJSON_TYPE));
+        req.addParameter("_explanation", "false");
+        req.addParameter("_source", "true");
+        try {
+            client().performRequest(req);
+        } catch (ResponseException e) {
+            Response response = e.getResponse();
+            assertEquals(response.getStatusLine().getStatusCode(), 404);
+            JsonNode json = Json.ORDERED_MAPPER.readTree(response.getEntity().getContent());
+
+            // check shape
+            assertTrue(json.isObject());
+            assertTrue(json.has("error"));
+            assertTrue(json.get("error").isObject());
+            assertTrue(json.get("error").has("type"));
+
+            assertTrue(json.has("status"));
+            assertTrue(json.get("status").isNumber());
+
+            // check the values
+            assertEquals("not_found_exception", json.get("error").get("type").asText());
+            throw(e);
+        }
     }
 }
