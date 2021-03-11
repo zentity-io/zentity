@@ -531,6 +531,14 @@ public class ResolutionActionIT extends AbstractIT {
         "  }\n" +
         "}", ContentType.APPLICATION_JSON);
 
+    public static final StringEntity TEST_PAYLOAD_JOB_OBJECT_ARRAYS = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"first_name\": [ \"alice\" ],\n" +
+            "    \"last_name\": [ \"jones\" ],\n" +
+            "    \"phone\": [ \"555-123-4567\" ]\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
     public static byte[] readFile(String filename) throws IOException {
         InputStream stream = ResolutionActionIT.class.getResourceAsStream("/" + filename);
         return IOUtils.toByteArray(stream);
@@ -573,6 +581,14 @@ public class ResolutionActionIT extends AbstractIT {
         client().performRequest(postModelArrays);
     }
 
+    public static void prepareTestEntityModelObjectArrays() throws Exception {
+        ByteArrayEntity testEntityModelObjectArrays;
+        testEntityModelObjectArrays = new ByteArrayEntity(readFile("TestEntityModelObjectArrays.json"), ContentType.APPLICATION_JSON);
+        Request postModelObjectArrays = new Request("POST", "_zentity/models/zentity_test_entity_object_arrays");
+        postModelObjectArrays.setEntity(testEntityModelObjectArrays);
+        client().performRequest(postModelObjectArrays);
+    }
+
     public static void prepareTestEntityModelElasticsearchError() throws Exception {
         ByteArrayEntity testEntityModelElasticsearchError;
         testEntityModelElasticsearchError = new ByteArrayEntity(readFile("TestEntityModelElasticsearchError.json"), ContentType.APPLICATION_JSON);
@@ -592,28 +608,14 @@ public class ResolutionActionIT extends AbstractIT {
     public static void prepareTestIndices() throws Exception {
 
         // Load files
-        ByteArrayEntity testIndex;
-        ByteArrayEntity testIndexArrays;
-        ByteArrayEntity testData;
-        ByteArrayEntity testDataArrays;
-
-        // Elasticsearch 7.0.0+ removes mapping types
         Properties props = new Properties();
         props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
-        if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
-            testIndex = new ByteArrayEntity(readFile("TestIndex.json"), ContentType.APPLICATION_JSON);
-            testData = new ByteArrayEntity(readFile("TestData.txt"), ContentType.create("application/x-ndjson"));
-        } else {
-            testIndex = new ByteArrayEntity(readFile("TestIndexElasticsearch6.json"), ContentType.APPLICATION_JSON);
-            testData = new ByteArrayEntity(readFile("TestDataElasticsearch6.txt"), ContentType.create("application/x-ndjson"));
-        }
-        if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
-            testIndexArrays = new ByteArrayEntity(readFile("TestIndexArrays.json"), ContentType.APPLICATION_JSON);
-            testDataArrays = new ByteArrayEntity(readFile("TestDataArrays.txt"), ContentType.create("application/x-ndjson"));
-        } else {
-            testIndexArrays = new ByteArrayEntity(readFile("TestIndexArraysElasticsearch6.json"), ContentType.APPLICATION_JSON);
-            testDataArrays = new ByteArrayEntity(readFile("TestDataArraysElasticsearch6.txt"), ContentType.create("application/x-ndjson"));
-        }
+        ByteArrayEntity testIndex = new ByteArrayEntity(readFile("TestIndex.json"), ContentType.APPLICATION_JSON);
+        ByteArrayEntity testData = new ByteArrayEntity(readFile("TestData.txt"), ContentType.create("application/x-ndjson"));
+        ByteArrayEntity testIndexArrays = new ByteArrayEntity(readFile("TestIndexArrays.json"), ContentType.APPLICATION_JSON);
+        ByteArrayEntity testDataArrays = new ByteArrayEntity(readFile("TestDataArrays.txt"), ContentType.create("application/x-ndjson"));
+        ByteArrayEntity testIndexObjectArrays = new ByteArrayEntity(readFile("TestIndexObjectArrays.json"), ContentType.APPLICATION_JSON);
+        ByteArrayEntity testDataObjectArrays = new ByteArrayEntity(readFile("TestDataObjectArrays.txt"), ContentType.create("application/x-ndjson"));
 
         // Create indices
         Request putTestIndexA = new Request("PUT", "zentity_test_index_a");
@@ -631,6 +633,9 @@ public class ResolutionActionIT extends AbstractIT {
         Request putTestIndexArrays = new Request("PUT", "zentity_test_index_arrays");
         putTestIndexArrays.setEntity(testIndexArrays);
         client().performRequest(putTestIndexArrays);
+        Request putTestIndexObjectArrays = new Request("PUT", "zentity_test_index_object_arrays");
+        putTestIndexObjectArrays.setEntity(testIndexObjectArrays);
+        client().performRequest(putTestIndexObjectArrays);
 
         // Load data into indices
         Request postBulk = new Request("POST", "_bulk");
@@ -641,6 +646,10 @@ public class ResolutionActionIT extends AbstractIT {
         postBulkArrays.addParameter("refresh", "true");
         postBulkArrays.setEntity(testDataArrays);
         client().performRequest(postBulkArrays);
+        Request postBulkObjectArrays = new Request("POST", "_bulk");
+        postBulkObjectArrays.addParameter("refresh", "true");
+        postBulkObjectArrays.setEntity(testDataObjectArrays);
+        client().performRequest(postBulkObjectArrays);
     }
 
     public static void prepareTestResources() throws Exception {
@@ -648,6 +657,7 @@ public class ResolutionActionIT extends AbstractIT {
         prepareTestEntityModelA();
         prepareTestEntityModelB();
         prepareTestEntityModelArrays();
+        prepareTestEntityModelObjectArrays();
         prepareTestEntityModelElasticsearchError();
         prepareTestEntityModelZentityError();
     }
@@ -1174,50 +1184,9 @@ public class ResolutionActionIT extends AbstractIT {
         postResolution.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_DATE);
         Response response = client().performRequest(postResolution);
         JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
-
-        /*
-        Elasticsearch 7.0.0 - 7.2.0 has a different behavior when querying date ranges.
-
-        To demonstrate, compare this query (below) with the test indices, data, and entity models on Elasticsearch
-        versions 6.7.1 and 7.0.0:
-
-        GET zentity_test_index_d/_search
-        {
-          "query": {
-            "bool": {
-              "filter": [
-                {
-                  "range": {
-                    "type_date": {
-                      "gte": "2000-01-01 00:00:01||-2s",
-                      "lte": "2000-01-01 00:00:01||+2s",
-                      "format": "yyyy-MM-dd HH:mm:ss"
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-
-        In 7.0.0 the result has a fourth hit ("_id" = "d3") where the "type_date" field is "2000-01-01T00:00:02.500",
-        which is a half second greater than the 2s window that was specified in the search.
-
-        We'll allow this behavior in the test, since this is a behavior of Elasticsearch and not zentity.
-        */
         Properties props = new Properties();
         props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
-        Set<String> dateBugVersions = new TreeSet<>();
-        dateBugVersions.add("7.0.0");
-        dateBugVersions.add("7.0.1");
-        dateBugVersions.add("7.1.0");
-        dateBugVersions.add("7.1.1");
-        dateBugVersions.add("7.2.0");
-        if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
-            assertEquals(json.get("hits").get("total").asInt(), 15);
-        } else {
-            assertEquals(json.get("hits").get("total").asInt(), 13);
-        }
+        assertEquals(json.get("hits").get("total").asInt(), 13);
         Set<String> docsExpected = new TreeSet<>();
         docsExpected.add("a1,0");
         docsExpected.add("a2,0");
@@ -1231,13 +1200,7 @@ public class ResolutionActionIT extends AbstractIT {
         docsExpected.add("d2,1");
         docsExpected.add("b1,2");
         docsExpected.add("c3,2");
-        if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
-            docsExpected.add("d3,1");
-            docsExpected.add("a4,2");
-            docsExpected.add("c4,2");
-        } else {
-            docsExpected.add("d3,2");
-        }
+        docsExpected.add("d3,2");
         assertEquals(docsExpected, getActual(json));
     }
 
@@ -1250,50 +1213,9 @@ public class ResolutionActionIT extends AbstractIT {
         postResolution.setEntity(TEST_PAYLOAD_JOB_DATA_TYPES_DATE_TERMS);
         Response response = client().performRequest(postResolution);
         JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
-
-        /*
-        Elasticsearch 7.0.0 - 7.2.0 has a different behavior when querying date ranges.
-
-        To demonstrate, compare this query (below) with the test indices, data, and entity models on Elasticsearch
-        versions 6.7.1 and 7.0.0:
-
-        GET zentity_test_index_d/_search
-        {
-          "query": {
-            "bool": {
-              "filter": [
-                {
-                  "range": {
-                    "type_date": {
-                      "gte": "2000-01-01 00:00:01||-2s",
-                      "lte": "2000-01-01 00:00:01||+2s",
-                      "format": "yyyy-MM-dd HH:mm:ss"
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-
-        In 7.0.0 the result has a fourth hit ("_id" = "d3") where the "type_date" field is "2000-01-01T00:00:02.500",
-        which is a half second greater than the 2s window that was specified in the search.
-
-        We'll allow this behavior in the test, since this is a behavior of Elasticsearch and not zentity.
-        */
         Properties props = new Properties();
         props.load(ZentityPlugin.class.getResourceAsStream("/plugin-descriptor.properties"));
-        Set<String> dateBugVersions = new TreeSet<>();
-        dateBugVersions.add("7.0.0");
-        dateBugVersions.add("7.0.1");
-        dateBugVersions.add("7.1.0");
-        dateBugVersions.add("7.1.1");
-        dateBugVersions.add("7.2.0");
-        if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
-            assertEquals(json.get("hits").get("total").asInt(), 15);
-        } else {
-            assertEquals(json.get("hits").get("total").asInt(), 13);
-        }
+        assertEquals(json.get("hits").get("total").asInt(), 13);
         Set<String> docsExpected = new TreeSet<>();
         docsExpected.add("a1,0");
         docsExpected.add("a2,0");
@@ -1307,13 +1229,7 @@ public class ResolutionActionIT extends AbstractIT {
         docsExpected.add("d2,1");
         docsExpected.add("b1,2");
         docsExpected.add("c3,2");
-        if (dateBugVersions.contains(props.getProperty("elasticsearch.version"))) {
-            docsExpected.add("d3,1");
-            docsExpected.add("a4,2");
-            docsExpected.add("c4,2");
-        } else {
-            docsExpected.add("d3,2");
-        }
+        docsExpected.add("d3,2");
         assertEquals(docsExpected, getActual(json));
     }
 
@@ -1586,16 +1502,27 @@ public class ResolutionActionIT extends AbstractIT {
             switch (doc.get("_id").asText()) {
                 case "1":
                     attributesExpected = "{\"array\":[\"111\",\"222\",\"333\",\"444\"],\"string\":[\"abc\"]}";
-                    explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]},\"string\":{\"attributes\":[\"string\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_2\",\"target_value\":[\"222\",null,\"222\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"array\",\"target_field\":\"array_4\",\"target_value\":[\"222\",\"333\",\"444\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"string\",\"target_field\":\"string\",\"target_value\":\"abc\",\"input_value\":\"abc\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
+                    explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]},\"string\":{\"attributes\":[\"string\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_2\",\"target_value\":[\"222\",\"222\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"array\",\"target_field\":\"array_4\",\"target_value\":[\"222\",\"333\",\"444\"],\"input_value\":\"222\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}},{\"attribute\":\"string\",\"target_field\":\"string\",\"target_value\":\"abc\",\"input_value\":\"abc\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
                     break;
                 case "2":
                     attributesExpected = "{\"array\":[\"444\",\"555\"],\"string\":[\"xyz\"]}";
-                    explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_1\",\"target_value\":[\"444\"],\"input_value\":\"444\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
+                    explanationExpected = "{\"resolvers\":{\"array\":{\"attributes\":[\"array\"]}},\"matches\":[{\"attribute\":\"array\",\"target_field\":\"array_1\",\"target_value\":\"444\",\"input_value\":\"444\",\"input_matcher\":\"exact\",\"input_matcher_params\":{}}]}";
                     break;
             }
             assertEquals(attributesExpected, Json.MAPPER.writeValueAsString(doc.get("_attributes")));
             assertEquals(explanationExpected, Json.MAPPER.writeValueAsString(doc.get("_explanation")));
         }
+    }
+
+    @Test
+    public void testJobObjectArrays() throws Exception {
+        String endpoint = "_zentity/resolution/zentity_test_entity_object_arrays";
+        Request q1 = new Request("POST", endpoint);
+        q1.addParameter("_source", "false");
+        q1.setEntity(TEST_PAYLOAD_JOB_OBJECT_ARRAYS);
+        Response r1 = client().performRequest(q1);
+        JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
+        assertFalse(j1.has("error"));
     }
 
     @Test

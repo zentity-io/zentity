@@ -1,0 +1,54 @@
+{
+  "attributes": {
+    "first_name": {},
+    "last_name": {},
+    "phone": {}
+  },
+  "resolvers": {
+    "name_phone": {
+      "attributes": [
+        "last_name",
+        "phone"
+      ]
+    }
+  },
+  "matchers": {
+    "exact": {
+      "clause": {
+        "term": {
+          "{{ field }}": "{{ value }}"
+        }
+      }
+    },
+    "exact_phone": {
+      "clause": {
+        "nested": {
+          "path": "phone",
+          "query": {
+            "term": {
+              "{{ field }}": "{{ value }}"
+            }
+          }
+        }
+      }
+    }
+  },
+  "indices": {
+    "zentity_test_index_object_arrays": {
+      "fields": {
+        "first_name": {
+          "attribute": "first_name",
+          "matcher": "exact"
+        },
+        "last_name": {
+          "attribute": "last_name",
+          "matcher": "exact"
+        },
+        "phone.number": {
+          "attribute": "phone",
+          "matcher": "exact_phone"
+        }
+      }
+    }
+  }
+}

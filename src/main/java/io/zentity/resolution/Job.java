@@ -191,6 +191,95 @@ public class Job {
     }
 
     /**
+     * Extract attribute values from a document "_source" given the path to the index field.
+     * Able to extract values from object keys, arrays, and object arrays.
+     * Able to handle field names that contain periods.
+     *
+     * Example doc:
+     *
+     * {
+     *   "a0": {
+     *     "b0": {
+     *       "c0": 0,
+     *       "d0": 9
+     *     }
+     *   },
+     *   "a1": {
+     *     "b1": {
+     *       "c1": [
+     *         1, 2
+     *       ],
+     *       "d1": [
+     *         9, 9
+     *       ]
+     *     }
+     *   },
+     *   "a2": {
+     *     "b2": [
+     *       {
+     *         "c2": 3,
+     *         "d2": 9
+     *       },
+     *       {
+     *         "c2": 4,
+     *         "d2": 9
+     *       }
+     *     ]
+     *   },
+     *   "a.3": {
+     *     "b.3": [
+     *       {
+     *         "c.3": 5,
+     *         "d.3": 9
+     *       },
+     *       {
+     *         "c.3": 6,
+     *         "d.3": 9
+     *       }
+     *     ]
+     *   }
+     * }
+     *
+     * Example paths, and the values extracted from the doc:
+     *
+     * Path         Values
+     * -----------  ------
+     * a0.b0.c0     0
+     * a1.b1.c1     1, 2
+     * a2.b2.c2     3, 4
+     * a.3.b.3.c.3  5, 6
+     *
+     *
+     * @param json   The "_source" of a document.
+     * @param path   The path to the index field.
+     * @param values Any attribute values found at the path of the document.
+     * @return
+     */
+    public static ArrayList<JsonNode> extractValues(JsonNode json, String[] path, ArrayList<JsonNode> values) {
+        if (json.isObject()) {
+            String pathNext = "";
+            for (int i = 0; i < path.length; i++) {
+                pathNext = i == 0 ? path[0] : pathNext + "." + path[i];
+                if (json.has(pathNext)) {
+                    String[] pathRemaining = Arrays.copyOfRange(path, i + 1, path.length);
+                    JsonNode jsonNext = json.get(pathNext);
+                    values = extractValues(jsonNext, pathRemaining, values);
+                    break;
+                }
+            }
+        } else if (json.isArray()) {
+            Iterator<JsonNode> jsonNextIterator = json.elements();
+            while (jsonNextIterator.hasNext()) {
+                JsonNode jsonNextItem = jsonNextIterator.next();
+                values = extractValues(jsonNextItem, path, values);
+            }
+        } else {
+            values.add(json);
+        }
+        return values;
+    }
+
+    /**
      * Determine if a field of an index has a matcher associated with that field.
      *
      * @param model          The entity model.
@@ -734,41 +823,27 @@ public class Job {
                     // If it's not in the _source, remove the last part of the index field name from the dot notation.
                     // Index field names can reference multi-fields, which are not returned in the _source.
                     // If the document does not contain a given index field, skip that field.
-                    JsonPointer path = job.input().model().indices().get(indexName).fields().get(indexFieldName).path();
-                    JsonPointer pathParent = job.input().model().indices().get(indexName).fields().get(indexFieldName).pathParent();
-                    JsonNode valueNode = doc.get("_source").at(path);
-                    if (valueNode.isMissingNode()) {
-                        if (pathParent != null)
-                            valueNode = doc.get("_source").at(pathParent);
-                        else
-                            continue;
-                    }
-                    if (valueNode.isNull() || valueNode.isMissingNode())
+                    String[] path = job.input().model().indices().get(indexName).fields().get(indexFieldName).path();
+                    ArrayList<JsonNode> values = extractValues(doc.get("_source"), path, new ArrayList<>());
+                    if (values.size() == 0)
                         continue;
-                    docIndexFields.put(indexFieldName, valueNode);
-                    if (valueNode.isArray()) {
-                        Iterator<JsonNode> valueNodeIterator = valueNode.elements();
-                        while (valueNodeIterator.hasNext()) {
-                            JsonNode vNode = valueNodeIterator.next();
-                            if (vNode.isNull() || valueNode.isMissingNode())
-                                continue;
-                            Value value = Value.create(attributeType, vNode);
-                            if (!docAttributes.containsKey(attributeName))
-                                docAttributes.put(attributeName, new TreeSet<>());
-                            if (!job.hopNextInputAttributes().containsKey(attributeName))
-                                job.hopNextInputAttributes().put(attributeName, new Attribute(attributeName, attributeType));
-                            docAttributes.get(attributeName).add(value);
-                            job.hopNextInputAttributes().get(attributeName).values().add(value);
-                        }
-                    } else {
-                        Value value = Value.create(attributeType, valueNode);
+                    ArrayNode valuesArrayNode = Json.ORDERED_MAPPER.createArrayNode();
+                    for (JsonNode vNode : values) {
+                        if (vNode.isNull() || vNode.isMissingNode())
+                            continue;
+                        Value value = Value.create(attributeType, vNode);
                         if (!docAttributes.containsKey(attributeName))
                             docAttributes.put(attributeName, new TreeSet<>());
                         if (!job.hopNextInputAttributes().containsKey(attributeName))
                             job.hopNextInputAttributes().put(attributeName, new Attribute(attributeName, attributeType));
                         docAttributes.get(attributeName).add(value);
+                        valuesArrayNode.add(vNode);
                         job.hopNextInputAttributes().get(attributeName).values().add(value);
                     }
+                    if (valuesArrayNode.size() == 1)
+                        docIndexFields.put(indexFieldName, valuesArrayNode.get(0));
+                    else
+                        docIndexFields.put(indexFieldName, valuesArrayNode);
                 }
             }
 

@@ -1,0 +1,27 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 2
+  },
+  "mappings": {
+    "properties": {
+      "first_name": {
+        "type": "text"
+      },
+      "last_name": {
+        "type": "text"
+      },
+      "phone": {
+        "type": "nested",
+        "properties": {
+          "number": {
+            "type": "keyword"
+          },
+          "type": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+}
