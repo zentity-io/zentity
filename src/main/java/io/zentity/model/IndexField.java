@@ -17,7 +17,6 @@
  */
 package io.zentity.model;
 
-import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
@@ -37,8 +36,7 @@ public class IndexField {
 
     private final String index;
     private final String name;
-    private JsonPointer path;
-    private JsonPointer pathParent;
+    private String[] path;
     private String attribute;
     private String matcher;
     private Double quality;
@@ -48,7 +46,7 @@ public class IndexField {
         validateName(name);
         this.index = index;
         this.name = name;
-        this.nameToPaths(name);
+        this.nameToPath(name);
         this.deserialize(json);
     }
 
@@ -56,7 +54,7 @@ public class IndexField {
         validateName(name);
         this.index = index;
         this.name = name;
-        this.nameToPaths(name);
+        this.nameToPath(name);
         this.deserialize(json);
     }
 
@@ -65,7 +63,7 @@ public class IndexField {
         this.index = index;
         this.name = name;
         this.validateRunnable = validateRunnable;
-        this.nameToPaths(name);
+        this.nameToPath(name);
         this.deserialize(json);
     }
 
@@ -74,7 +72,7 @@ public class IndexField {
         this.index = index;
         this.name = name;
         this.validateRunnable = validateRunnable;
-        this.nameToPaths(name);
+        this.nameToPath(name);
         this.deserialize(json);
     }
 
@@ -86,12 +84,8 @@ public class IndexField {
         return this.name;
     }
 
-    public JsonPointer path() {
+    public String[] path() {
         return this.path;
-    }
-
-    public JsonPointer pathParent() {
-        return this.pathParent;
     }
 
     public String attribute() {
@@ -112,11 +106,8 @@ public class IndexField {
         this.matcher = value.textValue();
     }
 
-    private void nameToPaths(String name) {
-        String[] parts = Patterns.PERIOD.split(name);
-        this.path = JsonPointer.compile("/" + String.join("/", parts));
-        if (parts.length > 1)
-            this.pathParent = JsonPointer.compile("/" + String.join("/", Arrays.copyOf(parts, parts.length - 1)));
+    private void nameToPath(String name) {
+        this.path = Patterns.PERIOD.split(name);
     }
 
     public Double quality() {

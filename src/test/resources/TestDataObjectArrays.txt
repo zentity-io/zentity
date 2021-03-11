@@ -1,0 +1,4 @@
+{ "index" : { "_index" : "zentity_test_index_object_arrays", "_id": "1" }}
+{ "first_name" : "alice", "last_name" : "jones", "phone" : [{ "number" : "555-123-4567", "type" : "home" }, { "number" : "555-987-6543", "type" : "mobile" }]}
+{ "index" : { "_index" : "zentity_test_index_object_arrays", "_id": "2" }}
+{ "first_name" : "allison", "last_name" : "jones", "phone" : [{ "number" : "555-987-6543", "type" : "mobile" }]}

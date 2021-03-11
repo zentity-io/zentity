@@ -17,6 +17,10 @@
  */
 package io.zentity.resolution;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.zentity.common.Json;
+import io.zentity.common.Patterns;
 import io.zentity.model.Matcher;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
@@ -1172,6 +1176,86 @@ public class JobTest {
         // Various tests
         Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 0.95)), 0.98275862069, 0.0000000001);
         Assert.assertEquals(Job.calculateCompositeIdentityConfidenceScore(Arrays.asList(0.75, 0.85)), 0.94444444444, 0.0000000001);
+    }
+
+    /**
+     * Extract attribute values from a document "_source" given the path to the index field.
+     *
+     * Example doc:
+     *
+     * {
+     *   "a0": {
+     *     "b0": {
+     *       "c0": 0,
+     *       "d0": 9
+     *     }
+     *   },
+     *   "a1": {
+     *     "b1": {
+     *       "c1": [
+     *         1, 2
+     *       ],
+     *       "d1": [
+     *         9, 9
+     *       ]
+     *     }
+     *   },
+     *   "a2": {
+     *     "b2": [
+     *       {
+     *         "c2": 3,
+     *         "d2": 9
+     *       },
+     *       {
+     *         "c2": 4,
+     *         "d2": 9
+     *       }
+     *     ]
+     *   },
+     *   "a.3": {
+     *     "b.3": [
+     *       {
+     *         "c.3": 5,
+     *         "d.3": 9
+     *       },
+     *       {
+     *         "c.3": 6,
+     *         "d.3": 9
+     *       }
+     *     ]
+     *   }
+     * }
+     *
+     * Example paths, and the values extracted from the doc:
+     *
+     * Path         Values
+     * -----------  ------
+     * a0.b0.c0     0
+     * a1.b1.c1     1, 2
+     * a2.b2.c2     3, 4
+     * a.3.b.3.c.3  5, 6
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testExtractValues() throws Exception {
+        JsonNode json = Json.MAPPER.readTree("{\"a0\":{\"b0\":{\"c0\":0,\"d0\":9}},\"a1\":{\"b1\":{\"c1\":[1,2],\"d1\":[9,9]}},\"a2\":{\"b2\":[{\"c2\":3,\"d2\":9},{\"c2\":4,\"d2\":9}]},\"a.3\":{\"b.3\":[{\"c.3\":5,\"d.3\":9},{\"c.3\":6,\"d.3\":9}]}}");
+        String[] path1 = Patterns.PERIOD.split("a0.b0.c0");
+        String[] path2 = Patterns.PERIOD.split("a1.b1.c1");
+        String[] path3 = Patterns.PERIOD.split("a2.b2.c2");
+        String[] path4 = Patterns.PERIOD.split("a.3.b.3.c.3");
+        ObjectNode values = Json.MAPPER.createObjectNode();
+        values.put("0", 0);
+        values.put("1", 1);
+        values.put("2", 2);
+        values.put("3", 3);
+        values.put("4", 4);
+        values.put("5", 5);
+        values.put("6", 6);
+        Assert.assertEquals(Arrays.asList(values.get("0")), Job.extractValues(json, path1, new ArrayList<>()));
+        Assert.assertEquals(Arrays.asList(values.get("1"), values.get("2")), Job.extractValues(json, path2, new ArrayList<>()));
+        Assert.assertEquals(Arrays.asList(values.get("3"), values.get("4")), Job.extractValues(json, path3, new ArrayList<>()));
+        Assert.assertEquals(Arrays.asList(values.get("5"), values.get("6")), Job.extractValues(json, path4, new ArrayList<>()));
     }
 
 }
