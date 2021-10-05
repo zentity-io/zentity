@@ -17,6 +17,7 @@ services:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
       - xpack.security.enabled=false
+      - action.destructive_requires_name=false
     ulimits:
       memlock:
         soft: -1
@@ -45,6 +46,7 @@ services:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
       - xpack.security.enabled=false
+      - action.destructive_requires_name=false
     ulimits:
       memlock:
         soft: -1
@@ -71,6 +73,7 @@ services:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
       - xpack.security.enabled=false
+      - action.destructive_requires_name=false
     ulimits:
       memlock:
         soft: -1
