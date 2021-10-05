@@ -73,8 +73,8 @@ public abstract class AbstractIT {
                 .withEnv("ZENTITY_VERSION", System.getenv("ZENTITY_VERSION"))
                 .withExposedService(SERVICE_NAME, SERVICE_PORT,
                         Wait.forHttp("/_cat/health")
-                                .forStatusCode(200)
-                                .withReadTimeout(Duration.ofSeconds(60)));
+                                .forStatusCodeMatching(it -> it >= 200 && it < 300)
+                                .withReadTimeout(Duration.ofSeconds(120)));
         cluster.start();
     }
 

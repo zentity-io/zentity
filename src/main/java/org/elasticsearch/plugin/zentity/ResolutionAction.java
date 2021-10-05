@@ -27,7 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.collect.Tuple;
+import org.elasticsearch.core.Tuple;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
@@ -200,7 +200,7 @@ public class ResolutionAction extends BaseRestHandler {
         buildJob(client, input, body, params, reqParams, onComplete);
     }
 
-    static void buildJob(NodeClient client, Input input, String body, Map<String, String> params, Map<String, String> reqParams, ActionListener<Job> onComplete) throws IOException, ValidationException {
+    static void buildJob(NodeClient client, Input input, String body, Map<String, String> params, Map<String, String> reqParams, ActionListener<Job> onComplete) {
         if (body == null || body.equals(""))
             throw new BadRequestException("Request body is missing.");
         Job job = buildJob(client, input, params, reqParams);
@@ -214,8 +214,7 @@ public class ResolutionAction extends BaseRestHandler {
      * @param onComplete The action to perform after the job completes.
      */
     static void runJob(Job job, ActionListener<BulkAction.SingleResult> onComplete) {
-        job.run(ActionListener.delegateFailure(
-            onComplete,
+        job.run(onComplete.delegateFailure(
             (ignored, res) -> {
                 BulkAction.SingleResult jobResult = new BulkAction.SingleResult(res, job.failed());
                 onComplete.onResponse(jobResult);
@@ -233,8 +232,7 @@ public class ResolutionAction extends BaseRestHandler {
      * @param onComplete The action to perform after the job completes.
      */
     static void buildAndRunJob(NodeClient client, String body, Map<String, String> params, Map<String, String> reqParams, ActionListener<BulkAction.SingleResult> onComplete) {
-        buildJob(client, body, params, reqParams, ActionListener.delegateFailure(
-            onComplete,
+        buildJob(client, body, params, reqParams, onComplete.delegateFailure(
             (ignored, job) -> runJob(job, onComplete)
         ));
     }
@@ -319,8 +317,7 @@ public class ResolutionAction extends BaseRestHandler {
     static void runBulk(NodeClient client, List<Tuple<String, String>> entries, Map<String, String> reqParams, ActionListener<BulkAction.BulkResult> onComplete) {
         final long startTime = System.nanoTime();
 
-        ActionListener<Collection<BulkAction.SingleResult>> delegate = ActionListener.delegateFailure(
-                onComplete,
+        ActionListener<Collection<BulkAction.SingleResult>> delegate = onComplete.delegateFailure(
                 (ignored, results) -> {
                     List<String> items = results.stream().map((res) -> res.response).collect(Collectors.toList());
                     boolean errors = results.stream().anyMatch((res) -> res.failed);

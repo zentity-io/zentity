@@ -38,11 +38,11 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
@@ -881,8 +881,7 @@ public class ModelsAction extends BaseRestHandler {
     static void runBulk(NodeClient client, List<Tuple<String, String>> entries, Map<String, String> reqParams, ActionListener<BulkAction.BulkResult> onComplete) {
         final long startTime = System.nanoTime();
 
-        executeBulk(client, entries, reqParams, ActionListener.delegateFailure(
-            onComplete,
+        executeBulk(client, entries, reqParams, onComplete.delegateFailure(
             (ignored, results) -> {
                 List<String> items = results.stream().map((res) -> res.response).collect(Collectors.toList());
                 boolean errors = results.stream().anyMatch((res) -> res.failed);

@@ -17,8 +17,8 @@
  */
 package org.elasticsearch.plugin.zentity;
 
-import org.elasticsearch.common.Booleans;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.Booleans;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.RestRequest;
 
 import java.util.Map;

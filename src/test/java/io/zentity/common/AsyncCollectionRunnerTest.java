@@ -18,7 +18,6 @@
 package io.zentity.common;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.collect.Tuple;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -31,8 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 public class AsyncCollectionRunnerTest {
   static final Executor THREAD_PER_TASK_EXECUTOR = (command) -> new Thread(command).start();
