@@ -21,7 +21,7 @@ import io.zentity.common.Json;
 import io.zentity.common.Patterns;
 import io.zentity.common.StreamUtil;
 import joptsimple.internal.Strings;
-import org.elasticsearch.common.collect.Tuple;
+import org.elasticsearch.core.Tuple;
 
 import java.util.Arrays;
 import java.util.List;
