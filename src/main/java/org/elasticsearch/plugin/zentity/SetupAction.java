@@ -33,7 +33,6 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
 import java.util.List;
-import java.util.Properties;
 
 import static org.elasticsearch.rest.RestRequest.Method;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
@@ -65,9 +64,6 @@ public class SetupAction extends BaseRestHandler {
             "    }\n" +
             "  }\n" +
             "}";
-    public static final String INDEX_MAPPING_ELASTICSEARCH_6 = "{\n" +
-            "  \"doc\": " + INDEX_MAPPING + "\n" +
-            "}";
 
     @Override
     public List<Route> routes() {
@@ -83,28 +79,16 @@ public class SetupAction extends BaseRestHandler {
      * @param numberOfShards   The value of index.number_of_shards.
      * @param numberOfReplicas The value of index.number_of_replicas.
      * @param onComplete       Action to perform after index creation request completes.
-     * @return
      */
     public static void createIndex(NodeClient client, int numberOfShards, int numberOfReplicas, ActionListener<CreateIndexResponse> onComplete) {
-        // Elasticsearch 7.0.0+ removes mapping types
-        Properties props = ZentityPlugin.properties();
-        if (props.getProperty("elasticsearch.version").compareTo("7.") >= 0) {
-            client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
-                .setSettings(Settings.builder()
-                        .put("index.number_of_shards", numberOfShards)
-                        .put("index.number_of_replicas", numberOfReplicas)
-                )
-                .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
-                .execute(onComplete);
-        } else {
-            client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
-                .setSettings(Settings.builder()
-                        .put("index.number_of_shards", numberOfShards)
-                        .put("index.number_of_replicas", numberOfReplicas)
-                )
-                .addMapping("doc", INDEX_MAPPING_ELASTICSEARCH_6, XContentType.JSON)
-                .execute(onComplete);
-        }
+        client.admin().indices().prepareCreate(ModelsAction.INDEX_NAME)
+            .setSettings(Settings.builder()
+                    .put("index.hidden", true)
+                    .put("index.number_of_shards", numberOfShards)
+                    .put("index.number_of_replicas", numberOfReplicas)
+            )
+            .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
+            .execute(onComplete);
     }
 
     /**
