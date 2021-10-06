@@ -18,7 +18,7 @@
         <zentity.author>Dave Moore</zentity.author>
         <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
         <zentity.website>${project.url}</zentity.website>
-        <zentity.version>1.8.2-dev</zentity.version>
+        <zentity.version>1.8.2</zentity.version>
 
         <!-- Dependency versions -->
         <elasticsearch.version>7.15.0</elasticsearch.version>
