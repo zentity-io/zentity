@@ -34,7 +34,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.xcontent.*;
+import org.elasticsearch.xcontent.*;
 import org.elasticsearch.index.IndexNotFoundException;
 
 import java.io.IOException;
@@ -43,7 +43,7 @@ import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static io.zentity.common.Patterns.COLON;
 
 public class Job {

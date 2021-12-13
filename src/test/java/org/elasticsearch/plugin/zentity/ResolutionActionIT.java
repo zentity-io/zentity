@@ -1408,7 +1408,7 @@ public class ResolutionActionIT extends AbstractIT {
             assertEquals(response.getStatusLine().getStatusCode(), 500);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("error").get("by").asText(), "elasticsearch");
-            assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.xcontent.XContentParseException");
+            assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.xcontent.XContentParseException");
             assertEquals(json.get("error").get("reason").asText(), "[1:967] [bool] failed to parse field [filter]");
             assertTrue(json.get("error").get("stack_trace").asText().contains("unknown field [example_malformed_query]"));
             assertEquals(json.get("hits").get("total").asInt(), 2);
@@ -1431,7 +1431,7 @@ public class ResolutionActionIT extends AbstractIT {
             assertEquals(response.getStatusLine().getStatusCode(), 500);
             JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
             assertEquals(json.get("error").get("by").asText(), "elasticsearch");
-            assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.common.xcontent.XContentParseException");
+            assertEquals(json.get("error").get("type").asText(), "org.elasticsearch.xcontent.XContentParseException");
             assertNull(json.get("error").get("stack_trace"));
             assertFalse(json.get("queries").isMissingNode());
             assertEquals(json.get("hits").get("total").asInt(), 2);
