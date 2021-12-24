@@ -48,8 +48,6 @@ import static io.zentity.common.Patterns.COLON;
 
 public class Job {
 
-    private static final Logger logger = LogManager.getLogger(Job.class);
-
     // Constants
     public static final boolean DEFAULT_INCLUDE_ATTRIBUTES = true;
     public static final boolean DEFAULT_INCLUDE_ERROR_TRACE = true;
