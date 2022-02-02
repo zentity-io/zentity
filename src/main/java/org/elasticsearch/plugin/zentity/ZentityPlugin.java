@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2021 Dave Moore
+ * Copyright © 2018-2022 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
