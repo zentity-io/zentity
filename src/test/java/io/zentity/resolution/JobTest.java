@@ -110,6 +110,29 @@ public class JobTest {
     }
 
     /**
+     * Sometimes the value extracted from the document contains quotations or backslashes that need to be escaped
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseQuoteJsonString() throws Exception {
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": \"{{ value }}\"\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        String nameAlias = "The \"One\"";
+        Matcher matcher = new Matcher("matcher_alias", matcherJson);
+        TreeMap<String, String> params = new TreeMap<>();
+        params.put("foo", "bar");
+        String matcherClause = Query.populateMatcherClause(matcher, "field_alias", nameAlias, params);
+        String expected = "{\"match\":{\"field_alias\":\"The \\\"One\\\"\"}}";
+        Assert.assertEquals(expected, matcherClause);
+    }
+
+    /**
      * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables,
      * but don't include {{ field }} and expect an exception to be raised.
      *

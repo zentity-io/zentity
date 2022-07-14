@@ -133,6 +133,8 @@ public class Query {
      */
     public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, Map<String, String> params) throws ValidationException {
         String matcherClause = matcher.clause();
+        // Quotes and backslashes need to be escaped for the matcher to correctly perform the substitution
+        String escapedValue = java.util.regex.Matcher.quoteReplacement(Json.jsonStringEscape(value));
         for (String variable : matcher.variables().keySet()) {
             Pattern pattern = matcher.variables().get(variable);
             switch (variable) {
@@ -140,7 +142,7 @@ public class Query {
                     matcherClause = pattern.matcher(matcherClause).replaceAll(indexFieldName);
                     break;
                 case "value":
-                    matcherClause = pattern.matcher(matcherClause).replaceAll(value);
+                    matcherClause = pattern.matcher(matcherClause).replaceAll(escapedValue);
                     break;
                 default:
                     java.util.regex.Matcher m = Patterns.VARIABLE_PARAMS.matcher(variable);
