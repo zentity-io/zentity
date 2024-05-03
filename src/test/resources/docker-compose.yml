@@ -14,7 +14,6 @@ services:
       #- cluster.initial_master_nodes=es01,es02,es03
       #- discovery.seed_hosts=es02,es03
       - http.port=9400
-      - transport.tcp.port=9500
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
       - xpack.security.enabled=false
@@ -43,7 +42,6 @@ services:
 #      - cluster.initial_master_nodes=es01,es02,es03
 #      - discovery.seed_hosts=es01,es03
 #      - http.port=9400
-#      - transport.tcp.port=9500
 #      - bootstrap.memory_lock=true
 #      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
 #      - xpack.security.enabled=false
@@ -70,7 +68,6 @@ services:
 #      - cluster.initial_master_nodes=es01,es02,es03
 #      - discovery.seed_hosts=es01,es02
 #      - http.port=9400
-#      - transport.tcp.port=9500
 #      - bootstrap.memory_lock=true
 #      - "ES_JAVA_OPTS=-Xms512m -Xmx512m -ea"
 #      - xpack.security.enabled=false

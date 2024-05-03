@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2022 Dave Moore
+ * Copyright © 2018-2024 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -332,7 +332,6 @@ public class ModelsActionIT extends AbstractIT {
                 JsonNode result = item.get("create");
                 assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
                 assertEquals("created", result.get("result").asText());
-                assertTrue(result.has("_type"));
                 assertTrue(result.has("_version"));
                 assertTrue(result.has("_shards"));
                 assertTrue(result.has("_seq_no"));
@@ -417,7 +416,6 @@ public class ModelsActionIT extends AbstractIT {
                     assertEquals(entityType, result.get("_id").asText());
                     assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
                     assertEquals("created", result.get("result").asText());
-                    assertTrue(result.has("_type"));
                     assertTrue(result.has("_version"));
                     assertTrue(result.has("_shards"));
                     assertTrue(result.has("_seq_no"));
@@ -505,7 +503,6 @@ public class ModelsActionIT extends AbstractIT {
                 JsonNode result = item.get(action);
                 assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
                 assertEquals( action + "d", result.get("result").asText());
-                assertTrue(result.has("_type"));
                 assertTrue(result.has("_version"));
                 assertTrue(result.has("_shards"));
                 assertTrue(result.has("_seq_no"));
@@ -600,7 +597,6 @@ public class ModelsActionIT extends AbstractIT {
                 JsonNode result = item.get(action);
                 assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
                 assertEquals( action + "d", result.get("result").asText());
-                assertTrue(result.has("_type"));
                 assertTrue(result.has("_version"));
                 assertTrue(result.has("_shards"));
                 assertTrue(result.has("_seq_no"));
@@ -698,7 +694,6 @@ public class ModelsActionIT extends AbstractIT {
                 if (i == 0) {
                     assertEquals(ModelsAction.INDEX_NAME, result.get("_index").asText());
                     assertEquals( "created", result.get("result").asText());
-                    assertTrue(result.has("_type"));
                     assertTrue(result.has("_version"));
                     assertTrue(result.has("_shards"));
                     assertTrue(result.has("_seq_no"));

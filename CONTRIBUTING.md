@@ -16,7 +16,7 @@ zentity was developed in IntelliJ IDEA and uses Maven to manage dependencies, te
 
 1. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 2. Install [IntelliJ IDEA](https://www.jetbrains.com/idea/download/)
-3. Install [JDK 11](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html)
+3. Install [JDK 17](https://www.oracle.com/java/technologies/downloads/#java17)
 
 **Create the project on IntelliJ IDEA:**
 

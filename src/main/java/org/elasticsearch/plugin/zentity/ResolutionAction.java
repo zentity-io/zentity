@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2022 Dave Moore
+ * Copyright © 2018-2024 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,11 +26,11 @@ import io.zentity.resolution.input.Input;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
@@ -397,7 +397,7 @@ public class ResolutionAction extends BaseRestHandler {
                             String json = BulkAction.bulkResultToJson(bulkResult);
                             if (pretty)
                                 json = Json.pretty(json);
-                            channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", json));
+                            channel.sendResponse(new RestResponse(RestStatus.OK, "application/json", json));
                         },
                         errorHandler
                     ));
@@ -408,9 +408,9 @@ public class ResolutionAction extends BaseRestHandler {
                     buildAndRunJob(client, body, reqParams, emptyMap(), ActionListener.wrap(
                         (jobResult) -> {
                             if (jobResult.failed)
-                                channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResult.response));
+                                channel.sendResponse(new RestResponse(RestStatus.INTERNAL_SERVER_ERROR, "application/json", jobResult.response));
                             else
-                                channel.sendResponse(new BytesRestResponse(RestStatus.OK, "application/json", jobResult.response));
+                                channel.sendResponse(new RestResponse(RestStatus.OK, "application/json", jobResult.response));
                         },
                         errorHandler
                     ));

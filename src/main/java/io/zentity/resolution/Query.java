@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2022 Dave Moore
+ * Copyright © 2018-2024 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,24 +28,32 @@ import io.zentity.resolution.input.Input;
 import io.zentity.resolution.input.Term;
 import io.zentity.resolution.input.value.StringValue;
 import io.zentity.resolution.input.value.Value;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.xcontent.*;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.xcontent.DeprecationHandler;
+import org.elasticsearch.xcontent.NamedXContentRegistry;
+import org.elasticsearch.xcontent.XContentFactory;
+import org.elasticsearch.xcontent.XContentParser;
+import org.elasticsearch.xcontent.XContentType;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 public class Query {
-
-    private static final Logger logger = LogManager.getLogger(Query.class);
 
     private final String indexName;
     private final int number;
@@ -397,12 +405,12 @@ public class Query {
      */
     public static SearchRequestBuilder buildSearchRequest(Job job, String indexName, String query) throws IOException {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        SearchModule searchModule = new SearchModule(Settings.EMPTY, false, Collections.emptyList());
+        SearchModule searchModule = new SearchModule(Settings.EMPTY, Collections.emptyList());
         try (XContentParser parser = XContentFactory.xContent(XContentType.JSON).createParser(new NamedXContentRegistry(searchModule
-                .getNamedXContents()), DeprecationHandler.THROW_UNSUPPORTED_OPERATION, query)) {
-            searchSourceBuilder.parseXContent(parser);
+                .getNamedXContents()), DeprecationHandler.THROW_UNSUPPORTED_OPERATION, new ByteArrayInputStream(query.getBytes()))) {
+            searchSourceBuilder.parseXContent(parser, false, nf -> true);
         }
-        SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(job.client(), SearchAction.INSTANCE);
+        SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(job.client());
         searchRequestBuilder.setIndices(indexName).setSource(searchSourceBuilder);
         if (job.searchAllowPartialSearchResults() != null)
             searchRequestBuilder.setAllowPartialSearchResults(job.searchAllowPartialSearchResults());
