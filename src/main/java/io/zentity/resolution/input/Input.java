@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2022 Dave Moore
+ * Copyright © 2018-2024 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,11 @@ import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.scope.Scope;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Input {
 

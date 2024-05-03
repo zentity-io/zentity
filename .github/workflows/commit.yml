@@ -24,10 +24,10 @@ jobs:
       # Build and test zentity for each version of Elasticsearch that its APIs support.
       matrix:
         elasticsearch:
-          - 7.17.0
-          - 7.16.3
-          - 7.16.2
-          - 7.16.1
+          - 8.13.3
+          - 8.13.2
+          - 8.13.1
+          - 8.13.0
 
     # Use the latest LTS OS.
     runs-on: ubuntu-20.04

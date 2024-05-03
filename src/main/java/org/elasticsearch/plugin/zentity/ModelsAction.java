@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2022 Dave Moore
+ * Copyright © 2018-2024 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,16 +28,18 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -152,14 +154,22 @@ public class ModelsAction extends BaseRestHandler {
      */
     public static void ensureIndex(NodeClient client, ActionListener<ActionResponse> onComplete) {
 
-        // Check if the .zentity-model index exists.
-        client.admin().indices().prepareExists(INDEX_NAME).execute(new ActionListener<>() {
+        // Check if the .zentity-models index exists.
+        GetIndexRequest getIndexRequest = new GetIndexRequest().indices(INDEX_NAME);
+        client.admin().indices().getIndex(getIndexRequest, new ActionListener<>() {
 
             @Override
-            public void onResponse(IndicesExistsResponse response) {
-                if (!response.isExists()) {
+            public void onResponse(GetIndexResponse response) {
 
-                    // The index does not exist. Create it.
+                // The index already exists.
+                onComplete.onResponse(response);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                // The index does not exist. Create it.
+                if (e instanceof IndexNotFoundException) {
                     createIndex(client, new ActionListener<>() {
 
                         @Override
@@ -176,18 +186,10 @@ public class ModelsAction extends BaseRestHandler {
                             onComplete.onFailure(e);
                         }
                     });
-                } else {
-
-                    // The index already exists.
-                    onComplete.onResponse(response);
                 }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
 
                 // An error occurred when checking if the index exists.
-                if (e instanceof ElasticsearchSecurityException) {
+                else if (e instanceof ElasticsearchSecurityException) {
 
                     // The error was a security exception.
                     // Log the error message as it was received from Elasticsearch.
@@ -279,7 +281,7 @@ public class ModelsAction extends BaseRestHandler {
     public static void getEntityModel(String entityType, NodeClient client, ActionListener<GetResponse> onComplete) {
 
         // Retrieve one entity model from the .zentity-models index.
-        client.prepareGet(INDEX_NAME, "doc", entityType).execute(new ActionListener<>() {
+        client.prepareGet(INDEX_NAME, entityType).execute(new ActionListener<>() {
 
             @Override
             public void onResponse(GetResponse response) {
@@ -347,7 +349,7 @@ public class ModelsAction extends BaseRestHandler {
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after indexing the entity model.
      */
-    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, boolean isBulkRequest, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
+    public static void indexEntityModel(String entityType, String requestBody, NodeClient client, boolean isBulkRequest, ActionListener<DocWriteResponse> onComplete) throws ValidationException, IOException {
 
         // Validate inputs
         if (entityType == null || entityType.equals(""))
@@ -368,7 +370,8 @@ public class ModelsAction extends BaseRestHandler {
                     WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
                     if (isBulkRequest)
                         refreshPolicy = WriteRequest.RefreshPolicy.NONE;
-                    client.prepareIndex(INDEX_NAME, "doc", entityType)
+                    client.prepareIndex(INDEX_NAME)
+                            .setId(entityType)
                             .setSource(requestBody, XContentType.JSON)
                             .setCreate(true)
                             .setRefreshPolicy(refreshPolicy)
@@ -407,7 +410,7 @@ public class ModelsAction extends BaseRestHandler {
      *                          Set to 'false' when using bulk operations to prevent redundant checks.
      * @param onComplete        The action to perform after updating the entity model.
      */
-    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, boolean isBulkRequest, ActionListener<IndexResponse> onComplete) throws ValidationException, IOException {
+    public static void updateEntityModel(String entityType, String requestBody, NodeClient client, boolean isBulkRequest, ActionListener<DocWriteResponse> onComplete) throws ValidationException, IOException {
 
         // Validate inputs
         if (entityType == null || entityType.equals(""))
@@ -428,7 +431,8 @@ public class ModelsAction extends BaseRestHandler {
                     WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
                     if (isBulkRequest)
                         refreshPolicy = WriteRequest.RefreshPolicy.NONE;
-                    client.prepareIndex(INDEX_NAME, "doc", entityType)
+                    client.prepareIndex(INDEX_NAME)
+                            .setId(entityType)
                             .setSource(requestBody, XContentType.JSON)
                             .setCreate(false)
                             .setRefreshPolicy(refreshPolicy)
@@ -483,7 +487,7 @@ public class ModelsAction extends BaseRestHandler {
                     WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.WAIT_UNTIL;
                     if (isBulkRequest)
                         refreshPolicy = WriteRequest.RefreshPolicy.NONE;
-                    client.prepareDelete(INDEX_NAME, "doc", entityType)
+                    client.prepareDelete(INDEX_NAME, entityType)
                             .setRefreshPolicy(refreshPolicy)
                             .execute(onComplete);
                 } catch (Exception e) {
@@ -542,7 +546,7 @@ public class ModelsAction extends BaseRestHandler {
                                 XContentBuilder content = XContentFactory.jsonBuilder();
                                 if (pretty)
                                     content.prettyPrint();
-                                response.toXContent(content, ToXContent.EMPTY_PARAMS);
+                                ChunkedToXContent.wrapAsToXContent(response).toXContent(content, ToXContent.EMPTY_PARAMS);
                                 onComplete.onResponse(content);
                             },
 
@@ -575,7 +579,7 @@ public class ModelsAction extends BaseRestHandler {
                 indexEntityModel(entityType, body, client, isBulkRequest, ActionListener.wrap(
 
                         // Success
-                        (IndexResponse response) -> {
+                        (DocWriteResponse response) -> {
                             XContentBuilder content = XContentFactory.jsonBuilder();
                             if (pretty)
                                 content.prettyPrint();
@@ -609,7 +613,7 @@ public class ModelsAction extends BaseRestHandler {
                 updateEntityModel(entityType, body, client, isBulkRequest, ActionListener.wrap(
 
                         // Success
-                        (IndexResponse response) -> {
+                        (DocWriteResponse response) -> {
                             XContentBuilder content = XContentFactory.jsonBuilder();
                             if (pretty)
                                 content.prettyPrint();

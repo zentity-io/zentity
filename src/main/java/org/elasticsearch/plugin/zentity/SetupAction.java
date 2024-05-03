@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2022 Dave Moore
+ * Copyright © 2018-2024 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,14 +22,13 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
-import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 
 import java.util.List;
@@ -87,7 +86,7 @@ public class SetupAction extends BaseRestHandler {
                     .put("index.number_of_shards", numberOfShards)
                     .put("index.number_of_replicas", numberOfReplicas)
             )
-            .addMapping("doc", INDEX_MAPPING, XContentType.JSON)
+            .setMapping(INDEX_MAPPING)
             .execute(onComplete);
     }
 
@@ -129,7 +128,7 @@ public class SetupAction extends BaseRestHandler {
                                 if (pretty)
                                     content.prettyPrint();
                                 content.startObject().field("acknowledged", true).endObject();
-                                channel.sendResponse(new BytesRestResponse(RestStatus.OK, content));
+                                channel.sendResponse(new RestResponse(RestStatus.OK, content));
                             } catch (Exception e) {
 
                                 // An error occurred when sending the response.
@@ -161,7 +160,7 @@ public class SetupAction extends BaseRestHandler {
                     throw new NotImplementedException("Method and endpoint not implemented.");
                 }
             } catch (NotImplementedException e) {
-                channel.sendResponse(new BytesRestResponse(channel, RestStatus.NOT_IMPLEMENTED, e));
+                channel.sendResponse(new RestResponse(channel, RestStatus.NOT_IMPLEMENTED, e));
             }
         };
     }
