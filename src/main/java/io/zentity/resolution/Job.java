@@ -452,10 +452,6 @@ public class Job {
 
     public void maxTimePerQuery(String maxTimePerQuery) { this.maxTimePerQuery = maxTimePerQuery; }
 
-    public boolean namedFilters() {
-        return (this.includeExplanation || this.includeScore);
-    }
-
     public boolean pretty() {
         return this.pretty;
     }
@@ -901,7 +897,7 @@ public class Job {
 
                 // Determine why any matching documents matched if including "_score" or "_explanation".
                 List<Double> bestAttributeIdentityConfidenceScores = new ArrayList<>();
-                if (job.namedFilters() && docObjNode.has("matched_queries") && docObjNode.get("matched_queries").size() > 0) {
+                if (docObjNode.has("matched_queries") && docObjNode.get("matched_queries").size() > 0) {
                     ObjectNode docExpObjNode = docObjNode.putObject("_explanation");
                     ObjectNode docExpResolversObjNode = docExpObjNode.putObject("resolvers");
                     ArrayNode docExpMatchesArrNode = docExpObjNode.putArray("matches");

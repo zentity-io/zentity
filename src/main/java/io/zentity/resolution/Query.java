@@ -130,16 +130,18 @@ public class Query {
     }
 
     /**
-     * Given a clause from the "matchers" field of an entity model, replace the {{ field }} and {{ value }} variables
-     * and arbitrary parameters. If a parameter exists, replace the {{ params.PARAM_NAME }} variable with its value.
+     * Given a clause from the "matchers" field of an entity model, replace the variables for {{ field }}, {{ value }},
+     * {{ clause_name }}, and arbitrary parameters. If a parameter exists, replace the {{ params.PARAM_NAME }} variable
+     * with its value.
      *
      * @param matcher        The matcher object.
      * @param indexFieldName The name of the index field to populate in the clause.
+     * @param clauseName     The name of the clause.
      * @param value          The value of the attribute to populate in the clause.
      * @param params         The values of the parameters (if any) to pass to the matcher.
      * @return A "bool" clause that references the desired field and value.
      */
-    public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, Map<String, String> params) throws ValidationException {
+    public static String populateMatcherClause(Matcher matcher, String indexFieldName, String value, String clauseName, Map<String, String> params) throws ValidationException {
         String matcherClause = matcher.clause();
         for (String variable : matcher.variables().keySet()) {
             Pattern pattern = matcher.variables().get(variable);
@@ -149,6 +151,9 @@ public class Query {
                     break;
                 case "value":
                     matcherClause = pattern.matcher(matcherClause).replaceAll(value);
+                    break;
+                case "clause_name":
+                    matcherClause = pattern.matcher(matcherClause).replaceAll(clauseName);
                     break;
                 default:
                     java.util.regex.Matcher m = Patterns.VARIABLE_PARAMS.matcher(variable);
@@ -169,14 +174,15 @@ public class Query {
      * Given an entity model, an index name, a set of attribute values, and an attribute name,
      * find all index field names that are mapped to the attribute name and populate their matcher clauses.
      *
-     * @param model         The entity model.
-     * @param indexName     The name of the index to reference in the entity model.
-     * @param attributes    The names and values of the input attributes.
-     * @param attributeName The name of the attribute to reference in the attributeSet.
-     * @param combiner      Combine clauses with "should" or "filter".
+     * @param model             The entity model.
+     * @param indexName         The name of the index to reference in the entity model.
+     * @param attributes        The names and values of the input attributes.
+     * @param attributeName     The name of the attribute to reference in the attributeSet.
+     * @param combiner          Combine clauses with "should" or "filter".
+     * @param clauseNameCounter An incrementing counter to ensure that each named clause has a unique _name.
      * @return A JSON-formatted string containing all populated matcher "bool" clauses for an index field.
      */
-    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Attribute> attributes, String attributeName, String combiner, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
+    public static List<String> makeIndexFieldClauses(Model model, String indexName, Map<String, Attribute> attributes, String attributeName, String combiner, AtomicInteger clauseNameCounter) throws ValidationException {
         if (!combiner.equals("should") && !combiner.equals("filter"))
             throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> indexFieldClauses = new ArrayList<>();
@@ -207,15 +213,15 @@ public class Query {
                 if (value.serialized() == null || value.serialized().equals(""))
                     continue;
 
-                // Populate the {{ field }}, {{ value }}, and {{ param.* }} variables of the matcher template.
-                String valueClause = populateMatcherClause(matcher, indexFieldName, value.serialized(), params);
-                if (namedFilters) {
+                // Name the clause to determine why any matching document matched
+                String valueBase64 = Base64.getEncoder().encodeToString(value.serialized().getBytes());
+                String clauseName = attributeName + ":" + indexFieldName + ":" + matcherName + ":" + valueBase64 + ":" + clauseNameCounter.getAndIncrement();
 
-                    // Name the clause to determine why any matching document matched
-                    String valueBase64 = Base64.getEncoder().encodeToString(value.serialized().getBytes());
-                    String _name = attributeName + ":" + indexFieldName + ":" + matcherName + ":" + valueBase64 + ":" + _nameIdCounter.getAndIncrement();
-                    valueClause = "{\"bool\":{\"_name\":\"" + _name + "\",\"filter\":" + valueClause + "}}";
-                }
+                // Populate the {{ field }}, {{ value }}, and {{ param.* }} variables of the matcher template.
+                String valueClause = populateMatcherClause(matcher, indexFieldName, value.serialized(), clauseName, params);
+
+                // Wrap the clause in a named query.
+                valueClause = "{\"bool\":{\"_name\":\"" + clauseName + "\",\"filter\":" + valueClause + "}}";
                 valueClauses.add(valueClause);
             }
             if (valueClauses.size() == 0)
@@ -237,20 +243,21 @@ public class Query {
      * for each attribute name in the set of attributes, find all index field names that are mapped to the attribute
      * name and populate their matcher clauses.
      *
-     * @param model      The entity model.
-     * @param indexName  The name of the index to reference in the entity model.
-     * @param attributes The names and values of the input attributes.
-     * @param combiner   Combine clauses with "should" or "filter".
+     * @param model             The entity model.
+     * @param indexName         The name of the index to reference in the entity model.
+     * @param attributes        The names and values of the input attributes.
+     * @param combiner          Combine clauses with "should" or "filter".
+     * @param clauseNameCounter An incrementing counter to ensure that each named clause has a unique _name.
      * @return A list of JSON-formatted strings each containing the populated matcher "bool" clauses for each attribute.
      */
-    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Attribute> attributes, String combiner, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
+    public static List<String> makeAttributeClauses(Model model, String indexName, Map<String, Attribute> attributes, String combiner, AtomicInteger clauseNameCounter) throws ValidationException {
         if (!combiner.equals("should") && !combiner.equals("filter"))
             throw new ValidationException("'" + combiner + "' is not a supported clause combiner.");
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : attributes.keySet()) {
 
             // Construct a "should" or "filter" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, combiner, namedFilters, _nameIdCounter);
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, combiner, clauseNameCounter);
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -272,16 +279,17 @@ public class Query {
      * @param indexName           The name of the index to reference in the entity model.
      * @param resolversFilterTree The filter tree for the resolvers to be queried.
      * @param attributes          The names and values for the input attributes.
+     * @param clauseNameCounter   An incrementing counter to ensure that each named clause has a unique _name.
      * @return A "bool" clause for all applicable resolvers.
      */
-    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Attribute> attributes, boolean namedFilters, AtomicInteger _nameIdCounter) throws ValidationException {
+    public static String populateResolversFilterTree(Model model, String indexName, TreeMap<String, TreeMap> resolversFilterTree, Map<String, Attribute> attributes, AtomicInteger clauseNameCounter) throws ValidationException {
 
         // Construct a "filter" clause for each attribute at this level of the filter tree.
         List<String> attributeClauses = new ArrayList<>();
         for (String attributeName : resolversFilterTree.keySet()) {
 
             // Construct a "should" clause for each index field mapped to this attribute.
-            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, "should", namedFilters, _nameIdCounter);
+            List<String> indexFieldClauses = makeIndexFieldClauses(model, indexName, attributes, attributeName, "should", clauseNameCounter);
             if (indexFieldClauses.size() == 0)
                 continue;
 
@@ -293,7 +301,7 @@ public class Query {
                 indexFieldsClause = indexFieldClauses.get(0);
 
             // Populate any child filters.
-            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributes, namedFilters, _nameIdCounter);
+            String filter = populateResolversFilterTree(model, indexName, resolversFilterTree.get(attributeName), attributes, clauseNameCounter);
             if (!filter.isEmpty())
                 attributeClauses.add("{\"bool\":{\"filter\":[" + indexFieldsClause + "," + filter + "]}}");
             else
@@ -436,7 +444,7 @@ public class Query {
 
         // "_explanation" uses named queries, and each value of the "_name" fields must be unique.
         // Use a counter to prepend a unique and deterministic identifier for each "_name" field in the query.
-        AtomicInteger _nameIdCounter = new AtomicInteger();
+        AtomicInteger clauseNameCounter = new AtomicInteger();
 
         // Construct query
         String queryClause;
@@ -454,7 +462,7 @@ public class Query {
 
         // Create "scope.exclude.attributes" clauses. Combine them into a single "should" clause.
         if (!job.input().scope().exclude().attributes().isEmpty()) {
-            List<String> attributeClauses = makeAttributeClauses(job.input().model(), indexName, job.input().scope().exclude().attributes(), "should", job.namedFilters(), _nameIdCounter);
+            List<String> attributeClauses = makeAttributeClauses(job.input().model(), indexName, job.input().scope().exclude().attributes(), "should", clauseNameCounter);
             int size = attributeClauses.size();
             if (size > 1)
                 queryMustNotClauses.add("{\"bool\":{\"should\":[" + String.join(",", attributeClauses) + "]}}");
@@ -470,7 +478,7 @@ public class Query {
 
         // Construct "scope.include.attributes" clauses. Combine them into a single "filter" clause.
         if (!job.input().scope().include().attributes().isEmpty()) {
-            List<String> attributeClauses = makeAttributeClauses(job.input().model(), indexName, job.input().scope().include().attributes(), "filter", job.namedFilters(), _nameIdCounter);
+            List<String> attributeClauses = makeAttributeClauses(job.input().model(), indexName, job.input().scope().include().attributes(), "filter", clauseNameCounter);
             int size = attributeClauses.size();
             if (size > 1)
                 queryFilterClauses.add("{\"bool\":{\"filter\":[" + String.join(",", attributeClauses) + "]}}");
@@ -503,7 +511,7 @@ public class Query {
                 List<List<String>> resolversSorted = sortResolverAttributes(job.input().model(), resolversGroup, counts);
                 this.resolversFilterTree = makeResolversFilterTree(resolversSorted);
                 this.resolversFilterTreeGrouped.put(numWeightLevels - level - 1, this.resolversFilterTree);
-                resolversClause = populateResolversFilterTree(job.input().model(), indexName, this.resolversFilterTree, job.attributes(), job.namedFilters(), _nameIdCounter);
+                resolversClause = populateResolversFilterTree(job.input().model(), indexName, this.resolversFilterTree, job.attributes(), clauseNameCounter);
 
                 // If there are multiple levels of weight, then each lower weight group of resolvers must ensure
                 // that every higher weight resolver either matches or does not exist.
@@ -533,7 +541,7 @@ public class Query {
                             Map<String, Integer> parentCounts = countAttributesAcrossResolvers(job.input().model(), parentResolverGroup);
                             List<List<String>> parentResolverSorted = sortResolverAttributes(job.input().model(), parentResolverGroup, parentCounts);
                             TreeMap<String, TreeMap> parentResolverFilterTree = makeResolversFilterTree(parentResolverSorted);
-                            String parentResolverClause = populateResolversFilterTree(job.input().model(), indexName, parentResolverFilterTree, job.attributes(), job.namedFilters(), _nameIdCounter);
+                            String parentResolverClause = populateResolversFilterTree(job.input().model(), indexName, parentResolverFilterTree, job.attributes(), clauseNameCounter);
 
                             // Construct a "should" clause for the above two clauses.
                             parentResolverClauses.add("{\"bool\":{\"should\":[" + attributesExistsClause + "," + parentResolverClause + "]}}");
@@ -689,7 +697,7 @@ public class Query {
                 Map<String, Integer> counts = countAttributesAcrossResolvers(job.input().model(), this.termResolvers);
                 List<List<String>> termResolversSorted = sortResolverAttributes(job.input().model(), this.termResolvers, counts);
                 this.termResolversFilterTree = makeResolversFilterTree(termResolversSorted);
-                termResolversClause = populateResolversFilterTree(job.input().model(), indexName, this.termResolversFilterTree, termAttributes, job.namedFilters(), _nameIdCounter);
+                termResolversClause = populateResolversFilterTree(job.input().model(), indexName, this.termResolversFilterTree, termAttributes, clauseNameCounter);
             }
 
             // Combine the two resolvers clauses in a "filter" clause if both exist.

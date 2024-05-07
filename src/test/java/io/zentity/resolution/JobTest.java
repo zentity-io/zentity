@@ -60,8 +60,8 @@ public class JobTest {
         Map<String, Integer> counts = Query.countAttributesAcrossResolvers(model, resolversList);
         List<List<String>> resolversSorted = Query.sortResolverAttributes(model, resolversList, counts);
         TreeMap<String, TreeMap> resolversFilterTree = Query.makeResolversFilterTree(resolversSorted);
-        String resolversClause = Query.populateResolversFilterTree(model, "index", resolversFilterTree, input.attributes(), false, new AtomicInteger());
-        String expected = "{\"bool\":{\"should\":[{\"match\":{\"id\":\"1234567890\",\"fuzziness\":\"auto\"}},{\"bool\":{\"filter\":[{\"bool\":{\"should\":[{\"term\":{\"name\":\"Alice Jones\"}},{\"term\":{\"name\":\"Alice Jones-Smith\"}}]}},{\"bool\":{\"should\":[{\"match\":{\"phone\":\"555-123-4567\",\"fuzziness\":\"2\"}},{\"bool\":{\"filter\":[{\"term\":{\"street\":\"123 Main St\"}},{\"bool\":{\"should\":[{\"bool\":{\"filter\":[{\"term\":{\"city\":\"Beverly Hills\"}},{\"term\":{\"state\":\"CA\"}}]}},{\"term\":{\"zip\":\"90210\"}}]}}]}}]}}]}}]}}";
+        String resolversClause = Query.populateResolversFilterTree(model, "index", resolversFilterTree, input.attributes(), new AtomicInteger());
+        String expected = "{\"bool\":{\"should\":[{\"bool\":{\"_name\":\"id:id:y:MTIzNDU2Nzg5MA==:0\",\"filter\":{\"match\":{\"id\":\"1234567890\",\"fuzziness\":\"auto\"}}}},{\"bool\":{\"filter\":[{\"bool\":{\"should\":[{\"bool\":{\"_name\":\"name:name:x:QWxpY2UgSm9uZXM=:1\",\"filter\":{\"term\":{\"name\":\"Alice Jones\"}}}},{\"bool\":{\"_name\":\"name:name:x:QWxpY2UgSm9uZXMtU21pdGg=:2\",\"filter\":{\"term\":{\"name\":\"Alice Jones-Smith\"}}}}]}},{\"bool\":{\"should\":[{\"bool\":{\"_name\":\"phone:phone:z:NTU1LTEyMy00NTY3:3\",\"filter\":{\"match\":{\"phone\":\"555-123-4567\",\"fuzziness\":\"2\"}}}},{\"bool\":{\"filter\":[{\"bool\":{\"_name\":\"street:street:x:MTIzIE1haW4gU3Q=:4\",\"filter\":{\"term\":{\"street\":\"123 Main St\"}}}},{\"bool\":{\"should\":[{\"bool\":{\"filter\":[{\"bool\":{\"_name\":\"city:city:x:QmV2ZXJseSBIaWxscw==:5\",\"filter\":{\"term\":{\"city\":\"Beverly Hills\"}}}},{\"bool\":{\"_name\":\"state:state:x:Q0E=:6\",\"filter\":{\"term\":{\"state\":\"CA\"}}}}]}},{\"bool\":{\"_name\":\"zip:zip:x:OTAyMTA=:7\",\"filter\":{\"term\":{\"zip\":\"90210\"}}}}]}}]}}]}}]}}]}}";
         Assert.assertEquals(resolversClause, expected);
     }
 
@@ -81,7 +81,7 @@ public class JobTest {
                 "}";
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
         TreeMap<String, String> params = new TreeMap<>();
-        String matcherClause = Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+        String matcherClause = Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", "", params);
         String expected = "{\"match\":{\"field_phone\":\"555-123-4567\"}}";
         Assert.assertEquals(matcherClause, expected);
     }
@@ -104,7 +104,7 @@ public class JobTest {
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
         TreeMap<String, String> params = new TreeMap<>();
         params.put("foo", "bar");
-        String matcherClause = Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+        String matcherClause = Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", "", params);
         String expected = "{\"match\":{\"field_phone\":\"555-123-4567\"}}";
         Assert.assertEquals(matcherClause, expected);
     }
@@ -129,7 +129,7 @@ public class JobTest {
                 "}";
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
         TreeMap<String, String> params = new TreeMap<>();
-        Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+        Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", "", params);
     }
 
     /**
@@ -152,7 +152,7 @@ public class JobTest {
                 "}";
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
         TreeMap<String, String> params = new TreeMap<>();
-        Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+        Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", "", params);
     }
 
     /**
@@ -178,7 +178,7 @@ public class JobTest {
                 "}";
         Matcher matcher = new Matcher("matcher_phone", matcherJson);
         TreeMap<String, String> params = new TreeMap<>();
-        String matcherClause = Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", params);
+        String matcherClause = Query.populateMatcherClause(matcher, "field_phone", "555-123-4567", "", params);
         String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
         Assert.assertEquals(matcherClause, expected);
     }
@@ -224,8 +224,8 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
-        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}";
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
+        String expected = "{\"bool\":{\"_name\":\"attribute_phone:field_phone:matcher_phone:NTU1LTEyMy00NTY3:0\",\"filter\":{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
     }
@@ -274,8 +274,8 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
-        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}";
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
+        String expected = "{\"bool\":{\"_name\":\"attribute_phone:field_phone:matcher_phone:NTU1LTEyMy00NTY3:0\",\"filter\":{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"1\"}}}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
     }
@@ -323,8 +323,8 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
-        String expected = "{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}";
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
+        String expected = "{\"bool\":{\"_name\":\"attribute_phone:field_phone:matcher_phone:NTU1LTEyMy00NTY3:0\",\"filter\":{\"match\":{\"field_phone\":{\"query\":\"555-123-4567\",\"fuzziness\":\"2\"}}}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
     }
@@ -378,8 +378,8 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
-        String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
+        String expected = "{\"bool\":{\"_name\":\"attribute_timestamp:field_timestamp:matcher_timestamp:MTIzIE1haW4gU3Q=:0\",\"filter\":{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
     }
@@ -437,8 +437,8 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
-        String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}";
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
+        String expected = "{\"bool\":{\"_name\":\"attribute_timestamp:field_timestamp:matcher_timestamp:MTIzIE1haW4gU3Q=:0\",\"filter\":{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-30m\",\"lte\":\"123 Main St||+30m\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
     }
@@ -501,8 +501,8 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
-        String expected = "{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-15m\",\"lte\":\"123 Main St||+15m\",\"format\":\"yyyy-MM-dd\"}}}";
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
+        String expected = "{\"bool\":{\"_name\":\"attribute_timestamp:field_timestamp:matcher_timestamp:MTIzIE1haW4gU3Q=:0\",\"filter\":{\"range\":{\"field_timestamp\":{\"gte\":\"123 Main St||-15m\",\"lte\":\"123 Main St||+15m\",\"format\":\"yyyy-MM-dd\"}}}}}";
         String actual = attributeClauses.get(0);
         Assert.assertEquals(expected, actual);
     }
@@ -547,7 +547,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
     }
 
     /**
@@ -591,7 +591,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", false, new AtomicInteger());
+        List<String> attributeClauses = Query.makeAttributeClauses(input.model(), "index", input.attributes(), "filter", new AtomicInteger());
     }
 
     /**
