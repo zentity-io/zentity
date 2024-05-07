@@ -1,0 +1,2 @@
+{ "index" : { "_index" : "zentity_test_index_inner_hits", "_id" : "1" }}
+{ "name": "Allie Jones", "phone": [{ "number": "mobile", "type": "123-555-1234" }, { "number": "mobile", "type": "123-555-0987" }], "address": [{ "street": "123 Main St", "city": "Washington", "state": "DC", "phone": { "number": "202-555-1234", "type": "home" }}, { "street": "555 Broad St", "city": "New York", "state": "NY", "phone": { "number": "202-555-9876", "type": "work" }}]}

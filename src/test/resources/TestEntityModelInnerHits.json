@@ -1,0 +1,101 @@
+{
+  "attributes": {
+    "name": {},
+    "phone": {},
+    "address_street": {},
+    "address_city": {},
+    "address_state": {}
+  },
+  "resolvers": {
+    "name_phone": {
+      "attributes": [
+        "name",
+        "phone"
+      ]
+    }
+  },
+  "matchers": {
+    "exact": {
+      "clause": {
+        "term": {
+          "{{ field }}": "{{ value }}"
+        }
+      }
+    },
+    "exact_nested_phone": {
+      "clause": {
+        "nested": {
+          "path": "phone",
+          "query": {
+            "term": {
+              "{{ field }}": "{{ value }}"
+            }
+          },
+          "inner_hits": {
+            "name": "{{ clause_name }}"
+          }
+        }
+      }
+    },
+    "exact_nested_address": {
+      "clause": {
+        "nested": {
+          "path": "address",
+          "query": {
+            "term": {
+              "{{ field }}": "{{ value }}"
+            }
+          },
+          "inner_hits": {
+            "name": "{{ clause_name }}"
+          }
+        }
+      }
+    },
+    "exact_nested_address_phone": {
+      "clause": {
+        "nested": {
+          "path": "address.phone",
+          "query": {
+            "term": {
+              "{{ field }}": "{{ value }}"
+            }
+          },
+          "inner_hits": {
+            "name": "{{ clause_name }}"
+          }
+        }
+      }
+    }
+  },
+  "indices": {
+    "test": {
+      "fields": {
+        "name": {
+          "attribute": "name",
+          "matcher": "exact"
+        },
+        "phone.number": {
+          "attribute": "phone",
+          "matcher": "exact_nested_phone"
+        },
+        "address.street": {
+          "attribute": "address_street",
+          "matcher": "exact_nested_address"
+        },
+        "address.city": {
+          "attribute": "address_city",
+          "matcher": "exact_nested_address"
+        },
+        "address.state": {
+          "attribute": "address_state",
+          "matcher": "exact_nested_address"
+        },
+        "address.phone.number": {
+          "attribute": "phone",
+          "matcher": "exact_nested_address_phone"
+        }
+      }
+    }
+  }
+}
