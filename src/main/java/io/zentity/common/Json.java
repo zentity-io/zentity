@@ -33,24 +33,37 @@ public class Json {
     public static final ObjectMapper ORDERED_MAPPER = new ObjectMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     private static final JsonStringEncoder STRING_ENCODER = new JsonStringEncoder();
 
+    /**
+     * Escape a JSON value and wrap it in double quotes.
+     *
+     * @param value The value to be escaped and wrapped in double quotes.
+     * @return
+     */
     public static String quoteString(String value) {
-        return jsonStringFormat(value);
+        return jsonStringQuote(jsonStringEscape(value));
     }
 
+    /**
+     * Escape a JSON value.
+     *
+     * @param value The value to be escaped.
+     * @return
+     */
     public static String jsonStringEscape(String value) {
         if (value == null)
             return "null"; // Prevents NullPointerException on STRING_ENCODER.quoteAsString()
         return new String(STRING_ENCODER.quoteAsString(value));
     }
 
-    private static String jsonStringQuote(String value) {
+    /**
+     * Wrap a JSON value in double quotes.
+     *
+     * @param value The value to be wrapped in quotes.
+     * @return
+     */
+    public static String jsonStringQuote(String value) {
         return "\"" + value + "\"";
     }
-
-    private static String jsonStringFormat(String value) {
-        return jsonStringQuote(jsonStringEscape(value));
-    }
-
 
     /**
      * Converts an object {@link JsonNode JsonNode's} fields iterator to a {@link Map} of strings.

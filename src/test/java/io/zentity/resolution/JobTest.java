@@ -110,12 +110,13 @@ public class JobTest {
     }
 
     /**
-     * Sometimes the value extracted from the document contains quotations or backslashes that need to be escaped
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables.
+     * Ensure double quotes are properly escaped.
      *
      * @throws Exception
      */
     @Test
-    public void testPopulateMatcherClauseQuoteJsonString() throws Exception {
+    public void testPopulateMatcherClauseEscapeQuotes() throws Exception {
         String matcherJson = "{\n" +
                 "  \"clause\": {\n" +
                 "    \"match\": {\n" +
@@ -129,6 +130,28 @@ public class JobTest {
         params.put("foo", "bar");
         String matcherClause = Query.populateMatcherClause(matcher, "field_alias", nameAlias, params);
         String expected = "{\"match\":{\"field_alias\":\"The \\\"One\\\"\"}}";
+        Assert.assertEquals(expected, matcherClause);
+    }
+
+    /**
+     * Populate the clause of a matcher by substituting the {{ field }} and {{ value }} variables.
+     * Ensure backslashes are properly escaped.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testPopulateMatcherClauseEscapeBackslashes() throws Exception {
+        String matcherJson = "{\n" +
+                "  \"clause\": {\n" +
+                "    \"match\": {\n" +
+                "      \"{{ field }}\": \"{{ value }}\"\n" +
+                "    }" +
+                "  }\n" +
+                "}";
+        Matcher matcher = new Matcher("matcher_filepath", matcherJson);
+        TreeMap<String, String> params = new TreeMap<>();
+        String matcherClause = Query.populateMatcherClause(matcher, "field_filepath", "C:\\Windows\\System32", params);
+        String expected = "{\"match\":{\"field_filepath\":\"C:\\\\Windows\\\\System32\"}}";
         Assert.assertEquals(expected, matcherClause);
     }
 
@@ -675,7 +698,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        String scriptFieldsClause = Query.makeScriptFieldsClause(input, "index");
+        String scriptFieldsClause = Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
         String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"DateFormat df = new SimpleDateFormat(params.format); df.setTimeZone(TimeZone.getTimeZone('UTC')); return df.format(doc[params.field].value.toInstant().toEpochMilli())\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd\"}}}}";
         Assert.assertEquals(scriptFieldsClause, expected);
     }
@@ -741,7 +764,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        String scriptFieldsClause = Query.makeScriptFieldsClause(input, "index");
+        String scriptFieldsClause = Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
         String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"DateFormat df = new SimpleDateFormat(params.format); df.setTimeZone(TimeZone.getTimeZone('UTC')); return df.format(doc[params.field].value.toInstant().toEpochMilli())\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd\"}}}}";
         Assert.assertEquals(scriptFieldsClause, expected);
     }
@@ -803,7 +826,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        String scriptFieldsClause = Query.makeScriptFieldsClause(input, "index");
+        String scriptFieldsClause = Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
         String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"DateFormat df = new SimpleDateFormat(params.format); df.setTimeZone(TimeZone.getTimeZone('UTC')); return df.format(doc[params.field].value.toInstant().toEpochMilli())\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd\"}}}}";
         Assert.assertEquals(scriptFieldsClause, expected);
     }
@@ -868,7 +891,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        String scriptFieldsClause = Query.makeScriptFieldsClause(input, "index");
+        String scriptFieldsClause = Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
         String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"DateFormat df = new SimpleDateFormat(params.format); df.setTimeZone(TimeZone.getTimeZone('UTC')); return df.format(doc[params.field].value.toInstant().toEpochMilli())\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}}";
         Assert.assertEquals(scriptFieldsClause, expected);
     }
@@ -935,7 +958,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        String scriptFieldsClause = Query.makeScriptFieldsClause(input, "index");
+        String scriptFieldsClause = Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
         String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"DateFormat df = new SimpleDateFormat(params.format); df.setTimeZone(TimeZone.getTimeZone('UTC')); return df.format(doc[params.field].value.toInstant().toEpochMilli())\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss.SSS\"}}}}";
         Assert.assertEquals(scriptFieldsClause, expected);
     }
@@ -1002,7 +1025,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        String scriptFieldsClause = Query.makeScriptFieldsClause(input, "index");
+        String scriptFieldsClause = Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
         String expected = "\"script_fields\":{\"field_timestamp\":{\"script\":{\"lang\":\"painless\",\"source\":\"DateFormat df = new SimpleDateFormat(params.format); df.setTimeZone(TimeZone.getTimeZone('UTC')); return df.format(doc[params.field].value.toInstant().toEpochMilli())\",\"params\":{\"field\":\"field_timestamp\",\"format\":\"yyyy-MM-dd'T'HH:mm:ss\"}}}}";
         Assert.assertEquals(scriptFieldsClause, expected);
     }
@@ -1064,7 +1087,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        Query.makeScriptFieldsClause(input, "index");
+        Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
     }
 
     /**
@@ -1124,7 +1147,7 @@ public class JobTest {
                 "  }\n" +
                 "}";
         Input input = new Input(json, model);
-        Query.makeScriptFieldsClause(input, "index");
+        Query.makeScriptFieldsClause(input.attributes(), input.model(), "index");
     }
 
     /**

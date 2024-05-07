@@ -36,6 +36,7 @@ import org.junit.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -422,6 +423,38 @@ public class ResolutionActionIT extends AbstractIT {
         "    }\n" +
         "  }\n" +
         "}", ContentType.APPLICATION_JSON);
+
+    /**
+     * A value of foo\bar would be represented as foo\\bar in a JSON string value,
+     * and then represented as foo\\\\bar for Java string concatenation.
+     */
+    public static final StringEntity TEST_PAYLOAD_JOB_ESCAPE_BACKSLASHES = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_a\": [ \"escape\\\\backslashes\" ]\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
+
+    /**
+     * A value of foo"bar" would be represented as foo\"bar\" in a JSON string value,
+     * and then represented as foo\\\"bar\\\" for Java string concatenation.
+     */
+    public static final StringEntity TEST_PAYLOAD_JOB_ESCAPE_DOUBLE_QUOTES = new StringEntity("{\n" +
+            "  \"attributes\": {\n" +
+            "    \"attribute_a\": [ \"escape\\\"doublequotes\\\"\" ]\n" +
+            "  },\n" +
+            "  \"scope\": {\n" +
+            "    \"include\": {\n" +
+            "      \"indices\": [ \"zentity_test_index_a\" ],\n" +
+            "      \"resolvers\": [ \"resolver_a\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "}", ContentType.APPLICATION_JSON);
 
     public static final StringEntity TEST_PAYLOAD_JOB_SCOPE_EXCLUDE_ATTRIBUTES = new StringEntity("{\n" +
         "  \"attributes\": {\n" +
@@ -1250,6 +1283,34 @@ public class ResolutionActionIT extends AbstractIT {
         JsonNode j1 = Json.MAPPER.readTree(r1.getEntity().getContent());
         assertEquals(j1.get("hits").get("total").asInt(), 5);
         assertEquals(docsExpectedA, getActual(j1));
+    }
+
+    @Test
+    public void testJobEscapeBackslashes() throws Exception {
+        String endpoint = "_zentity/resolution/zentity_test_entity_a";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(TEST_PAYLOAD_JOB_ESCAPE_BACKSLASHES);
+        postResolution.addParameter("max_hops", "0");
+        Response response = client().performRequest(postResolution);
+        JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+        assertEquals(json.get("hits").get("total").asInt(), 1);
+        Set<String> docsExpected = new TreeSet<>();
+        docsExpected.add("escapeBackslashes,0");
+        assertEquals(docsExpected, getActual(json));
+    }
+
+    @Test
+    public void testJobEscapeDoubleQuotes() throws Exception {
+        String endpoint = "_zentity/resolution/zentity_test_entity_a";
+        Request postResolution = new Request("POST", endpoint);
+        postResolution.setEntity(TEST_PAYLOAD_JOB_ESCAPE_DOUBLE_QUOTES);
+        postResolution.addParameter("max_hops", "0");
+        Response response = client().performRequest(postResolution);
+        JsonNode json = Json.MAPPER.readTree(response.getEntity().getContent());
+        assertEquals(json.get("hits").get("total").asInt(), 1);
+        Set<String> docsExpected = new TreeSet<>();
+        docsExpected.add("escapeDoubleQuotes,0");
+        assertEquals(docsExpected, getActual(json));
     }
 
     @Test

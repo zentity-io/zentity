@@ -78,3 +78,7 @@
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_10", "field_d": "d_03", "object": {"a": {"b": {"c": "a"}}}, "type_boolean": true, "type_date": "2020-01-01T00:00:00.000", "type_double": 3.141592653589793, "type_float": 1.0, "type_integer": 1, "type_long": 922337203685477, "type_string": "a", "type_string_null": null}
 { "index" : { "_index": "zentity_test_index_d", "_id": "d9" }}
 {"field_a": "a_11", "field_b": "b_11", "field_c": "c_11", "field_d": "d_03", "object": {"a": {"b": {"c": "b"}}}, "type_boolean": false, "type_date": "2020-01-01T00:00:00.000", "type_double": -3.141592653589793, "type_float": -1.0, "type_integer": -1, "type_long": -922337203685477, "type_string": "b", "type_string_null": null}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "escapeBackslashes" }}
+{"field_a": "escape\\backslashes"}
+{ "index" : { "_index": "zentity_test_index_a", "_id": "escapeDoubleQuotes" }}
+{"field_a": "escape\"doublequotes\""}

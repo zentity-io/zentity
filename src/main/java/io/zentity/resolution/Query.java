@@ -24,7 +24,6 @@ import io.zentity.model.Matcher;
 import io.zentity.model.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.Attribute;
-import io.zentity.resolution.input.Input;
 import io.zentity.resolution.input.Term;
 import io.zentity.resolution.input.value.StringValue;
 import io.zentity.resolution.input.value.Value;
@@ -69,20 +68,21 @@ public class Query {
      * Builds the "script_fields" clause of an Elasticsearch query.
      * This is required by some zentity attribute types such as the "date" type.
      *
-     * @param input     The input of the resolution job.
-     * @param indexName The index name of the query.
+     * @param attributes The input attributes of the resolution job.
+     * @param model      The input model of the resolution job.
+     * @param indexName  The index name of the query.
      * @return A JSON-formatted string of the "script_fields" clause of an Elasticsearch query.
      * @throws ValidationException
      */
-    public static String makeScriptFieldsClause(Input input, String indexName) throws ValidationException {
+    public static String makeScriptFieldsClause(Map<String, Attribute> attributes, Model model, String indexName) throws ValidationException {
         List<String> scriptFieldClauses = new ArrayList<>();
 
         // Find any index fields that need to be included in the "script_fields" clause.
         // Currently this includes any index field that is associated with a "date" attribute,
         // which requires the "_source" value to be reformatted to a normalized format.
-        Index index = input.model().indices().get(indexName);
-        for (String attributeName : index.attributeIndexFieldsMap().keySet()) {
-            switch (input.model().attributes().get(attributeName).type()) {
+        Index index = model.indices().get(indexName);
+        for (String attributeName :attributes.keySet()) {
+            switch (model.attributes().get(attributeName).type()) {
                 case "date":
 
                     // Required params
@@ -91,17 +91,17 @@ public class Query {
                     // Make a "script" clause for each index field associated with this attribute.
                     for (String indexFieldName : index.attributeIndexFieldsMap().get(attributeName).keySet()) {
                         // Check if the required params are defined in the input attribute.
-                        if (input.attributes().containsKey(attributeName) && input.attributes().get(attributeName).params().containsKey("format") && !input.attributes().get(attributeName).params().get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(input.attributes().get(attributeName).params().get("format")).matches()) {
-                            format = input.attributes().get(attributeName).params().get("format");
+                        if (attributes.containsKey(attributeName) && attributes.get(attributeName).params().containsKey("format") && !attributes.get(attributeName).params().get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(attributes.get(attributeName).params().get("format")).matches()) {
+                            format = attributes.get(attributeName).params().get("format");
                         } else {
                             // Otherwise check if the required params are defined in the model attribute.
-                            Map<String, String> params = input.model().attributes().get(attributeName).params();
+                            Map<String, String> params = model.attributes().get(attributeName).params();
                             if (params.containsKey("format") && !params.get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
                                 format = params.get("format");
                             } else {
                                 // Otherwise check if the required params are defined in the matcher associated with the index field.
                                 String matcherName = index.attributeIndexFieldsMap().get(attributeName).get(indexFieldName).matcher();
-                                params = input.model().matchers().get(matcherName).params();
+                                params = model.matchers().get(matcherName).params();
                                 if (params.containsKey("format") && !params.get("format").equals("null") && !Patterns.EMPTY_STRING.matcher(params.get("format")).matches()) {
                                     format = params.get("format");
                                 } else {
@@ -746,7 +746,7 @@ public class Query {
         topLevelClauses.add(queryClause);
 
         // Construct the "script_fields" clause.
-        String scriptFieldsClause = makeScriptFieldsClause(job.input(), indexName);
+        String scriptFieldsClause = makeScriptFieldsClause(job.attributes(), job.input().model(), indexName);
         if (scriptFieldsClause != null)
             topLevelClauses.add(scriptFieldsClause);
 

@@ -926,7 +926,7 @@ public class Job {
                         String attributeValueSerialized = new String(Base64.getDecoder().decode(_name[3]));
                         String attributeType = job.input().model().attributes().get(attributeName).type();
                         if (attributeType.equals("string") || attributeType.equals("date"))
-                            attributeValueSerialized = "\"" + attributeValueSerialized + "\"";
+                            attributeValueSerialized = Json.jsonStringQuote(attributeValueSerialized);
                         JsonNode attributeValueNode = Json.MAPPER.readTree("{\"attribute_value\":" + attributeValueSerialized + "}").get("attribute_value");
                         JsonNode matcherParamsNode;
                         if (job.input().attributes().containsKey(attributeName))
