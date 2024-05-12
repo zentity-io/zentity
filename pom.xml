@@ -18,10 +18,10 @@
         <zentity.author>Dave Moore</zentity.author>
         <zentity.classname>org.elasticsearch.plugin.zentity.ZentityPlugin</zentity.classname>
         <zentity.website>${project.url}</zentity.website>
-        <zentity.version>1.8.4</zentity.version>
+        <zentity.version>1.8.3</zentity.version>
 
         <!-- Dependency versions -->
-        <elasticsearch.version>8.13.0</elasticsearch.version>
+        <elasticsearch.version>8.13.4</elasticsearch.version>
         <jackson.core.version>2.17.0</jackson.core.version>
         <jackson.databind.version>2.17.0</jackson.databind.version>
         <jdk.version>1.17</jdk.version>
