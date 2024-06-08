@@ -15,10 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.zentity.common;
+package io.zentity.model;
 
-import io.zentity.model.ValidationException;
-import io.zentity.model.Zid;
 import org.junit.Assert;
 import org.junit.Test;
 
