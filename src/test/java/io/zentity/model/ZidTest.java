@@ -25,14 +25,14 @@ public class ZidTest {
     ////  "attributes"  ////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    public void testEncodeEntity() throws Exception {
+    public void testEncodeEntity() {
         String _zid = Zid.encodeEntity("person", "my_index", "1", 0);
         String expected = "person|my_index|MQ==|0";
         Assert.assertEquals(expected, _zid);
     }
 
     @Test
-    public void testEncodeEntityCrossClusterSearch() throws Exception {
+    public void testEncodeEntityCrossClusterSearch() {
         String _zid = Zid.encodeEntity("person", "us:my_index", "1", 0);
         String expected = "person|us:my_index|MQ==|0";
         Assert.assertEquals(expected, _zid);
