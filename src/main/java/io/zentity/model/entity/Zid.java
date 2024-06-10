@@ -17,64 +17,27 @@
  */
 package io.zentity.model.entity;
 
-import io.zentity.model.ValidationException;
-
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class Zid {
 
     public static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder();
-    public static final Set<String> VALID_RELATION_DIRECTIONS = new TreeSet<>(
-            Arrays.asList("a>b", "a<b", "a<>b", "")
-    );
 
     /**
      * Encode an entity _zid.
      *
-     * @param entityType           The entity type.
-     * @param indexName            The index name in which the entity was first observed during resolution.
-     * @param docId                The doc _id in which the entity was first observed during resolution.
-     * @param entityTypeOccurrence The occurrence in which the entity type appeared in the doc.
+     * @param type       The entity type.
+     * @param indexName  The index name in which the entity was first observed during resolution.
+     * @param docId      The doc _id in which the entity was first observed during resolution.
+     * @param occurrence The occurrence in which the entity type appeared in the doc.
      * @return Serialized _zid for the entity.
      */
-    public static String encodeEntity(String entityType, String indexName, String docId, Integer entityTypeOccurrence) {
+    public static String encode(String type, String indexName, String docId, Integer occurrence) {
         return String.join("|",
-                entityType,
+                type,
                 indexName,
                 BASE64_ENCODER.encodeToString(docId.getBytes()),
-                entityTypeOccurrence.toString()
+                occurrence.toString()
         );
-    }
-
-    /**
-     * Encode a relation _zid.
-     * Normalizes the value by ensuring that entities A and B appear in lexicographical order.
-     *
-     * @param relationType      The relation type.
-     * @param relationDirection The relation direction ("a>b", "a<b", "a<>b", "", or null)
-     * @param entityZidA        The _zid of entity A.
-     * @param entityZidB        The _zid if entity B.
-     * @return Serialized _zid for the relation.
-     * @throws ValidationException
-     */
-    public static String encodeRelation(String relationType, String relationDirection, String entityZidA, String entityZidB) throws ValidationException {
-        relationType = relationType == null ? "" : relationType;
-        relationDirection = relationDirection == null ? "" : relationDirection;
-        if (!VALID_RELATION_DIRECTIONS.contains(relationDirection))
-            throw new ValidationException("'" + relationDirection + "' is not a valid relation direction.");
-
-        // If entity A < entity B, return the value.
-        if (entityZidA.compareTo(entityZidB) <= 0)
-            return String.join("#", relationType, relationDirection, entityZidA, entityZidB);
-
-        // If entity A > entity B, reverse their positions and reverse the direction.
-        if (relationDirection.equals("a>b"))
-            relationDirection = "a<b";
-        else if (relationDirection.equals("a<b"))
-            relationDirection = "a>b";
-        return String.join("#", relationType, relationDirection, entityZidB, entityZidA);
     }
 }
