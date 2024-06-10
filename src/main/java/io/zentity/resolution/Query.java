@@ -19,9 +19,9 @@ package io.zentity.resolution;
 
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
-import io.zentity.model.Index;
-import io.zentity.model.Matcher;
-import io.zentity.model.Model;
+import io.zentity.model.entity.Index;
+import io.zentity.model.entity.Matcher;
+import io.zentity.model.entity.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.Attribute;
 import io.zentity.resolution.input.Input;

@@ -20,7 +20,7 @@ package io.zentity.resolution.input.scope;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
-import io.zentity.model.Model;
+import io.zentity.model.entity.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.Attribute;
 

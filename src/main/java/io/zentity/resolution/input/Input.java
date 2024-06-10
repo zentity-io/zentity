@@ -21,8 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
 import io.zentity.common.Patterns;
-import io.zentity.model.Index;
-import io.zentity.model.Model;
+import io.zentity.model.entity.Index;
+import io.zentity.model.entity.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.scope.Scope;
 

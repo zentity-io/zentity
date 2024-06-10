@@ -20,7 +20,7 @@ package org.elasticsearch.plugin.zentity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.zentity.common.Json;
-import io.zentity.model.*;
+import io.zentity.model.entity.*;
 import joptsimple.internal.Strings;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Consts;

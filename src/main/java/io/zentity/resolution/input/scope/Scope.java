@@ -19,7 +19,7 @@ package io.zentity.resolution.input.scope;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
-import io.zentity.model.Model;
+import io.zentity.model.entity.Model;
 import io.zentity.model.ValidationException;
 
 import java.io.IOException;

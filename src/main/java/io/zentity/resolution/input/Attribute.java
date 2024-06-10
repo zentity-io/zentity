@@ -93,7 +93,7 @@ public class Attribute {
     private void validateType(String value) throws ValidationException {
         if (Patterns.EMPTY_STRING.matcher(value).matches())
             throw new ValidationException("'attributes." + this.name + ".type'' must not be empty.");
-        if (!io.zentity.model.Attribute.VALID_TYPES.contains(value))
+        if (!io.zentity.model.entity.Attribute.VALID_TYPES.contains(value))
             throw new ValidationException("'attributes." + this.name + ".type' has an unrecognized type '" + value + "'.");
     }
 

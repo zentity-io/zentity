@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.zentity.model;
+package io.zentity.model.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
+import io.zentity.model.ValidationException;
 import io.zentity.resolution.input.value.Value;
 import org.junit.Assert;
 import org.junit.Test;

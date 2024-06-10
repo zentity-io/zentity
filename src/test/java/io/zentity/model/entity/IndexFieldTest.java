@@ -15,8 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.zentity.model;
+package io.zentity.model.entity;
 
+import io.zentity.model.ValidationException;
 import org.junit.Test;
 
 public class IndexFieldTest {

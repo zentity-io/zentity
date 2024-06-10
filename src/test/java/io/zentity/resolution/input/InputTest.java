@@ -19,13 +19,12 @@ package io.zentity.resolution.input;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.zentity.common.Json;
-import io.zentity.model.IndexTest;
-import io.zentity.model.MatcherTest;
-import io.zentity.model.Model;
-import io.zentity.model.ModelTest;
-import io.zentity.model.ResolverTest;
+import io.zentity.model.entity.IndexTest;
+import io.zentity.model.entity.MatcherTest;
+import io.zentity.model.entity.Model;
+import io.zentity.model.entity.ModelTest;
+import io.zentity.model.entity.ResolverTest;
 import io.zentity.model.ValidationException;
-import io.zentity.resolution.input.Input;
 import org.junit.Assert;
 import org.junit.Test;
 

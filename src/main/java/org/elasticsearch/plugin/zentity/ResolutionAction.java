@@ -19,7 +19,7 @@ package org.elasticsearch.plugin.zentity;
 
 import io.zentity.common.AsyncCollectionRunner;
 import io.zentity.common.Json;
-import io.zentity.model.Model;
+import io.zentity.model.entity.Model;
 import io.zentity.model.ValidationException;
 import io.zentity.resolution.Job;
 import io.zentity.resolution.input.Input;
