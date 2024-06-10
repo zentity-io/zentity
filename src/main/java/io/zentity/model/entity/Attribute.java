@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static io.zentity.model.Validation.validateStrictName;
+
 public class Attribute {
 
     public static final Set<String> VALID_TYPES = new TreeSet<>(
@@ -116,12 +118,12 @@ public class Attribute {
     }
 
     private void validateName(String value) throws ValidationException {
-        Model.validateStrictName(value);
+        validateStrictName(value);
     }
 
     private void validateNameFields(String[] nameFields) throws ValidationException {
         for (String nameField : nameFields)
-            Model.validateStrictName(nameField);
+            validateStrictName(nameField);
     }
 
     private void validateScore(JsonNode value) throws ValidationException {

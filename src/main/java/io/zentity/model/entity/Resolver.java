@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static io.zentity.model.Validation.validateStrictName;
+
 public class Resolver {
 
     public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
@@ -90,7 +92,7 @@ public class Resolver {
     }
 
     private void validateName(String value) throws ValidationException {
-        Model.validateStrictName(value);
+        validateStrictName(value);
     }
 
     private void validateAttributes(JsonNode value) throws ValidationException {

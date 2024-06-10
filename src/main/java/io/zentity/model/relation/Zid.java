@@ -19,15 +19,9 @@ package io.zentity.model.relation;
 
 import io.zentity.model.ValidationException;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.TreeSet;
+import static io.zentity.model.relation.Model.VALID_RELATION_DIRECTIONS;
 
 public class Zid {
-
-    public static final Set<String> VALID_RELATION_DIRECTIONS = new TreeSet<>(
-            Arrays.asList("a>b", "a<b", "a<>b", "")
-    );
 
     /**
      * Encode a relation _zid.

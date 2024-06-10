@@ -59,6 +59,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.zentity.model.Validation.validateStrictName;
 import static java.util.Collections.emptyMap;
 import static org.elasticsearch.rest.RestRequest.Method;
 import static org.elasticsearch.rest.RestRequest.Method.DELETE;
@@ -357,7 +358,7 @@ public class ModelsAction extends BaseRestHandler {
         if (requestBody == null || requestBody.equals(""))
             throw new ValidationException("Request body cannot be empty when indexing an entity model.");
         new Model(requestBody);
-        Model.validateStrictName(entityType);
+        validateStrictName(entityType);
 
         // The action that indexes the entity model.
         ActionListener<ActionResponse> action = new ActionListener<>() {
@@ -418,7 +419,7 @@ public class ModelsAction extends BaseRestHandler {
         if (requestBody == null || requestBody.equals(""))
             throw new ValidationException("Request body cannot be empty when updating an entity model.");
         new Model(requestBody);
-        Model.validateStrictName(entityType);
+        validateStrictName(entityType);
 
         // The action that updates the entity model.
         ActionListener<ActionResponse> action = new ActionListener<>() {

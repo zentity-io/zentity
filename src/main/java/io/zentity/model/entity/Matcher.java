@@ -32,6 +32,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import static io.zentity.model.Validation.validateStrictName;
+
 public class Matcher {
 
     public static final Set<String> REQUIRED_FIELDS = new TreeSet<>(
@@ -121,7 +123,7 @@ public class Matcher {
     }
 
     private void validateName(String value) throws ValidationException {
-        Model.validateStrictName(value);
+        validateStrictName(value);
     }
 
     private void validateClause(JsonNode value) throws ValidationException {
