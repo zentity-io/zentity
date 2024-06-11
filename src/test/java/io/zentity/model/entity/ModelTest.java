@@ -18,6 +18,7 @@
 package io.zentity.model.entity;
 
 import io.zentity.model.ValidationException;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class ModelTest {
@@ -33,7 +34,21 @@ public class ModelTest {
 
     @Test
     public void testValid() throws Exception {
-        new Model(VALID_OBJECT);
+        Model model = new Model(VALID_OBJECT);
+        Assert.assertEquals("string", model.attributes().get("attribute_name").type());
+        Assert.assertEquals(0.5, model.attributes().get("attribute_name").score(), 0.0);
+        Assert.assertEquals("string", model.attributes().get("attribute_array").type());
+        Assert.assertEquals(0.5, model.attributes().get("attribute_array").score(), 0.0);
+        Assert.assertEquals("string", model.attributes().get("attribute_object").type());
+        Assert.assertEquals(0.5, model.attributes().get("attribute_object").score(), 0.0);
+        //Assert.assertTrue(model.resolvers().get("resolver_name_a").attributes().contains("string"));
+        //Assert.assertTrue(model.resolvers().get("resolver_name_b").attributes().contains("string"));
+        //Assert.assertTrue(model.resolvers().get("resolver_name_c").attributes().contains("string"));
+        Assert.assertEquals("{\"match\":{\"{{ field }}\":\"{{ value }}\"}}", model.matchers().get("matcher_name").clause());
+        Assert.assertEquals("foo", model.indices().get("index_name_a").fields().get("index_field_name").attribute());
+        Assert.assertEquals("bar", model.indices().get("index_name_a").fields().get("index_field_name").matcher());
+        Assert.assertEquals(1.0, model.indices().get("index_name_a").fields().get("index_field_name").quality(), 0.0);
+
     }
 
     @Test(expected = ValidationException.class)

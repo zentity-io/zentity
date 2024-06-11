@@ -40,6 +40,7 @@ public class Model {
             Arrays.asList("a>b", "a<b", "a<>b", "")
     );
 
+    private String _id;
     private String index;
     private String type;
     private String direction;
@@ -54,6 +55,8 @@ public class Model {
         this.deserialize(json);
     }
 
+    public String _id() { return this._id; };
+
     public String index() { return this.index; }
 
     public String type() { return this.type; }
@@ -64,13 +67,17 @@ public class Model {
 
     public String b() { return this.b; }
 
+    private void _id(String index, String a, String b) {
+        this._id = String.join("#", index, a, b);
+    }
+
     private void index(String name) throws ValidationException {
         validateStrictName(name);
         this.index = name;
     }
 
     private void type(String type) throws ValidationException {
-        validateStrictName(type);
+        validateStrictName(type, true);
         this.type = type;
     }
 
@@ -149,12 +156,18 @@ public class Model {
                     this.index(value.asText());
                     break;
                 case "type":
-                    if (!value.isNull() && !value.asText().equals(""))
-                        this.type(value.asText());
+                    if (!value.isNull()) {
+                        String s = value.asText().trim();
+                        if (!s.equals(""))
+                            this.type(s);
+                    }
                     break;
                 case "direction":
-                    if (!value.isNull() && !value.asText().equals(""))
-                        this.direction(value.asText());
+                    if (!value.isNull()) {
+                        String s = value.asText().trim();
+                        if (!s.equals(""))
+                            this.direction(s);
+                    }
                     break;
                 case "a":
                     this.a(value.asText());
@@ -166,6 +179,23 @@ public class Model {
                     throw new ValidationException("'" + fieldName + "' is not a recognized field.");
             }
         }
+
+        // If entity A > entity B, reverse their positions and reverse the direction.
+        if (this.a().compareTo(this.b()) > 0) {
+            String a = this.a();
+            String b = this.b();
+            this.a(b);
+            this.b(a);
+            if (this.direction() != null) {
+                if (this.direction().equals("a>b"))
+                    this.direction("a<b");
+                else if (this.direction().equals("a<b"))
+                    this.direction("a>b");
+            }
+        }
+
+        // Create the _id
+        this._id(this.index(), this.a(), this.b());
     }
 
     public void deserialize(String json) throws ValidationException, IOException {

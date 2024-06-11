@@ -38,6 +38,7 @@ public class Model {
             Arrays.asList("attributes", "resolvers", "matchers", "indices")
     );
 
+    private String _id;
     private Map<String, Attribute> attributes = new TreeMap<>();
     private Map<String, Index> indices = new TreeMap<>();
     private Map<String, Matcher> matchers = new TreeMap<>();
@@ -61,6 +62,8 @@ public class Model {
         this.validateRunnable = validateRunnable;
         this.deserialize(json);
     }
+
+    public String _id() { return this._id; }
 
     public Map<String, Attribute> attributes() {
         return this.attributes;

@@ -26,9 +26,9 @@ public class ModelTest {
     public final static String VALID_OBJECT = "{\n" +
             "  \"index\": \"foo\",\n" +
             "  \"type\": \"residence\",\n" +
-            "  \"direction\": \"a<>b\",\n" +
-            "  \"a\": \"person\",\n" +
-            "  \"b\": \"address\"\n" +
+            "  \"direction\": \"a<b\",\n" +
+            "  \"a\": \"address\",\n" +
+            "  \"b\": \"person\"\n" +
             "}";
 
     ////  model  ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,9 +38,9 @@ public class ModelTest {
         Model model = new Model(VALID_OBJECT);
         Assert.assertEquals(model.index(), "foo");
         Assert.assertEquals(model.type(), "residence");
-        Assert.assertEquals(model.direction(), "a<>b");
-        Assert.assertEquals(model.a(), "person");
-        Assert.assertEquals(model.b(), "address");
+        Assert.assertEquals(model.direction(), "a<b");
+        Assert.assertEquals(model.a(), "address");
+        Assert.assertEquals(model.b(), "person");
     }
 
     @Test(expected = ValidationException.class)
@@ -48,9 +48,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\",\n" +
                 "  \"foo\": \"bar\"\n" +
                 "}");
     }
@@ -62,9 +62,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -73,19 +73,19 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \" \",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
     @Test(expected = ValidationException.class)
     public void testInvalidIndexOmitted() throws Exception {
         new Model("{\n" +
-                "  \"direction\": \"a<>b\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -94,9 +94,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": [\"foo\"],\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -105,9 +105,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": true,\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -116,9 +116,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": 1.0,\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -127,9 +127,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": 1,\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -138,9 +138,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": null,\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -149,44 +149,47 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": {},\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
     ////  model."type"  ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeEmpty() throws Exception {
-        new Model("{\n" +
+    @Test
+    public void testValidTypeEmpty() throws Exception {
+        Model model = new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
+        Assert.assertNull(model.type());
     }
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeEmptyWhitespace() throws Exception {
-        new Model("{\n" +
+    @Test
+    public void testValidTypeEmptyWhitespace() throws Exception {
+        Model model = new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \" \",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
+        Assert.assertNull(model.type());
     }
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeOmmitted() throws Exception {
-        new Model("{\n" +
+    @Test
+    public void testValidTypeOmmitted() throws Exception {
+        Model model = new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
+        Assert.assertNull(model.type());
     }
 
     @Test(expected = ValidationException.class)
@@ -194,9 +197,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": [\"residence\"],\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -205,9 +208,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": true,\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -216,9 +219,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": 1.0,\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -227,21 +230,22 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": 1,\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
-    @Test(expected = ValidationException.class)
-    public void testInvalidTypeTypeNull() throws Exception {
-        new Model("{\n" +
+    @Test
+    public void testValidTypeTypeNull() throws Exception {
+        Model model = new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": null,\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
+        Assert.assertNull(model.type());
     }
 
     @Test(expected = ValidationException.class)
@@ -249,9 +253,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": {},\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -259,23 +263,37 @@ public class ModelTest {
 
     @Test
     public void testValidDirectionEmpty() throws Exception {
-        new Model("{\n" +
+        Model model = new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \"\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
+        Assert.assertNull(model.direction());
+    }
+
+    @Test
+    public void testValidDirectionEmptyWhitespace() throws Exception {
+        Model model = new Model("{\n" +
+                "  \"index\": \"foo\",\n" +
+                "  \"type\": \"residence\",\n" +
+                "  \"direction\": \" \",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
+                "}");
+        Assert.assertNull(model.direction());
     }
 
     @Test
     public void testValidDirectionOmitted() throws Exception {
-        new Model("{\n" +
+        Model model = new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
+        Assert.assertNull(model.direction());
     }
 
     @Test
@@ -284,8 +302,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \"a>b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -295,8 +313,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \"a<b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -306,8 +324,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -316,44 +334,44 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a->b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
-                "}");
-        new Model("{\n" +
-                "  \"index\": \"foo\",\n" +
-                "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a->b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<-b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \"a<-b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \" a < > b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<-b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
+                "}");
+        new Model("{\n" +
+                "  \"index\": \"foo\",\n" +
+                "  \"type\": \"residence\",\n" +
+                "  \"direction\": \" a < > b \",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \" a < -- > b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \"A<>B\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -362,9 +380,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a->bb\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<--bb\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -374,8 +392,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": \" \",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -384,9 +402,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": [\"a<>b\"],\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": [\"a<b\"],\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -396,8 +414,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": true,\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -407,8 +425,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": 1.0,\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -418,8 +436,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": 1,\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -429,8 +447,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": null,\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -440,8 +458,8 @@ public class ModelTest {
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
                 "  \"direction\": {},\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -452,9 +470,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
+                "  \"direction\": \"a<b\",\n" +
                 "  \"a\": \"\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -463,9 +481,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
+                "  \"direction\": \"a<b\",\n" +
                 "  \"a\": \" \",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -474,8 +492,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -484,9 +502,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": [\"person\"],\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": [\"address\"],\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -495,9 +513,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
+                "  \"direction\": \"a<b\",\n" +
                 "  \"a\": true,\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -506,9 +524,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
+                "  \"direction\": \"a<b\",\n" +
                 "  \"a\": 1.0,\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -517,9 +535,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
+                "  \"direction\": \"a<b\",\n" +
                 "  \"a\": 1,\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -528,9 +546,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
+                "  \"direction\": \"a<b\",\n" +
                 "  \"a\": null,\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -539,9 +557,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
+                "  \"direction\": \"a<b\",\n" +
                 "  \"a\": {},\n" +
-                "  \"b\": \"address\"\n" +
+                "  \"b\": \"person\"\n" +
                 "}");
     }
 
@@ -552,8 +570,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
                 "  \"b\": \"\"\n" +
                 "}");
     }
@@ -563,8 +581,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
                 "  \"b\": \" \"\n" +
                 "}");
     }
@@ -574,8 +592,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\"\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\"\n" +
                 "}");
     }
 
@@ -584,9 +602,9 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
-                "  \"b\": [\"address\"]\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
+                "  \"b\": [\"person\"]\n" +
                 "}");
     }
 
@@ -595,8 +613,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
                 "  \"b\": true\n" +
                 "}");
     }
@@ -606,8 +624,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
                 "  \"b\": 1.0\n" +
                 "}");
     }
@@ -617,8 +635,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
                 "  \"b\": 1\n" +
                 "}");
     }
@@ -628,8 +646,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
                 "  \"b\": null\n" +
                 "}");
     }
@@ -639,8 +657,8 @@ public class ModelTest {
         new Model("{\n" +
                 "  \"index\": \"foo\",\n" +
                 "  \"type\": \"residence\",\n" +
-                "  \"direction\": \"a<>b\",\n" +
-                "  \"a\": \"person\",\n" +
+                "  \"direction\": \"a<b\",\n" +
+                "  \"a\": \"address\",\n" +
                 "  \"b\": {}\n" +
                 "}");
     }

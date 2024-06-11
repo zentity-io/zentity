@@ -15,17 +15,20 @@ public class Validation {
     /**
      * Validate that a name meets the same requirements as the Elasticsearch index name requirements.
      *
-     * @param name  The name of the relation type.
+     * @param name     The name to validate.
+     * @param optional Whether the name can be empty.
      * @return an optional ValidationException if the type is not in a valid format.
      * @see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.10/indices-create-index.html#indices-create-api-path-params">Elasticsearch Index Name Requirements</a>
      * @see org.elasticsearch.cluster.metadata.MetadataCreateIndexService#validateIndexOrAliasName
      */
-    public static void validateStrictName(String name) throws ValidationException {
+    public static void validateStrictName(String name, Boolean optional) throws ValidationException {
         BiFunction<String, String, String> msg = (invalidName, description) -> "Invalid name [" + invalidName + "], " + description;
-        if (name == null)
-            throw new ValidationException(msg.apply("", "must not be empty"));
-        if (Patterns.EMPTY_STRING.matcher(name).matches())
-            throw new ValidationException(msg.apply(name, "must not be empty"));
+        if (!optional) {
+            if (name == null)
+                throw new ValidationException(msg.apply("", "must not be empty"));
+            if (Patterns.EMPTY_STRING.matcher(name).matches())
+                throw new ValidationException(msg.apply(name, "must not be empty"));
+        }
         if (!Strings.validFileName(name))
             throw new ValidationException(msg.apply(name, "must not contain the following characters: " + Strings.INVALID_FILENAME_CHARS));
         if (name.contains("#"))
@@ -47,5 +50,9 @@ public class Validation {
             throw new ValidationException(msg.apply(name,  "must not be '.' or '..'"));
         if (!name.toLowerCase(Locale.ROOT).equals(name))
             throw new ValidationException(msg.apply(name,  "must be lowercase"));
+    }
+
+    public static void validateStrictName(String name) throws ValidationException {
+        validateStrictName(name, false);
     }
 }
