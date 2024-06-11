@@ -41,9 +41,9 @@ public class ModelTest {
         Assert.assertEquals(0.5, model.attributes().get("attribute_array").score(), 0.0);
         Assert.assertEquals("string", model.attributes().get("attribute_object").type());
         Assert.assertEquals(0.5, model.attributes().get("attribute_object").score(), 0.0);
-        //Assert.assertTrue(model.resolvers().get("resolver_name_a").attributes().contains("string"));
-        //Assert.assertTrue(model.resolvers().get("resolver_name_b").attributes().contains("string"));
-        //Assert.assertTrue(model.resolvers().get("resolver_name_c").attributes().contains("string"));
+        Assert.assertTrue(model.resolvers().get("resolver_name_a").attributes().contains("attribute_a"));
+        Assert.assertTrue(model.resolvers().get("resolver_name_b").attributes().contains("attribute_a"));
+        Assert.assertTrue(model.resolvers().get("resolver_name_c").attributes().contains("attribute_a"));
         Assert.assertEquals("{\"match\":{\"{{ field }}\":\"{{ value }}\"}}", model.matchers().get("matcher_name").clause());
         Assert.assertEquals("foo", model.indices().get("index_name_a").fields().get("index_field_name").attribute());
         Assert.assertEquals("bar", model.indices().get("index_name_a").fields().get("index_field_name").matcher());
