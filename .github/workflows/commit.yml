@@ -24,6 +24,9 @@ jobs:
       # Build and test zentity for each version of Elasticsearch that its APIs support.
       matrix:
         elasticsearch:
+          - 8.14.3
+          - 8.14.2
+          - 8.14.1
           - 8.14.0
           - 8.13.4
           - 8.13.3
