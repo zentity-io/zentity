@@ -24,6 +24,9 @@ jobs:
       # Build and test zentity for each version of Elasticsearch that its APIs support.
       matrix:
         elasticsearch:
+          - 8.16.2
+          - 8.16.1
+          - 8.16.0
           - 8.14.0
           - 8.13.3
           - 8.13.2
@@ -31,27 +34,27 @@ jobs:
           - 8.13.0
 
     # Use the latest LTS OS.
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
 
       # Checkout the repository.
       # Uses: https://github.com/actions/checkout
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Configure the JDK.
       # Uses: https://github.com/actions/setup-java
       # Elasticsearch JVM support matrix: https://www.elastic.co/support/matrix#matrix_jvm
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
           java-version: 17
 
       # Cache Maven packages.
       # Uses: https://github.com/actions/cache
       - name: Cache packages
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
