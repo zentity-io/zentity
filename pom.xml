@@ -21,12 +21,13 @@
         <zentity.version>1.8.3</zentity.version>
 
         <!-- Dependency versions -->
-        <elasticsearch.version>8.17.0</elasticsearch.version>
+        <elasticsearch.version>8.19.6</elasticsearch.version>
         <jackson.core.version>2.17.0</jackson.core.version>
         <jackson.databind.version>2.17.0</jackson.databind.version>
         <jdk.version>1.17</jdk.version>
         <commons-io.version>2.16.1</commons-io.version>
-        <testcontainers.version>1.16.0</testcontainers.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
+        <junit.version>4.13.2</junit.version>
 
         <!-- Maven plugin versions -->
         <maven.antrun.version>3.0.0</maven.antrun.version>
@@ -83,6 +84,12 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

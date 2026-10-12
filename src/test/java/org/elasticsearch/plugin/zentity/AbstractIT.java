@@ -1,6 +1,6 @@
 /*
  * zentity
- * Copyright © 2018-2025 Dave Moore
+ * Copyright © 2018-2026 Dave Moore
  * https://zentity.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@ import org.elasticsearch.client.RestClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
-import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
@@ -45,7 +45,7 @@ public abstract class AbstractIT {
     public final static int SERVICE_PORT = 9400;
 
     // A docker-compose cluster used for all test cases in the test class.
-    private static DockerComposeContainer cluster;
+    private static ComposeContainer cluster;
 
     // Client that communicates with the docker-compose cluster.
     private static RestClient client;
@@ -67,7 +67,7 @@ public abstract class AbstractIT {
      */
     public static void createCluster() {
         Path path = Paths.get(System.getenv("BUILD_DIRECTORY"), "test-classes", "docker-compose.yml");
-        cluster = new DockerComposeContainer(new File(path.toString()))
+        cluster = new ComposeContainer(new File(path.toString()))
                 .withEnv("BUILD_DIRECTORY", System.getenv("BUILD_DIRECTORY"))
                 .withEnv("ELASTICSEARCH_VERSION", System.getenv("ELASTICSEARCH_VERSION"))
                 .withEnv("ZENTITY_VERSION", System.getenv("ZENTITY_VERSION"))
