@@ -11,7 +11,7 @@ jobs:
     name: Create Release
 
     # Use the latest LTS OS.
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       release_tag: ${{ steps.get_tag.outputs.tag }}
@@ -57,7 +57,7 @@ jobs:
     needs: create_release
 
     # Use the latest LTS OS.
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     # Set the zentity version as the value of the release tag.
     env:

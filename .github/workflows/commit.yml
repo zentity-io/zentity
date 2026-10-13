@@ -27,7 +27,7 @@ jobs:
           - 9.0.0
 
     # Use the latest LTS OS.
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
 
