@@ -88,6 +88,14 @@ public class ResolutionAction extends BaseRestHandler {
         return "zentity_resolution_action";
     }
 
+    @Override
+    public boolean supportsBulkContent() {
+        // Required for Elasticsearch to accept the streamed (non-aggregated) request bodies it
+        // delivers to "/_bulk" routes as of 9.0.0. All routes registered by this handler already
+        // expect JSON bodies, so the JSON/SMILE-only restriction this enables has no effect here.
+        return true;
+    }
+
     /**
      * Retrieve a serialized entity model.
      *
@@ -351,10 +359,6 @@ public class ResolutionAction extends BaseRestHandler {
         if (!restRequest.hasContent())
             throw new BadRequestException("Request body is missing.");
 
-        // would be better to handle incoming content as a stream for bulk,
-        // but alas, unsure how to use the StreamInput format
-        final String body = restRequest.content().utf8ToString();
-
         // Read all possible parameters into a map so that the handler knows we've consumed them
         // and all other unknowns will be thrown as unrecognized
         Map<String, String> reqParams = ParamsUtil.readAll(
@@ -383,11 +387,11 @@ public class ResolutionAction extends BaseRestHandler {
         );
 
         final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, Job.DEFAULT_PRETTY, reqParams, emptyMap());
+        final boolean isBulkRequest = restRequest.path().endsWith("/_bulk");
 
-        return channel -> {
+        return ZentityPlugin.prepareRequestBody(restRequest, logger, (channel, body) -> {
             Consumer<Exception> errorHandler = (e) -> ZentityPlugin.sendResponseError(channel, logger, e);
             try {
-                boolean isBulkRequest = restRequest.path().endsWith("/_bulk");
                 if (isBulkRequest) {
 
                     // Run bulk jobs
@@ -415,11 +419,10 @@ public class ResolutionAction extends BaseRestHandler {
                         errorHandler
                     ));
                 }
-
             } catch (Exception e) {
                 errorHandler.accept(e);
             }
-        };
+        });
     }
 
 }

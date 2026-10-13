@@ -44,6 +44,7 @@ import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -103,6 +104,14 @@ public class ModelsAction extends BaseRestHandler {
         return "zentity_models_action";
     }
 
+    @Override
+    public boolean supportsBulkContent() {
+        // Required for Elasticsearch to accept the streamed (non-aggregated) request bodies it
+        // delivers to "/_bulk" routes as of 9.0.0. All routes registered by this handler already
+        // expect JSON bodies, so the JSON/SMILE-only restriction this enables has no effect here.
+        return true;
+    }
+
     /**
      * Create the .zentity-models index.
      *
@@ -155,7 +164,8 @@ public class ModelsAction extends BaseRestHandler {
     public static void ensureIndex(NodeClient client, ActionListener<ActionResponse> onComplete) {
 
         // Check if the .zentity-models index exists.
-        GetIndexRequest getIndexRequest = new GetIndexRequest().indices(INDEX_NAME);
+        // Use the same default master-node timeout as Elasticsearch's REST layer.
+        GetIndexRequest getIndexRequest = new GetIndexRequest(TimeValue.THIRTY_SECONDS).indices(INDEX_NAME);
         client.admin().indices().getIndex(getIndexRequest, new ActionListener<>() {
 
             @Override
@@ -686,7 +696,6 @@ public class ModelsAction extends BaseRestHandler {
 
         // Parse request
         Method method = restRequest.method();
-        String body = restRequest.content().utf8ToString();
 
         // Read all possible parameters into a map so that the handler knows we've consumed them
         // and all other unknowns will be thrown as unrecognized
@@ -697,11 +706,11 @@ public class ModelsAction extends BaseRestHandler {
         );
 
         final boolean pretty = ParamsUtil.optBoolean(PARAM_PRETTY, DEFAULT_PRETTY, reqParams, emptyMap());
+        final boolean isBulkRequest = restRequest.path().endsWith("/_bulk");
 
-        return channel -> {
+        return ZentityPlugin.prepareRequestBody(restRequest, logger, (channel, body) -> {
             Consumer<Exception> errorHandler = (e) -> ZentityPlugin.sendResponseError(channel, logger, e);
             try {
-                boolean isBulkRequest = restRequest.path().endsWith("/_bulk");
                 if (isBulkRequest) {
 
                     // Run bulk operations
@@ -725,11 +734,10 @@ public class ModelsAction extends BaseRestHandler {
                         errorHandler
                     ));
                 }
-
             } catch (Exception e) {
                 errorHandler.accept(e);
             }
-        };
+        });
     }
 
     /**

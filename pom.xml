@@ -21,10 +21,10 @@
         <zentity.version>1.8.3</zentity.version>
 
         <!-- Dependency versions -->
-        <elasticsearch.version>8.19.6</elasticsearch.version>
+        <elasticsearch.version>9.3.0</elasticsearch.version>
         <jackson.core.version>2.17.0</jackson.core.version>
         <jackson.databind.version>2.17.0</jackson.databind.version>
-        <jdk.version>1.17</jdk.version>
+        <jdk.version>21</jdk.version>
         <commons-io.version>2.16.1</commons-io.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <junit.version>4.13.2</junit.version>
@@ -34,7 +34,7 @@
         <maven.assembly.version>3.7.1</maven.assembly.version>
         <maven.build-helper.version>3.5.0</maven.build-helper.version>
         <maven.compiler.version>3.13.0</maven.compiler.version>
-        <maven.junit.version>2.7.8</maven.junit.version>
+        <maven.junit.version>2.9.2</maven.junit.version>
         <maven.license.codehaus.version>2.0.0</maven.license.codehaus.version>
         <maven.license.mycila.version>3.0</maven.license.mycila.version>
         <maven.surefire.version>2.22.2</maven.surefire.version>
@@ -74,6 +74,16 @@
             <version>${elasticsearch.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- elasticsearch-java no longer transitively provides the low-level REST client as of
+             Elasticsearch 9.x (it moved to an Apache HttpClient 5 transport). Depend on it
+             directly so integration tests retain access to RestClient/Request/Response and the
+             Apache HttpClient 4.x entity classes they use. -->
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-client</artifactId>
+            <version>${elasticsearch.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -101,8 +111,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.version}</version>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <release>21</release>
                 </configuration>
             </plugin>
 

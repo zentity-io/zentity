@@ -26,15 +26,21 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.CompositeBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.features.NodeFeature;
+import org.elasticsearch.http.HttpBody;
+import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestHandler;
+import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -43,6 +49,7 @@ import org.elasticsearch.plugins.Plugin;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -117,6 +124,95 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
                 new ResolutionAction(),
                 new SetupAction()
         );
+    }
+
+    /**
+     * A function that builds the {@link RestChannel} consumer for a request once its body (if any)
+     * is known as a UTF-8 string.
+     */
+    @FunctionalInterface
+    protected interface RestBodyHandler {
+        void accept(RestChannel channel, String body) throws Exception;
+    }
+
+    /**
+     * Build the {@link org.elasticsearch.rest.BaseRestHandler.RestChannelConsumer} for a request,
+     * reading its body as a UTF-8 string regardless of whether Elasticsearch delivered it fully
+     * buffered or as a stream of chunks.
+     *
+     * As of Elasticsearch 9.0.0, the HTTP layer no longer aggregates request bodies whose path
+     * ends in "/_bulk" (see Netty4HttpServerTransport's aggregator predicate). Such bodies arrive
+     * as a {@link HttpBody.Stream}, and {@link RestRequest#content()} cannot be called on them.
+     * Elasticsearch's own {@code BaseRestHandler} requires handlers to either consume a fully
+     * buffered body synchronously inside {@code prepareRequest} (otherwise it rejects the request
+     * with "does not support having a body"), or, for streamed bodies, return a
+     * {@link org.elasticsearch.rest.BaseRestHandler.RequestBodyChunkConsumer} that it drives itself
+     * via {@link HttpBody.Stream#setHandler}.
+     *
+     * This method must therefore be called from within {@code prepareRequest} (not deferred into
+     * the returned consumer), so that a fully-buffered body is consumed before this method returns,
+     * matching what {@code BaseRestHandler.handleRequest} asserts. Elasticsearch 9.1.0+ and all 8.x
+     * versions always deliver fully-buffered bodies, so the streamed branch only engages on 9.0.x.
+     * Both {@link RestRequest#isFullContent()} and {@link RestRequest#contentStream()} are available
+     * on every Elasticsearch version zentity supports (verified on 8.19.6 through 9.5.5).
+     *
+     * @param restRequest The incoming request.
+     * @param logger      The logger to use if an error occurs while handling the last chunk of a
+     *                    streamed body (there is no other caller on the stack at that point to
+     *                    report it through).
+     * @param bodyHandler The action to perform with the channel and the fully-read request body.
+     * @return The consumer to return from {@code prepareRequest}.
+     */
+    protected static BaseRestHandler.RequestBodyChunkConsumer prepareRequestBody(RestRequest restRequest, Logger logger, RestBodyHandler bodyHandler) {
+        if (restRequest.isFullContent()) {
+
+            // The body was delivered fully-buffered. Consume it now (inside prepareRequest, as
+            // Elasticsearch requires) and run the handler once the channel is available.
+            // handleChunk() is irrelevant here: Elasticsearch only wires and calls it when
+            // RestRequest#isStreamedContent() is true, which is never the case on this branch.
+            String body = restRequest.content().utf8ToString();
+            return new BaseRestHandler.RequestBodyChunkConsumer() {
+                @Override
+                public void accept(RestChannel channel) throws Exception {
+                    bodyHandler.accept(channel, body);
+                }
+
+                @Override
+                public void handleChunk(RestChannel channel, ReleasableBytesReference chunk, boolean isLast) {
+                    throw new IllegalStateException("handleChunk() should never be called for a fully-buffered request body.");
+                }
+            };
+        }
+
+        // The body was delivered as a stream of chunks. Elasticsearch drives this consumer itself:
+        // it wires HttpBody.Stream#setHandler to call handleChunk(...) and then invokes accept(channel)
+        // to kick things off, mirroring Elasticsearch's own RestBulkAction.ChunkHandler.
+        return new BaseRestHandler.RequestBodyChunkConsumer() {
+
+            private final List<ReleasableBytesReference> chunks = new ArrayList<>();
+
+            @Override
+            public void accept(RestChannel channel) {
+                restRequest.contentStream().next();
+            }
+
+            @Override
+            public void handleChunk(RestChannel channel, ReleasableBytesReference chunk, boolean isLast) {
+                chunks.add(chunk);
+                if (!isLast) {
+                    restRequest.contentStream().next();
+                    return;
+                }
+                try {
+                    String body = CompositeBytesReference.of(chunks.toArray(new ReleasableBytesReference[0])).utf8ToString();
+                    bodyHandler.accept(channel, body);
+                } catch (Exception e) {
+                    sendResponseError(channel, logger, e);
+                } finally {
+                    Releasables.close(chunks);
+                }
+            }
+        };
     }
 
     /**

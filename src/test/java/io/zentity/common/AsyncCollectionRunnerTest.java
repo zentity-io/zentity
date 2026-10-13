@@ -18,6 +18,7 @@
 package io.zentity.common;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.common.logging.LogConfigurator;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -32,6 +33,19 @@ import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
 
 public class AsyncCollectionRunnerTest {
+
+  static {
+    // This test runs ActionListener callbacks (via AsyncCollectionRunner) on raw background
+    // threads. As of Elasticsearch 9.2.0, ActionListener's internal assertions reference
+    // ElasticsearchException, whose static initializer now transitively calls LogManager.getLogger
+    // (for the new cross-project-search exception types). Outside of a real ES node, no logging
+    // provider is registered, so that call throws an uncaught NullPointerException on whichever
+    // background thread triggers the class load first -- silently dropping that thread's listener
+    // callback and hanging any test that awaits it. Configuring the logging provider up front avoids
+    // the class-load-time NPE on every Elasticsearch version this plugin supports.
+    LogConfigurator.configureESLogging();
+  }
+
   static final Executor THREAD_PER_TASK_EXECUTOR = (command) -> new Thread(command).start();
 
   void quietSleep(long millis) {
