@@ -104,11 +104,22 @@ public class ModelsAction extends BaseRestHandler {
         return "zentity_models_action";
     }
 
-    @Override
+    // Required for Elasticsearch to accept the streamed (non-aggregated) request bodies it
+    // delivers to "/_bulk" routes as of 9.0.0. All routes registered by this handler already
+    // expect JSON bodies, so the JSON/SMILE-only restriction this enables has no effect here.
+    //
+    // RestHandler's method for this was named supportsBulkContent() on 8.19.6 through 9.2.x and
+    // renamed back to its pre-9.2 name, supportsContentStream(), as of 9.3.0 (verified via
+    // sourcerer against the elasticsearch source for both names across that range). Since zentity
+    // is built once per targeted Elasticsearch version (not against a version-spanning API), and
+    // both names must compile across the whole 8.19.6-9.5.5+ support range, both overrides are
+    // declared here without @Override: whichever name actually matches RestHandler's method for
+    // the version being built becomes the real override, and the other is simply an unused method.
     public boolean supportsBulkContent() {
-        // Required for Elasticsearch to accept the streamed (non-aggregated) request bodies it
-        // delivers to "/_bulk" routes as of 9.0.0. All routes registered by this handler already
-        // expect JSON bodies, so the JSON/SMILE-only restriction this enables has no effect here.
+        return true;
+    }
+
+    public boolean supportsContentStream() {
         return true;
     }
 

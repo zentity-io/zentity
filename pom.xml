@@ -21,7 +21,7 @@
         <zentity.version>1.8.3</zentity.version>
 
         <!-- Dependency versions -->
-        <elasticsearch.version>9.3.0</elasticsearch.version>
+        <elasticsearch.version>9.4.0</elasticsearch.version>
         <jackson.core.version>2.17.0</jackson.core.version>
         <jackson.databind.version>2.17.0</jackson.databind.version>
         <jdk.version>21</jdk.version>
