@@ -34,20 +34,21 @@ jobs:
       # Checkout the repository.
       # Uses: https://github.com/actions/checkout
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Configure the JDK.
       # Uses: https://github.com/actions/setup-java
       # Elasticsearch JVM support matrix: https://www.elastic.co/support/matrix#matrix_jvm
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: 21
 
       # Cache Maven packages.
       # Uses: https://github.com/actions/cache
       - name: Cache packages
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
