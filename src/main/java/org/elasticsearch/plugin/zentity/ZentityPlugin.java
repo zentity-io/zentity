@@ -23,16 +23,10 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.settings.ClusterSettings;
-import org.elasticsearch.common.settings.IndexScopedSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.features.NodeFeature;
 import org.elasticsearch.http.HttpBody;
@@ -51,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Predicate;
@@ -107,15 +102,15 @@ public class ZentityPlugin extends Plugin implements ActionPlugin {
         return properties.getProperty("version");
     }
 
+    // Elasticsearch 9.4.0 collapsed getRestHandlers()'s 9 individual parameters into a single
+    // RestHandlersServices record (ActionPlugin.RestHandlersServices) and removed the old overload
+    // entirely (verified via sourcerer against the elasticsearch source for both 9.3.0 and 9.4.0).
+    // zentity targets only Elasticsearch 9.4.0+ going forward, so this uses the new signature
+    // directly rather than maintaining both. The body is unchanged: it ignores all parameters and
+    // returns the same static list of handlers.
     @Override
-    public List<RestHandler> getRestHandlers(
-            Settings settings,
-            NamedWriteableRegistry namedWriteableRegistry,
-            RestController restController,
-            ClusterSettings clusterSettings,
-            IndexScopedSettings indexScopedSettings,
-            SettingsFilter settingsFilter,
-            IndexNameExpressionResolver indexNameExpressionResolver,
+    public Collection<RestHandler> getRestHandlers(
+            RestHandlersServices restHandlersServices,
             Supplier<DiscoveryNodes> nodesInCluster,
             Predicate<NodeFeature> clusterSupportsFeature) {
         return Arrays.asList(
